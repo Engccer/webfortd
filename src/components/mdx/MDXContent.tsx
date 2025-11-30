@@ -109,7 +109,7 @@ const components = {
   },
   // 이미지 placeholder 처리
   img: (props: React.ImgHTMLAttributes<HTMLImageElement>) => {
-    if (props.src?.includes("placeholder")) {
+    if (typeof props.src === "string" && props.src.includes("placeholder")) {
       return null // placeholder 이미지는 표시하지 않음
     }
     return <img className="max-w-full h-auto my-4 rounded-lg" {...props} />
