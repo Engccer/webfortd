@@ -2,16 +2,24 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { ChevronRight, Home } from "lucide-react"
+import { Home } from "lucide-react"
 import { mainNavigation } from "@/lib/navigation"
+import {
+  Breadcrumb as BreadcrumbRoot,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb"
 
-interface BreadcrumbItem {
+interface BreadcrumbItemType {
   title: string
   href: string
 }
 
-function getBreadcrumbs(pathname: string): BreadcrumbItem[] {
-  const items: BreadcrumbItem[] = [{ title: "홈", href: "/" }]
+function getBreadcrumbs(pathname: string): BreadcrumbItemType[] {
+  const items: BreadcrumbItemType[] = [{ title: "홈", href: "/" }]
 
   if (pathname === "/") return items
 
@@ -49,28 +57,25 @@ export function Breadcrumb() {
   if (items.length <= 1) return null
 
   return (
-    <nav aria-label="breadcrumb" className="mb-6">
-      <ol className="flex flex-wrap items-center gap-1 text-sm">
+    <BreadcrumbRoot className="mb-6">
+      <BreadcrumbList>
         {items.map((item, index) => (
-          <li key={item.href} className="flex items-center gap-1">
-            {index > 0 && (
-              <ChevronRight className="h-4 w-4 text-gray-400" aria-hidden="true" />
-            )}
+          <BreadcrumbItem key={item.href}>
+            {index > 0 && <BreadcrumbSeparator />}
             {index === items.length - 1 ? (
-              <span className="font-medium text-gray-900" aria-current="page">
+              <BreadcrumbPage>
                 {item.title === "홈" ? <Home className="h-4 w-4" /> : item.title}
-              </span>
+              </BreadcrumbPage>
             ) : (
-              <Link
-                href={item.href}
-                className="text-gray-600 hover:text-blue-600 hover:underline"
-              >
-                {item.title === "홈" ? <Home className="h-4 w-4" /> : item.title}
-              </Link>
+              <BreadcrumbLink asChild>
+                <Link href={item.href}>
+                  {item.title === "홈" ? <Home className="h-4 w-4" /> : item.title}
+                </Link>
+              </BreadcrumbLink>
             )}
-          </li>
+          </BreadcrumbItem>
         ))}
-      </ol>
-    </nav>
+      </BreadcrumbList>
+    </BreadcrumbRoot>
   )
 }

@@ -17,7 +17,7 @@ export function Sidebar({ items, title }: SidebarProps) {
   return (
     <nav className="w-64 shrink-0" aria-label="사이드바 메뉴">
       {title && (
-        <h2 className="mb-4 text-lg font-bold text-gray-900">{title}</h2>
+        <h2 className="mb-4 text-lg font-bold text-foreground">{title}</h2>
       )}
       <ul className="space-y-1">
         {items.map((item) => (
@@ -44,12 +44,12 @@ function SidebarItem({ item, pathname, level = 0 }: SidebarItemProps) {
         href={item.href}
         className={cn(
           "flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors",
-          level > 0 && "ml-4 border-l border-gray-200 pl-4",
+          level > 0 && "ml-4 border-l border-border pl-4",
           isActive
-            ? "bg-blue-50 font-medium text-blue-600"
+            ? "bg-accent font-medium text-primary"
             : isParentActive
-              ? "text-blue-600"
-              : "text-gray-700 hover:bg-gray-100"
+              ? "text-primary"
+              : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
         )}
       >
         {isActive && <ChevronRight className="h-4 w-4" />}

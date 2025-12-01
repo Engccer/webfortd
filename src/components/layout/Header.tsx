@@ -3,22 +3,38 @@
 import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import * as NavigationMenu from "@radix-ui/react-navigation-menu"
-import { Menu, X, ChevronDown, Search } from "lucide-react"
+import { Menu, Search, ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { mainNavigation } from "@/lib/navigation"
 import { AccessibilityToolbar } from "@/components/accessibility/AccessibilityToolbar"
+import { Button } from "@/components/ui/Button"
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+  navigationMenuTriggerStyle,
+} from "@/components/ui/navigation-menu"
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false)
   const pathname = usePathname()
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-gray-200 bg-white">
+    <header className="sticky top-0 z-40 w-full border-b border-border bg-background">
       {/* Top Bar */}
-      <div className="border-b border-gray-100 bg-gray-50">
+      <div className="border-b border-border bg-muted/50">
         <div className="mx-auto flex h-10 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <div className="text-xs text-gray-600">
+          <div className="text-xs text-muted-foreground">
             장애인교원의 교육활동을 지원합니다
           </div>
           <div className="flex items-center gap-4">
@@ -33,145 +49,138 @@ export function Header() {
           {/* Logo */}
           <Link
             href="/"
-            className="flex items-center gap-2 text-lg font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            className="flex items-center gap-2 text-lg font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
           >
-            <span className="text-blue-600">장애인교원</span>
+            <span className="text-primary">장애인교원</span>
             <span className="hidden sm:inline">교육전념 여건 지원</span>
           </Link>
 
           {/* Desktop Navigation */}
-          <NavigationMenu.Root className="hidden lg:block" id="main-nav" tabIndex={-1}>
-            <NavigationMenu.List className="flex items-center gap-1">
+          <NavigationMenu className="hidden lg:block" id="main-nav">
+            <NavigationMenuList>
               {mainNavigation.map((item) => (
-                <NavigationMenu.Item key={item.href}>
+                <NavigationMenuItem key={item.href}>
                   {item.children ? (
                     <>
-                      <NavigationMenu.Trigger
+                      <NavigationMenuTrigger
                         className={cn(
-                          "group flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500",
-                          pathname.startsWith(item.href)
-                            ? "text-blue-600"
-                            : "text-gray-700"
+                          pathname.startsWith(item.href) && "text-primary"
                         )}
                       >
                         {item.title}
-                        <ChevronDown className="h-4 w-4 transition-transform group-data-[state=open]:rotate-180" />
-                      </NavigationMenu.Trigger>
-                      <NavigationMenu.Content className="absolute left-0 top-full w-auto min-w-[200px] rounded-lg border border-gray-200 bg-white p-2 shadow-lg">
-                        <ul className="space-y-1">
+                      </NavigationMenuTrigger>
+                      <NavigationMenuContent>
+                        <ul className="grid w-[200px] gap-1 p-2">
                           {item.children.map((child) => (
                             <li key={child.href}>
-                              <NavigationMenu.Link asChild>
+                              <NavigationMenuLink asChild>
                                 <Link
                                   href={child.href}
                                   className={cn(
-                                    "block rounded-md px-3 py-2 text-sm transition-colors hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500",
-                                    pathname === child.href
-                                      ? "bg-blue-50 text-blue-600"
-                                      : "text-gray-700"
+                                    "block select-none rounded-md px-3 py-2 text-sm leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
+                                    pathname === child.href &&
+                                      "bg-accent text-primary"
                                   )}
                                 >
                                   {child.title}
                                 </Link>
-                              </NavigationMenu.Link>
+                              </NavigationMenuLink>
                             </li>
                           ))}
                         </ul>
-                      </NavigationMenu.Content>
+                      </NavigationMenuContent>
                     </>
                   ) : (
-                    <NavigationMenu.Link asChild>
-                      <Link
-                        href={item.href}
+                    <Link href={item.href} legacyBehavior passHref>
+                      <NavigationMenuLink
                         className={cn(
-                          "rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500",
-                          pathname === item.href
-                            ? "text-blue-600"
-                            : "text-gray-700"
+                          navigationMenuTriggerStyle(),
+                          pathname === item.href && "text-primary"
                         )}
                       >
                         {item.title}
-                      </Link>
-                    </NavigationMenu.Link>
+                      </NavigationMenuLink>
+                    </Link>
                   )}
-                </NavigationMenu.Item>
+                </NavigationMenuItem>
               ))}
-            </NavigationMenu.List>
-            <NavigationMenu.Viewport />
-          </NavigationMenu.Root>
+            </NavigationMenuList>
+          </NavigationMenu>
 
           {/* Search & Mobile Menu Button */}
           <div className="flex items-center gap-2">
-            <button
+            <Button
+              variant="outline"
+              size="sm"
               id="search-input"
-              className="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-500 transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="gap-2"
               aria-label="검색"
             >
               <Search className="h-4 w-4" />
               <span className="hidden sm:inline">검색...</span>
-            </button>
+            </Button>
 
-            <button
-              className="rounded-lg p-2 text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 lg:hidden"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              aria-expanded={mobileMenuOpen}
-              aria-label={mobileMenuOpen ? "메뉴 닫기" : "메뉴 열기"}
-            >
-              {mobileMenuOpen ? (
-                <X className="h-6 w-6" />
-              ) : (
-                <Menu className="h-6 w-6" />
-              )}
-            </button>
+            {/* Mobile Menu */}
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="lg:hidden"
+                  aria-label="메뉴 열기"
+                >
+                  <Menu className="h-6 w-6" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+                <SheetHeader>
+                  <SheetTitle>메뉴</SheetTitle>
+                </SheetHeader>
+                <nav className="mt-6">
+                  <ul className="space-y-2">
+                    {mainNavigation.map((item) => (
+                      <li key={item.href}>
+                        <Link
+                          href={item.href}
+                          className={cn(
+                            "block rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-accent",
+                            pathname.startsWith(item.href)
+                              ? "text-primary"
+                              : "text-foreground"
+                          )}
+                          onClick={() => setMobileMenuOpen(false)}
+                        >
+                          {item.title}
+                        </Link>
+                        {item.children && (
+                          <ul className="ml-4 mt-1 space-y-1">
+                            {item.children.map((child) => (
+                              <li key={child.href}>
+                                <Link
+                                  href={child.href}
+                                  className={cn(
+                                    "block rounded-lg px-3 py-1.5 text-sm transition-colors hover:bg-accent",
+                                    pathname === child.href
+                                      ? "text-primary"
+                                      : "text-muted-foreground"
+                                  )}
+                                  onClick={() => setMobileMenuOpen(false)}
+                                >
+                                  {child.title}
+                                </Link>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </nav>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </div>
-
-      {/* Mobile Menu */}
-      {mobileMenuOpen && (
-        <nav className="border-t border-gray-200 bg-white lg:hidden">
-          <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
-            <ul className="space-y-2">
-              {mainNavigation.map((item) => (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    className={cn(
-                      "block rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-gray-100",
-                      pathname.startsWith(item.href)
-                        ? "text-blue-600"
-                        : "text-gray-700"
-                    )}
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    {item.title}
-                  </Link>
-                  {item.children && (
-                    <ul className="ml-4 mt-1 space-y-1">
-                      {item.children.map((child) => (
-                        <li key={child.href}>
-                          <Link
-                            href={child.href}
-                            className={cn(
-                              "block rounded-lg px-3 py-1.5 text-sm transition-colors hover:bg-gray-100",
-                              pathname === child.href
-                                ? "text-blue-600"
-                                : "text-gray-600"
-                            )}
-                            onClick={() => setMobileMenuOpen(false)}
-                          >
-                            {child.title}
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </nav>
-      )}
     </header>
   )
 }
