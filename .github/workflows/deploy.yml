@@ -1,9 +1,14 @@
 name: Deploy to GitHub Pages
 
+# 현재 비활성화됨 - Vercel로 배포 중
+# GitHub Pages 재활성화 시 아래 주석 해제
+# on:
+#   push:
+#     branches: [master]
+#   workflow_dispatch:
+
 on:
-  push:
-    branches: [master]
-  workflow_dispatch:
+  workflow_dispatch:  # 수동 실행만 가능
 
 permissions:
   contents: read
@@ -32,6 +37,8 @@ jobs:
 
       - name: Build
         run: npm run build
+        env:
+          DEPLOY_TARGET: github-pages
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
