@@ -3,6 +3,7 @@ import "./globals.css"
 import { Header } from "@/components/layout/Header"
 import { Footer } from "@/components/layout/Footer"
 import { SkipLink } from "@/components/accessibility/SkipLink"
+import { FocusManager } from "@/components/accessibility/FocusManager"
 
 export const metadata: Metadata = {
   title: {
@@ -36,6 +37,7 @@ export default function RootLayout({
     <html lang="ko" data-contrast="default" data-underline-links="false">
       <body className="min-h-screen bg-white text-gray-900 antialiased">
         <SkipLink />
+        <FocusManager />
         <div className="flex min-h-screen flex-col">
           <Header />
           <main id="main-content" tabIndex={-1} className="flex-1">
