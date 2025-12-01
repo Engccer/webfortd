@@ -26,9 +26,9 @@ export function Card({ title, description, href, icon, className }: CardProps) {
           </div>
         )}
         <div className="space-y-1">
-          <h3 className="font-semibold text-gray-900 group-hover:text-blue-600">
+          <span className="font-semibold text-gray-900 group-hover:text-blue-600">
             {title}
-          </h3>
+          </span>
           <p className="text-sm text-gray-600">{description}</p>
         </div>
       </div>

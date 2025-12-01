@@ -1,15 +1,5 @@
 import Link from "next/link"
-import {
-  User,
-  School,
-  FileText,
-  BarChart3,
-  ArrowRight,
-  BookOpen,
-  Scale,
-  Users,
-  Heart,
-} from "lucide-react"
+import { User, School, FileText, BarChart3, ArrowRight } from "lucide-react"
 import { Card } from "@/components/ui/Card"
 import { userEntries } from "@/lib/navigation"
 
@@ -19,33 +9,6 @@ const iconMap: Record<string, React.ReactNode> = {
   "file-text": <FileText className="h-6 w-6" />,
   "bar-chart": <BarChart3 className="h-6 w-6" />,
 }
-
-const quickLinks = [
-  {
-    title: "지원제도 안내",
-    description: "장애유형별, 지원영역별 제도를 확인하세요",
-    href: "/support",
-    icon: <BookOpen className="h-6 w-6" />,
-  },
-  {
-    title: "권리 구제",
-    description: "장애인교원의 권리와 구제 절차를 안내합니다",
-    href: "/rights",
-    icon: <Scale className="h-6 w-6" />,
-  },
-  {
-    title: "현장 사례",
-    description: "우수 사례와 인식 개선 콘텐츠를 만나보세요",
-    href: "/stories",
-    icon: <Users className="h-6 w-6" />,
-  },
-  {
-    title: "자주 묻는 질문",
-    description: "궁금한 점에 대한 답변을 확인하세요",
-    href: "/participate/faq",
-    icon: <Heart className="h-6 w-6" />,
-  },
-]
 
 export default function HomePage() {
   return (
@@ -102,28 +65,6 @@ export default function HomePage() {
                 description={entry.description}
                 href={entry.href}
                 icon={iconMap[entry.icon]}
-              />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Quick Links */}
-      <section className="bg-gray-50 py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mb-10 text-center">
-            <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">
-              주요 메뉴
-            </h2>
-          </div>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {quickLinks.map((link) => (
-              <Card
-                key={link.href}
-                title={link.title}
-                description={link.description}
-                href={link.href}
-                icon={link.icon}
               />
             ))}
           </div>
