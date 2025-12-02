@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useTheme } from "next-themes"
-import { Settings, X, Type, AlignJustify, Contrast, Link2, Pause, Moon, Sun, Monitor } from "lucide-react"
+import { Settings, X, Type, AlignJustify, Contrast, Link2, Pause, Moon, Sun, Monitor, Volume2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
   type AccessibilitySettings,
@@ -203,6 +203,18 @@ export function AccessibilityToolbar() {
                 id="reduce-motion"
                 checked={settings.reduceMotion}
                 onCheckedChange={(checked) => updateSetting("reduceMotion", checked)}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <Label htmlFor="sound-enabled" className="flex items-center gap-2 text-sm font-medium">
+                <Volume2 className="h-4 w-4" />
+                <span>메뉴 효과음</span>
+              </Label>
+              <Switch
+                id="sound-enabled"
+                checked={settings.soundEnabled}
+                onCheckedChange={(checked) => updateSetting("soundEnabled", checked)}
               />
             </div>
           </div>

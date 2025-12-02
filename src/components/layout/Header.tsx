@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation"
 import { Menu, Search, ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { mainNavigation } from "@/lib/navigation"
+import { playMenuOpenSound, playMenuFocusSound } from "@/lib/sound"
 import { AccessibilityToolbar } from "@/components/accessibility/AccessibilityToolbar"
 import { Button } from "@/components/ui/Button"
 import {
@@ -56,7 +57,7 @@ export function Header() {
           </Link>
 
           {/* Desktop Navigation */}
-          <NavigationMenu className="hidden lg:block" id="main-nav">
+          <NavigationMenu className="hidden lg:block" id="main-nav" viewport={false}>
             <NavigationMenuList>
               {mainNavigation.map((item) => (
                 <NavigationMenuItem key={item.href}>
@@ -66,6 +67,8 @@ export function Header() {
                         className={cn(
                           pathname.startsWith(item.href) && "text-primary"
                         )}
+                        onPointerEnter={() => playMenuFocusSound()}
+                        onClick={() => playMenuOpenSound()}
                       >
                         {item.title}
                       </NavigationMenuTrigger>
@@ -77,9 +80,9 @@ export function Header() {
                                 <Link
                                   href={child.href}
                                   className={cn(
-                                    "block select-none rounded-md px-3 py-2 text-sm leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
+                                    "block select-none rounded-md px-3 py-2 text-sm leading-none no-underline outline-none transition-colors hover:bg-primary/10 hover:text-primary focus:bg-primary/10 focus:text-primary",
                                     pathname === child.href &&
-                                      "bg-accent text-primary"
+                                      "bg-primary/10 text-primary"
                                   )}
                                 >
                                   {child.title}

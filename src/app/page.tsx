@@ -59,15 +59,11 @@ export default function HomePage() {
             <Badge variant="secondary" className="mb-4">
               장애인교원 지원 플랫폼
             </Badge>
-            <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
-              장애인교원의 교육활동을 보호하고
-              <br />
-              <span className="text-primary">교육에 전념할 수 있는 여건</span>을
-              마련합니다
+            <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
+              <span className="text-primary">장애인교원</span> 교육전념 여건 지원
             </h1>
-            <p className="mt-6 text-lg text-muted-foreground">
-              장애인교원이 필요한 지원 정보를 한곳에서 쉽고 빠르게 확인할 수
-              있습니다. 장애유형별 맞춤형 안내와 지역사회 연계 정보를 제공합니다.
+            <p className="mx-auto mt-6 max-w-2xl text-base text-muted-foreground sm:text-lg">
+              장애인교원이 필요한 지원 정보를 한곳에서 쉽고 빠르게 확인할 수 있습니다.
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-4">
               <Button asChild size="lg">
@@ -98,7 +94,7 @@ export default function HomePage() {
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {sections.map((section) => (
               <Link key={section.href} href={section.href}>
-                <Card className="h-full transition-colors hover:border-primary/50 hover:bg-accent/50">
+                <Card className="h-full transition-colors hover:border-primary hover:bg-primary/5">
                   <CardHeader>
                     <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
                       <section.icon className="h-5 w-5 text-primary" />

@@ -6,6 +6,7 @@ export interface AccessibilitySettings {
   contrast: "default" | "high1" | "high2"
   underlineLinks: boolean
   reduceMotion: boolean
+  soundEnabled: boolean
 }
 
 export const defaultSettings: AccessibilitySettings = {
@@ -14,6 +15,7 @@ export const defaultSettings: AccessibilitySettings = {
   contrast: "default",
   underlineLinks: false,
   reduceMotion: false,
+  soundEnabled: false,
 }
 
 export function loadSettings(): AccessibilitySettings {
