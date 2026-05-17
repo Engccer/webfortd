@@ -64,7 +64,8 @@
       "_alt_original": "선생님으로 보이는 성인 여성과 학생으로 보이는 어린 여자아이가 나란히 서서 하트 포즈를 취하고 있는 일러스트입니다. 왼쪽의 여자아이는 머리 위로 두 팔로 큰 하트를 만들고 있고, 오른쪽의 여성은 가슴 앞에서 두 손으로 작은 하트를 만들고 있습니다. 서로 소통하고 긍정적으로 교류하는 모습을 표현합니다.",
       "_file": "content/disability-types/2024-staff-p-159.md",
       "manifest_path": "public/source-images/2024-support-staff-duty-guide/page-121-fig-01.png",
-      "alt_override": null
+      "alt_override": "선생님으로 보이는 성인 여성과 학생으로 보이는 어린 여자아이가 나란히 서서 하트 포즈를 취하고 있는 일러스트입니다. 왼쪽의 여성은 가슴 앞에서 두 손으로 작은 하트를 만들고 있고, 오른쪽의 여자아이는 머리 위로 두 팔로 큰 하트를 만들고 있습니다. 서로 소통하고 긍정적으로 교류하는 모습을 표현합니다.",
+      "notes": "M4 매핑 alt 좌우 반대 — 2026-05-17 PoC 4종 합의로 교정 (Gemini·Gemma·Codex 모두 NO)"
     },
     "2024-staff-p-165#2024-support-staff-duty-guide#0": {
       "_alt_original": "청각장애인교원을 위한 전화 소통 지원 서비스인 '전화를 대신 받기'의 네 단계 과정을 보여주는 흐름도입니다. 청각장애인교원의 통화 요청과 내용 전달부터, 지원인력이 통화를 수행하고 그 내용을 청각장애인교원에게 전달하며, 마지막으로 청취 과정에 대한 피드백을 주고받는 순서로 진행됩니다.",
@@ -82,7 +83,8 @@
       "_alt_original": "손과 팔의 움직임이 제한된 장애인 교원을 위한 보조기기인 트랙볼 마우스 사진입니다. 본체 왼쪽에 큰 노란색 트랙볼이 있고, 그 주변에 클릭을 위한 버튼들이 배열되어 있습니다.",
       "_file": "content/disability-types/2024-staff-p-183.md",
       "manifest_path": "public/source-images/2024-support-staff-duty-guide/page-150-fig-03.png",
-      "alt_override": null
+      "alt_override": "손과 팔의 움직임이 제한된 장애인 교원을 위한 보조기기인 트랙볼 마우스 사진입니다. 본체 중앙에 큰 노란색 트랙볼이 있고, 그 좌우에 클릭을 위한 파란색 버튼이 대칭으로 배치되어 있습니다.",
+      "notes": "M4 매핑 alt 트랙볼 위치 오기 — 2026-05-17 PoC 4종 합의로 교정 (Gemini·Codex가 NO, Gemma 묘사도 중앙 명시)"
     },
     "2024-staff-p-183#2024-support-staff-duty-guide#1": {
       "_alt_original": "머리 움직임을 인식하여 컴퓨터 커서를 제어하는 헤드 마우스 장치 사진입니다. 검은색 렌즈가 달린 소형 카메라 형태로, 주로 모니터 상단에 부착하여 사용합니다.",
@@ -526,7 +528,8 @@
       "_alt_original": "두 사람이 등을 돌리고 손짓하며 한 사람을 따돌리는 모습. 이는 따돌림이나 사회적 고립과 같은 정서적 학대를 시각적으로 보여준다.",
       "_file": "content/policies/2024-jbu-p-062.md",
       "manifest_path": "public/source-images/2024-jbu-work-support-guide/page-101-fig-01.png",
-      "alt_override": null
+      "alt_override": "세 명의 남성이 정면을 향해 나란히 서 있는 일러스트. 가운데 인물은 눈물을 흘리며 양손을 옆으로 벌린 채 곤혹스러운 표정이고, 양옆의 두 인물은 가운데 인물을 향해 손가락질하며 비난하는 모습. 따돌림이나 정서적 학대를 시각적으로 보여준다.",
+      "notes": "M4 매핑 alt 동작 오기 — 2026-05-17 PoC 4종 합의로 교정 (Gemini·Codex·Gemma 모두 NO, '등을 돌리고' 묘사는 실제와 다름)"
     },
     "2024-jbu-p-063#2024-jbu-work-support-guide#0": {
       "_alt_original": "휠체어에 앉아 불편해하는 여성의 팔을 억지로 잡아당기는 남성의 모습. 이는 신체적 괴롭힘이나 성적 학대를 묘사한다.",

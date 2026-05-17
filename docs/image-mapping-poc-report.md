@@ -114,6 +114,53 @@ unmapped로 남는 케이스마다 4종 모델의 독립 묘사를 `docs/image-m
 3. **본 자동화 86건 진입** — 위 절차에 따라 unmapped 이미지 매핑 자동화
 4. 자동화 결과 검수 + `npm run image:apply` + production 배포 확인
 
+## 실행 결과 (2026-05-18)
+
+### 1·2단계 — 완료
+
+- Codex ERROR 6건 재실행: cross-cache.json에서 verdict='ERROR' 6건 삭제 후 cross-validate.mjs 재실행. 4종 합의 완성: 4/4=12, 3/4=1, 2/4=3, 1/4=2 (분쟁 5건은 PoC와 동일 재현 — 동일 결과로 신뢰성 확인).
+- alt 정제 3건 적용: `_image-mappings.json`의 staff-p-159·staff-p-183·jbu-p-062에 `alt_override` + 사유 `notes` 추가. 본문은 `apply-alt-overrides.mjs`(manifest_path 기반 1:1 교체)로 반영. `npm run image:apply`는 사용하지 않음 (사유는 §3 후술).
+
+### 3단계 — 본 자동화 86건: 자동 적용 0건
+
+3종 자동 모델(Gemini·Codex·Gemma) 병렬 호출 + Claude implicit YES 가정으로 PoC의 4/4 게이트 매핑. 페이지 hint 있는 26건만 자동화, 60건은 no-page-hint 사유로 스킵, 22건은 페이지 범위 내 raster 없음 사유로 스킵, 4건은 후보 7개 모두 합의 게이트 거부.
+
+**구조적 한계**:
+
+| Source | TODO unmapped | 가용 raster | 비고 |
+|---|---|---|---|
+| 2023-hr-guide | 60 | 21 | 페이지 hint 6건 모두 범위 밖 raster |
+| 2024-staff-duty-guide | 18 | 7 | 후보 7개 모두 NO 만장일치 (alt는 플로차트 단계인데 raster는 모니터 암 사진) |
+| 2024-jbu-work-support-guide | 7 | 10 | 매핑 가능 케이스 0건 |
+| 2023-disability-types | 1 | 3098 | 페이지 hint 없어 자동화 불가 |
+
+3종 모델 만장일치 NO는 **데이터 무결성 보존 동작** — 부적합 매핑을 자동화하지 않음으로써 시각장애인 위원장이 부정확한 raster가 박힌 본문을 검수 불가능한 환경에서 보호.
+
+상세 검수 큐: `docs/image-mapping-disputed.md` (4건 review + 82건 skip + 각 후보별 4종 모델 raw 응답).
+
+### 추가 발견 — `npm run image:apply`의 indexInFile 매칭 버그
+
+본 자동화 후 `npm run image:apply` 호출 시 잘못된 raster 3건이 본문에 삽입됨 (즉시 rollback). 원인 및 임시 가드, 항구 패치 제안은 `docs/image-mapping-disputed.md` §⚠️ 절 참조. Phase 2 진입 시 `applyMappings`에 alt 교차 검증을 추가해야 안전.
+
+### 최종 결과 요약
+
+| 항목 | 시작 (Phase 1 머지) | 종료 (M4-D 후) |
+|---|---|---|
+| Mapped TODO | 18 | 18 (변동 없음) |
+| Unmapped TODO | 86 | 86 (변동 없음) |
+| alt 정제 | 0 | 3 |
+| 정적 페이지 빌드 | 564 | 564 |
+
+자동 매핑 확장은 raster 추출 단계 보강(또는 위원장 수동 검수) 없이는 진전 불가. 본 자동화는 합의 게이트 안전망 작동을 실증했고, 향후 Phase 2 진입 시 image:apply 패치와 함께 매핑 자동화 절차를 재가동할 기반은 갖춰짐.
+
+### 캐시 자료
+
+- `/tmp/image-match-poc/auto-mapping.mjs` — 3종 병렬 cross-validation 본 자동화 스크립트
+- `/tmp/image-match-poc/auto-results.json` — 86건 처리 결과
+- `/tmp/image-match-poc/auto-cache.json` — Gemini·Codex·Gemma 호출 캐시 (재실행 시 재사용 가능)
+- `/tmp/image-match-poc/apply-alt-overrides.mjs` — manifest_path 기반 alt 정제 보조 스크립트
+- `/tmp/image-match-poc/write-disputed-doc.mjs` — 검수 큐 문서 생성 스크립트
+
 ## 결정 요약
 
 | 항목 | 결정 |
