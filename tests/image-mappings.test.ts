@@ -39,6 +39,10 @@ interface FixtureSpec {
 function setupFixture(spec: FixtureSpec): string {
   const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'img-mappings-test-'))
 
+  // sentinel — IMG_MAPPINGS_ROOT override 인정 조건 (P1-2 안전장치).
+  // 운영 환경에 ENV 실수 설정 시 sentinel 부재로 자동 차단.
+  fs.writeFileSync(path.join(tmpRoot, '.image-mappings-test-root'), '')
+
   // manifest.json + raster 더미 파일 생성
   const manifestDir = path.join(tmpRoot, 'public/source-images')
   fs.mkdirSync(manifestDir, { recursive: true })
@@ -284,6 +288,55 @@ describe('image-mappings apply — 무결성 가드', () => {
     assert.match(r.stdout, /수정 파일: 0/)
     const body = fs.readFileSync(path.join(root, 'content/domains/test-null.md'), 'utf8')
     assert.match(body, /TODO: image-link/, 'null 매핑은 본문 TODO를 그대로 둠')
+  })
+
+  it('P1-1: alt 비교 정규화 — whitespace squash + NFC 정규화 후 같으면 통과', () => {
+    // 본문 TODO alt: 줄바꿈 + 연속 공백
+    // mapping _alt_original: 단일 공백
+    // 정규화 후 같으면 가드 통과해야 함 (false positive 차단 방지)
+    const altInBody = '여러\n줄에   걸친  alt'
+    const altInJson = '여러 줄에 걸친 alt'
+    const root = setupFixture({
+      sources: [{ source: 'test-src', pages: [{ page: 12, figures: [1] }] }],
+      mdFiles: [
+        {
+          relPath: 'content/domains/test-norm.md',
+          frontmatter: FM,
+          body: `\n${TODO_MARKER('test-src', altInBody)}\n`,
+        },
+      ],
+      mappings: {
+        'test-norm#test-src#0': {
+          manifest_path: 'public/source-images/test-src/page-012-fig-01.png',
+          _alt_original: altInJson,
+        },
+      },
+    })
+    fixturesToCleanup.push(root)
+
+    const r = runApply(root)
+    assert.equal(r.status, 0, `정규화 후 일치인데 차단됨: ${r.stderr}`)
+    assert.match(r.stdout, /교체 마커: 1/)
+  })
+
+  it('P1-2: sentinel 파일 없는 디렉터리는 IMG_MAPPINGS_ROOT override 차단 (production 보호)', () => {
+    // sentinel 없는 임시 디렉터리
+    const noSentinelRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'img-mappings-nosent-'))
+    fixturesToCleanup.push(noSentinelRoot)
+
+    let stderr = ''
+    try {
+      execFileSync(TSX_BIN, [APPLY_SCRIPT, 'apply'], {
+        cwd: REPO_ROOT,
+        encoding: 'utf-8',
+        env: { ...process.env, IMG_MAPPINGS_ROOT: noSentinelRoot },
+        stdio: ['ignore', 'pipe', 'pipe'],
+      })
+    } catch (e) {
+      stderr = ((e as { stderr?: Buffer | string }).stderr ?? '').toString()
+    }
+
+    assert.match(stderr, /sentinel.*부재.*override 무시/, '경고 메시지 누락')
   })
 
   it('manifest_path가 manifest.json에 없으면 dry stop', () => {
