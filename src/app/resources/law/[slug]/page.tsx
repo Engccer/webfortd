@@ -4,7 +4,8 @@ import { serialize } from "next-mdx-remote/serialize"
 import remarkGfm from "remark-gfm"
 import rehypeSlug from "rehype-slug"
 import { MDXClientWrapper } from "@/components/mdx/MDXClientWrapper"
-import { getDocBySlug, getAllDocs } from "@/lib/mdx"
+import { getKBDocBySlugCompat, getStaticParamsForSubsection } from "@/lib/kb"
+import { adaptFrontmatterToLegacy } from "@/lib/kb-adapter"
 import { Calendar, User, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 
@@ -13,30 +14,37 @@ interface PageProps {
 }
 
 export async function generateStaticParams() {
-  const docs = await getAllDocs("resources", "law")
-  return docs.map((doc) => ({ slug: doc.slug }))
+  return getStaticParamsForSubsection("law")
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params
-  const doc = await getDocBySlug("resources", "law", slug)
+  const kbDoc = await getKBDocBySlugCompat("resources", "law", slug)
 
-  if (!doc) {
+  if (!kbDoc) {
     return { title: "문서를 찾을 수 없습니다" }
   }
 
+  const legacy = adaptFrontmatterToLegacy(kbDoc.frontmatter)
   return {
-    title: doc.title,
-    description: doc.description,
+    title: legacy.title,
+    description: legacy.description,
   }
 }
 
 export default async function LawDocPage({ params }: PageProps) {
   const { slug } = await params
-  const doc = await getDocBySlug("resources", "law", slug)
+  const kbDoc = await getKBDocBySlugCompat("resources", "law", slug)
 
-  if (!doc) {
+  if (!kbDoc) {
     notFound()
+  }
+
+  const legacy = adaptFrontmatterToLegacy(kbDoc.frontmatter)
+  const doc = {
+    ...legacy,
+    content: kbDoc.content,
+    headings: kbDoc.headings,
   }
 
   const mdxSource = await serialize(doc.content, {
@@ -71,12 +79,17 @@ export default async function LawDocPage({ params }: PageProps) {
               <p className="mb-4 text-lg text-gray-600">{doc.description}</p>
             )}
             <div className="flex flex-wrap gap-4 text-sm text-gray-500">
-              {doc.date && (
+              {doc.date ? (
                 <span className="flex items-center gap-1">
                   <Calendar className="h-4 w-4" aria-hidden="true" />
                   {doc.date}
                 </span>
-              )}
+              ) : doc.year ? (
+                <span className="flex items-center gap-1">
+                  <Calendar className="h-4 w-4" aria-hidden="true" />
+                  {doc.year}년
+                </span>
+              ) : null}
               {doc.author && (
                 <span className="flex items-center gap-1">
                   <User className="h-4 w-4" aria-hidden="true" />

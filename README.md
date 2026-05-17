@@ -266,11 +266,19 @@ Markdown 문법과 React 컴포넌트를 함께 사용할 수 있습니다.
 
 ### 진행 예정
 
-- [ ] 검색 기능 구현 (Flexsearch)
-- [ ] 다크 모드 지원
-- [ ] 실제 콘텐츠 추가
-- [ ] 백엔드 연동 (질문하기, 신고하기 등)
-- [ ] 다국어 지원 검토
+상세 일정과 마일스톤은 `~/.claude/plans/sprightly-honking-wave.md`(Phase 1 4주 계획)와 `docs/KB_ARCHITECTURE.md`(v2) 참조.
+
+**Phase 1 (진행 중, 4주)** — 콘텐츠 정본 인프라 + 빌드 파이프라인 + 출처 마크다운 분해:
+
+- [ ] frontmatter 스키마 v1 + 검증 스크립트 (zod v4)
+- [ ] 마크다운 → JSON 인덱스 빌드 파이프라인(`scripts/sync-content.ts`), 위키링크 추출·백링크
+- [ ] 다크 모드 활성화(`next-themes` 통합, 고대비 모드와 충돌 없음)
+- [ ] 사이트 검색 활성화(`flexsearch` 신 인덱스 소스)
+- [ ] 출처 마크다운 5개(docparse 최종본, 약 23,629라인)를 atomic 페이지 약 580~600개로 분해
+- [ ] 원본 PDF 4개에서 이미지·도표 복구
+- [ ] git PR 기반 검수 워크플로 + CI(`content-validate.yml`)
+
+**Phase 2 이후** — Supabase 연결(장교조 명의 결정 후), 임베딩·RAG, AI 챗봇, TTS·이미지 alt 자동 생성, 다국어.
 
 ## 기여 방법
 
@@ -289,4 +297,4 @@ Markdown 문법과 React 컴포넌트를 함께 사용할 수 있습니다.
 
 ---
 
-**마지막 업데이트**: 2025년 12월 1일
+**마지막 업데이트**: 2026년 5월 17일

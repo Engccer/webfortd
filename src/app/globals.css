@@ -221,6 +221,56 @@ body {
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+/* ==========================================================================
+ * 고대비 모드 ↔ 다크/라이트 조합 토큰 정렬 (M2)
+ *
+ * .dark 이후에 선언해 CSS cascade 순서로 specificity 충돌 없이 high-contrast가
+ * 다크/라이트 모드 토큰을 덮어쓰도록 한다. 4가지 조합(light+default, light+high1/2,
+ * dark+default, dark+high1/2) 모두에서 가독성 유지.
+ * ========================================================================== */
+
+[data-contrast="high1"],
+.dark[data-contrast="high1"] {
+  --background: #000000;
+  --foreground: #ffffff;
+  --card: #000000;
+  --card-foreground: #ffffff;
+  --popover: #000000;
+  --popover-foreground: #ffffff;
+  --primary: #ffffff;
+  --primary-foreground: #000000;
+  --secondary: #111111;
+  --secondary-foreground: #ffffff;
+  --muted: #111111;
+  --muted-foreground: #dddddd;
+  --accent: #111111;
+  --accent-foreground: #ffffff;
+  --border: #ffffff;
+  --input: #ffffff;
+  --ring: #ffffff;
+}
+
+[data-contrast="high2"],
+.dark[data-contrast="high2"] {
+  --background: #000000;
+  --foreground: #ffff00;
+  --card: #000000;
+  --card-foreground: #ffff00;
+  --popover: #000000;
+  --popover-foreground: #ffff00;
+  --primary: #ffff00;
+  --primary-foreground: #000000;
+  --secondary: #111100;
+  --secondary-foreground: #ffff00;
+  --muted: #111100;
+  --muted-foreground: #cccc00;
+  --accent: #111100;
+  --accent-foreground: #ffff00;
+  --border: #ffff00;
+  --input: #ffff00;
+  --ring: #ffff00;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

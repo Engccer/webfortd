@@ -1,0 +1,33 @@
+# webfortd CODEOWNERS
+#
+# 마지막 매칭 규칙이 우선합니다(GitHub 정책).
+# 위원장 GitHub 핸들을 @Engccer로 가정합니다. 실제 핸들과 다르면
+# 본 파일과 GitHub Settings > Branches > Branch protection rules의
+# "Require review from Code Owners" 설정을 함께 갱신하세요.
+#
+# 본 파일이 실제로 검수자 자동 요청을 작동시키려면:
+#   1. main 브랜치 보호 규칙에서 "Require review from Code Owners" 활성화
+#   2. 본 파일에 명시된 핸들이 저장소 collaborator 또는 팀 멤버여야 함
+
+# 기본 소유자 — 매칭되지 않은 파일은 위원장에게 검수 요청
+*                                       @Engccer
+
+# 콘텐츠 정본 — 모든 .md 변경은 위원장 승인 필요
+/content/                               @Engccer
+
+# 문서 — 아키텍처·가이드 변경
+/docs/                                  @Engccer
+
+# 스키마 — frontmatter 타입 정의 변경은 데이터 무결성에 직결
+/src/types/kb.ts                        @Engccer
+
+# 검증·빌드 스크립트 — validate/sync 로직 변경
+/scripts/validate-frontmatter.ts        @Engccer
+/scripts/sync-content.ts                @Engccer
+/scripts/decompose-source.ts            @Engccer
+/scripts/image-mappings.ts              @Engccer
+/scripts/check-alt-text-labels.ts       @Engccer
+/scripts/check-mdx-escape.ts            @Engccer
+
+# CI 워크플로 — 검수 자동화 자체에 대한 변경
+/.github/                               @Engccer
