@@ -27,7 +27,10 @@ import matter from 'gray-matter'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
-const REPO_ROOT = path.resolve(__dirname, '..')
+// 테스트는 IMG_MAPPINGS_ROOT로 fixture 디렉터리를 주입.
+const REPO_ROOT = process.env.IMG_MAPPINGS_ROOT
+  ? path.resolve(process.env.IMG_MAPPINGS_ROOT)
+  : path.resolve(__dirname, '..')
 const CONTENT_DIR = path.join(REPO_ROOT, 'content')
 const MANIFEST_PATH = path.join(REPO_ROOT, 'public/source-images/manifest.json')
 const MAPPINGS_PATH = path.join(REPO_ROOT, 'content/_image-mappings.json')
@@ -67,6 +70,13 @@ interface MappingEntry {
   alt_override?: string | null
   /** 검수자 메모 */
   notes?: string
+  /**
+   * template/skeleton 생성 시점의 원본 alt. apply 단계에서 본문 TODO의 현재 alt와
+   * 교차 검증해 stale indexInFile 매칭을 차단한다 (M4-D P0 가드).
+   * mappings.json이 incremental 업데이트되면 indexInFile 번호가 본문 카운터와
+   * 어긋날 수 있으므로 alt 무결성 검증이 필요.
+   */
+  _alt_original?: string
 }
 
 function loadManifest(): ManifestEntry[] {
@@ -282,6 +292,17 @@ function applyMappings(occurrences: TodoOccurrence[], manifest: ManifestEntry[])
     if (manifestEntry.source !== occ.source) {
       result.errors.push(
         `${key}: source 불일치 — TODO=${occ.source}, manifest=${manifestEntry.source} (다른 출처 이미지 삽입 차단)`,
+      )
+      continue
+    }
+    // M4-D P0 가드: _alt_original ↔ 본문 TODO alt 교차 검증.
+    // mappings.json이 incremental 업데이트되면 indexInFile이 본문 카운터와
+    // 어긋날 수 있다 (예: 일부 이미 inserted된 상태에서 추가 매핑 시도). 그러면
+    // mappings의 #0이 본문의 다른 #0 TODO에 매칭되어 잘못된 raster가 삽입됨.
+    // _alt_original을 채워 두면 stale 매칭을 사전 차단할 수 있다.
+    if (mapping._alt_original !== undefined && mapping._alt_original.trim() !== occ.alt.trim()) {
+      result.errors.push(
+        `${key}: _alt_original 불일치 — JSON='${mapping._alt_original.slice(0, 50)}...' 본문='${occ.alt.slice(0, 50)}...' (stale indexInFile 매칭 차단 — template 재생성 필요)`,
       )
       continue
     }
