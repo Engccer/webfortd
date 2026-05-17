@@ -19,7 +19,7 @@
 
 import fs from 'node:fs'
 import path from 'node:path'
-import { execSync } from 'node:child_process'
+import { execFileSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import matter from 'gray-matter'
 
@@ -50,14 +50,18 @@ function getChangedContentFiles(): string[] | null {
   if (!eventName) return null
 
   try {
-    let diffCmd: string
+    // coderabbit P1 #3: execFileSync로 shell 해석 회피 (defense-in-depth).
+    let diffArgs: string[]
     if (eventName === 'pull_request') {
       const base = process.env.GITHUB_BASE_REF ?? 'main'
-      diffCmd = `git diff --name-only origin/${base}...HEAD`
+      diffArgs = ['diff', '--name-only', `origin/${base}...HEAD`]
     } else {
-      diffCmd = `git diff --name-only HEAD^ HEAD`
+      diffArgs = ['diff', '--name-only', 'HEAD^', 'HEAD']
     }
-    const output = execSync(diffCmd, { cwd: REPO_ROOT, encoding: 'utf-8' })
+    const output = execFileSync('git', diffArgs, {
+      cwd: REPO_ROOT,
+      encoding: 'utf-8',
+    })
     return output
       .trim()
       .split('\n')

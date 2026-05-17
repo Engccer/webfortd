@@ -110,26 +110,31 @@ export async function KbPageLayout({ axis, slug }: KbPageLayoutProps) {
         <article>
           <header className="mb-8 border-b border-border pb-6">
             {/* M4-B: 출처 문서 내 상위 헤딩 경로 — 분해 페이지의 컨텍스트를
-                인용처럼 보이는 blockquote가 아닌 시맨틱 breadcrumb로 렌더. */}
-            {fm.parent_headings && fm.parent_headings.length > 0 && (
-              <nav
-                aria-label="출처 문서 내 위치"
-                className="mb-3 text-sm text-muted-foreground"
-              >
-                <ol className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
-                  {fm.parent_headings.map((heading, idx) => (
-                    <li key={idx} className="flex items-center gap-x-1.5">
-                      <span>{heading}</span>
-                      {idx < fm.parent_headings!.length - 1 && (
-                        <span aria-hidden="true" className="text-muted-foreground/60">
-                          /
-                        </span>
-                      )}
-                    </li>
-                  ))}
-                </ol>
-              </nav>
-            )}
+                인용처럼 보이는 blockquote가 아닌 시맨틱 breadcrumb로 렌더.
+                coderabbit P1 #1: non-null assertion 제거 위해 closure에 로컬 var 캡처. */}
+            {(() => {
+              const parents = fm.parent_headings ?? []
+              if (parents.length === 0) return null
+              return (
+                <nav
+                  aria-label="출처 문서 내 위치"
+                  className="mb-3 text-sm text-muted-foreground"
+                >
+                  <ol className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
+                    {parents.map((heading, idx) => (
+                      <li key={idx} className="flex items-center gap-x-1.5">
+                        <span>{heading}</span>
+                        {idx < parents.length - 1 && (
+                          <span aria-hidden="true" className="text-muted-foreground/60">
+                            /
+                          </span>
+                        )}
+                      </li>
+                    ))}
+                  </ol>
+                </nav>
+              )
+            })()}
             <h1 className="mb-4 text-3xl font-bold text-foreground">{legacy.title}</h1>
             {legacy.description && (
               <p className="mb-4 text-lg text-muted-foreground">{legacy.description}</p>

@@ -20,7 +20,7 @@
 
 import fs from 'node:fs'
 import path from 'node:path'
-import { execSync } from 'node:child_process'
+import { execFileSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -68,15 +68,20 @@ function getChangedContentFiles(): string[] | null {
   if (!eventName) return null
 
   try {
-    let diffCmd: string
+    // coderabbit P1 #3: execSync + string interpolation 대신 execFileSync로 인자 분리.
+    // 현재 트리거(pull_request + 비-fork 가드)에서는 안전하지만 trigger 변경 시 shell
+    // injection 면이 열림 — defense-in-depth.
+    let diffArgs: string[]
     if (eventName === 'pull_request') {
       const base = process.env.GITHUB_BASE_REF ?? 'main'
-      // origin/<base>가 fetch되어 있어야 함. fetch-depth: 0 권장.
-      diffCmd = `git diff --name-only origin/${base}...HEAD`
+      diffArgs = ['diff', '--name-only', `origin/${base}...HEAD`]
     } else {
-      diffCmd = `git diff --name-only HEAD^ HEAD`
+      diffArgs = ['diff', '--name-only', 'HEAD^', 'HEAD']
     }
-    const output = execSync(diffCmd, { cwd: REPO_ROOT, encoding: 'utf-8' })
+    const output = execFileSync('git', diffArgs, {
+      cwd: REPO_ROOT,
+      encoding: 'utf-8',
+    })
     return output
       .trim()
       .split('\n')

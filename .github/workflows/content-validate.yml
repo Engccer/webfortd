@@ -85,17 +85,17 @@ jobs:
         run: npm run sync:content
         continue-on-error: true
 
+      # coderabbit P1 #4: 두 check 스크립트는 항상 exit 0(warning-only) 보장이라
+      # continue-on-error 불필요. 옵션 제거로 실수로 비-zero exit 들어가면 즉시 fail.
       - name: Check alt_text labels (PR only)
         if: github.event_name == 'pull_request'
         id: alt_text
         run: npm run check:alt-text
-        continue-on-error: true
 
       - name: Check MDX escape integrity (PR only)
         if: github.event_name == 'pull_request'
         id: mdx_escape
         run: npm run check:mdx-escape
-        continue-on-error: true
 
       - name: Post PR comment (PR only, non-fork)
         # codex-rescue M5 P1 #1: fork PR은 GITHUB_TOKEN이 read-only로 강등될 수 있어
