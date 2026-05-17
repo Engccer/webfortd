@@ -3,11 +3,12 @@
 import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Menu, Search, ChevronDown } from "lucide-react"
+import { Menu } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { mainNavigation } from "@/lib/navigation"
 import { playMenuOpenSound, playMenuFocusSound } from "@/lib/sound"
 import { AccessibilityToolbar } from "@/components/accessibility/AccessibilityToolbar"
+import { SiteSearch } from "@/components/search/SiteSearch"
 import { Button } from "@/components/ui/Button"
 import {
   Sheet,
@@ -112,16 +113,7 @@ export function Header() {
 
           {/* Search & Mobile Menu Button */}
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              id="search-input"
-              className="gap-2"
-              aria-label="검색"
-            >
-              <Search className="h-4 w-4" />
-              <span className="hidden sm:inline">검색...</span>
-            </Button>
+            <SiteSearch />
 
             {/* Mobile Menu */}
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>

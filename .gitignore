@@ -43,3 +43,16 @@ next-env.d.ts
 # claude
 CLAUDE.md
 .claude/
+
+# content source assets
+data/source-pdf/
+
+# generated build indexes (M2 이후 생성)
+src/lib/kb-index.generated.json
+
+# M4-C 매핑 템플릿은 재생성 가능 (image:template으로 만듦). _image-mappings.json은 검수자 데이터로 git 추적.
+content/_image-mappings.template.json
+
+# codex-rescue M6 P1 #3: 외부 TTS/codex 도구가 잘못된 절대경로로 만든 artifact 차단.
+# 2026-05-17 발견된 'C:\Users\pc\.codex\tts-summary.txt' 루트 파일이 재발하지 않도록.
+/C:\\*

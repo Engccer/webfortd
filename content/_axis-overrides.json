@@ -1,0 +1,32 @@
+{
+  "_comment": "M4 수동 검수에서 결정한 slug → axis 매핑. decompose-source.ts가 시작 시 읽어서 pickAxis 결과를 override함. slug는 finalSlug 기준(확장자 제외).",
+  "_schema": {
+    "<slug>": "<axis: disability-types|domains|regions|policies|agreements|stories|resources|uncategorized>"
+  },
+  "overrides": {
+    "2023-hr-1-7": "regions",
+    "2023-hr-p-001": "policies",
+    "2023-hr-p-004": "disability-types",
+    "2023-hr-p-010": "disability-types",
+    "2023-hr-p-027": "disability-types",
+    "2023-hr-p-036": "disability-types",
+    "2023-hr-p-041": "disability-types",
+    "2023-hr-p-042": "disability-types",
+    "2023-hr-p-045": "disability-types",
+    "2023-hr-p-063": "policies",
+    "2023-hr-p-075": "disability-types",
+    "2023-research-195": "disability-types",
+    "2023-research-2-4": "policies",
+    "2023-research-305": "policies",
+    "2023-research-p-080": "policies",
+    "2024-jbu-1-11": "regions",
+    "2024-jbu-1-94": "policies",
+    "2024-jbu-2-12": "policies",
+    "2024-jbu-2-14": "policies",
+    "2024-jbu-p-013": "disability-types",
+    "2024-jbu-p-018": "policies",
+    "2024-jbu-p-071": "policies",
+    "2024-staff-5": "policies",
+    "2024-staff-p-009": "policies"
+  }
+}
