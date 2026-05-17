@@ -131,10 +131,14 @@ describe('C. 슬러그·axis 검증', () => {
     }
   })
 
-  it('모든 분해 페이지의 status가 draft', () => {
+  it('분해 페이지의 대부분이 draft, published는 published gate 통과 필수', () => {
+    // M4 curation 후 일부 분해 페이지는 위원장 검수 후 status=published로 전환될 수 있음.
+    // 회귀 가드: published 페이지는 반드시 reviewed_by가 비어있지 않아야 함(published gate).
+    // 그리고 분해 페이지 대다수(>=95%)는 여전히 draft여야 함(대량 검수 미완료 상태 정상).
     const contentRoot = path.join(REPO_ROOT, 'content')
     const stack = [contentRoot]
     let drafted = 0
+    let published = 0
     while (stack.length > 0) {
       const cur = stack.pop()!
       for (const entry of fs.readdirSync(cur, { withFileTypes: true })) {
@@ -145,12 +149,33 @@ describe('C. 슬러그·axis 검증', () => {
           // source_origin이 pre-phase-1인 경우는 위원장 수동 작성 페이지라 제외
           const isManual = /source_origin:\s*["']?pre-phase-1["']?/.test(content)
           if (isManual) continue
-          assert.match(content, /status:\s*draft/, `${full}: 분해 페이지는 status=draft여야 함`)
-          drafted += 1
+          if (/status:\s*draft/.test(content)) {
+            drafted += 1
+          } else if (/status:\s*"?published"?/.test(content)) {
+            published += 1
+            // published gate 회귀 가드: reviewed_by가 비어있지 않아야 함
+            const reviewedByMatch = content.match(/reviewed_by:\s*(\[[^\]]*\])/)
+            assert.ok(
+              reviewedByMatch,
+              `${full}: published 페이지는 reviewed_by 필드가 있어야 함`,
+            )
+            const arr = reviewedByMatch![1].trim()
+            assert.notEqual(
+              arr,
+              '[]',
+              `${full}: published 페이지의 reviewed_by가 빈 배열 (published gate 위반)`,
+            )
+          }
         }
       }
     }
-    assert.ok(drafted >= 500, `초안 페이지 수가 500 이상이어야 함 (현재 ${drafted})`)
+    assert.ok(drafted >= 500, `draft 페이지 수가 500 이상이어야 함 (현재 ${drafted})`)
+    // 검수 진행률 가드: M4 잔여 작업이 대량 publish하기 전까진 95% 이상 draft.
+    const total = drafted + published
+    assert.ok(
+      drafted / total >= 0.95,
+      `draft 비율 ${(drafted / total * 100).toFixed(1)}%가 95% 미만 — 대량 publish 의도된 것인지 확인`,
+    )
   })
 })
 
@@ -182,24 +207,37 @@ describe('E. published gate', () => {
 })
 
 describe('F. M3 codex-rescue P0/P1 패치 회귀 방지', () => {
-  it('자동 ![](path) 삽입이 분해 결과에 없어야 한다 (P0 #1)', () => {
-    // 모든 분해 페이지에 자동 이미지 마크다운 ![](...) 가 없는지 확인.
-    // M3 정책: 본문 이미지는 TODO 주석으로만 보존.
+  it('![](source-images) 삽입은 _image-mappings.json 매핑 수와 일치 (P0 #1 회귀 가드)', () => {
+    // M3 P0 정책: 분해 단계에서 자동 이미지 삽입 금지. TODO 마커 보존만.
+    // M4-C image:apply는 _image-mappings.json 명세로 의도적으로 ![](path) 교체.
+    // 회귀 가드: 본문의 ![](source-images) 수가 매핑 명세의 매핑 수보다 많으면 비정상.
     const axes = ['policies', 'domains', 'agreements', 'disability-types', 'regions', 'uncategorized']
-    let autoImageCount = 0
+    let bodyImageCount = 0
     for (const axis of axes) {
       const dir = path.join(REPO_ROOT, 'content', axis)
       if (!fs.existsSync(dir)) continue
       for (const f of fs.readdirSync(dir)) {
         if (!f.endsWith('.md')) continue
         const content = fs.readFileSync(path.join(dir, f), 'utf-8')
-        // 본문 영역의 ![alt](path) 패턴
-        if (/!\[[^\]]+\]\(\/source-images\//.test(content)) {
-          autoImageCount += 1
-        }
+        const matches = content.match(/!\[[^\]]+\]\(\/source-images\//g) ?? []
+        bodyImageCount += matches.length
       }
     }
-    assert.equal(autoImageCount, 0, '자동 ![](path) 삽입은 P0 정책 위반 — TODO 마커만 사용해야 함')
+    // _image-mappings.json이 있으면 그 매핑 수와 비교, 없으면 0이어야 함.
+    const mappingsPath = path.join(REPO_ROOT, 'content/_image-mappings.json')
+    let mappedCount = 0
+    if (fs.existsSync(mappingsPath)) {
+      const j = JSON.parse(fs.readFileSync(mappingsPath, 'utf-8'))
+      mappedCount = Object.values(j.mappings ?? {}).filter(
+        (e) => (e as { manifest_path?: string | null }).manifest_path,
+      ).length
+    }
+    assert.equal(
+      bodyImageCount,
+      mappedCount,
+      `본문 ![](source-images) ${bodyImageCount}건 ≠ 매핑 명세 ${mappedCount}건 ` +
+      `— 자동 삽입(P0 위반) 또는 명세 외 수동 삽입 의심`,
+    )
   })
 
   it('이미지 TODO 마커가 본문에 보존되어 있어야 한다 (P0 #2)', () => {
