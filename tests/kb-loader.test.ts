@@ -2,18 +2,20 @@
  * src/lib/kb.ts 로더 동작 회귀 테스트
  *
  * 테스트 D:
- *   - getKBDocBySlug('hr-guide-2023') → not-null, title 일치
+ *   - getKBDocBySlug('ordinance-comparison') → not-null, title 일치
  *   - getKBDocBySlug('non-existent') → null
- *   - getSlugsBySubsection('research') → ['hr-guide-2023'] 포함
- *   - getSlugsBySubsection('law') → ['collective-agreement', 'ordinance-comparison'] 포함
- *   - getBacklinks('hr-guide-2023') → 빈 배열 (현재 위키링크 없음)
+ *   - getSlugsBySubsection('law') → ['ordinance-comparison'] 포함
+ *   - getSlugsBySubsection('research') → 빈 배열 (Phase 1 정리 후 통문서 자산 제거됨)
+ *   - getBacklinks('ordinance-comparison') → 빈 배열 (현재 위키링크 없음)
+ *
+ * 배경: Phase 1 정리에서 docparse 통문서 2건(hr-guide-2023, collective-agreement)이
+ *       atomic 분해본과 중복되어 삭제됨. 남은 published 통문서는 ordinance-comparison 1건뿐.
  *
  * 주의: kb.ts는 react의 `cache()`를 사용한다. node:test에서 직접 import하면
  *       react가 서버 컨텍스트 없이 실행되지만, cache()는 단순 memoize로만 동작하므로
  *       테스트 환경에서도 정상 작동한다.
  *
  * 또한 kb.ts는 src/lib/kb-index.generated.json을 정적 import한다.
- * 따라서 이 테스트는 실제 생성된 JSON(3개 문서)을 기준으로 검증한다.
  * 테스트 실행 전 `npm run sync:content`가 완료된 상태를 가정한다.
  */
 
@@ -47,21 +49,24 @@ before(async () => {
 // ============================================================
 
 describe('D. getKBDocBySlug', () => {
-  it("'hr-guide-2023' — not-null DocumentFull 반환", async () => {
-    const doc = (await getKBDocBySlug('hr-guide-2023')) as {
+  it("'ordinance-comparison' — not-null DocumentFull 반환", async () => {
+    const doc = (await getKBDocBySlug('ordinance-comparison')) as {
       slug: string
       frontmatter: { title: string }
     } | null
-    assert.notEqual(doc, null, 'hr-guide-2023 문서가 null을 반환함')
-    assert.equal(doc!.slug, 'hr-guide-2023')
+    assert.notEqual(doc, null, 'ordinance-comparison 문서가 null을 반환함')
+    assert.equal(doc!.slug, 'ordinance-comparison')
   })
 
-  it("'hr-guide-2023' — title이 frontmatter와 일치", async () => {
-    const doc = (await getKBDocBySlug('hr-guide-2023')) as {
+  it("'ordinance-comparison' — title이 frontmatter와 일치", async () => {
+    const doc = (await getKBDocBySlug('ordinance-comparison')) as {
       frontmatter: { title: string }
     } | null
     assert.notEqual(doc, null)
-    assert.equal(doc!.frontmatter.title, '2023 장애인교원 인사관리 안내서')
+    assert.equal(
+      doc!.frontmatter.title,
+      '시도교육청 장애인교원 편의지원 조례 비교 분석 보고서',
+    )
   })
 
   it("'non-existent' — null 반환", async () => {
@@ -71,27 +76,20 @@ describe('D. getKBDocBySlug', () => {
 })
 
 describe('D. getSlugsBySubsection', () => {
-  it("'research' — hr-guide-2023 포함", () => {
-    const slugs = getSlugsBySubsection('research')
-    assert.ok(
-      slugs.includes('hr-guide-2023'),
-      `'research' subsection에 hr-guide-2023가 없음: ${JSON.stringify(slugs)}`,
-    )
-  })
-
-  it("'law' — collective-agreement 포함", () => {
-    const slugs = getSlugsBySubsection('law')
-    assert.ok(
-      slugs.includes('collective-agreement'),
-      `'law' subsection에 collective-agreement가 없음: ${JSON.stringify(slugs)}`,
-    )
-  })
-
   it("'law' — ordinance-comparison 포함", () => {
     const slugs = getSlugsBySubsection('law')
     assert.ok(
       slugs.includes('ordinance-comparison'),
       `'law' subsection에 ordinance-comparison가 없음: ${JSON.stringify(slugs)}`,
+    )
+  })
+
+  it("'research' — Phase 1 정리 후 빈 배열", () => {
+    const slugs = getSlugsBySubsection('research')
+    assert.deepEqual(
+      slugs,
+      [],
+      `'research' subsection은 통문서 자산 제거 후 비어 있어야 함: ${JSON.stringify(slugs)}`,
     )
   })
 
@@ -102,12 +100,12 @@ describe('D. getSlugsBySubsection', () => {
 })
 
 describe('D. getBacklinks', () => {
-  it("'hr-guide-2023' — 현재 위키링크 없으므로 빈 배열", () => {
-    const backlinks = getBacklinks('hr-guide-2023')
+  it("'ordinance-comparison' — 현재 위키링크 없으므로 빈 배열", () => {
+    const backlinks = getBacklinks('ordinance-comparison')
     assert.deepEqual(
       backlinks,
       [],
-      `hr-guide-2023의 backlinks가 비어있지 않음: ${JSON.stringify(backlinks)}`,
+      `ordinance-comparison의 backlinks가 비어있지 않음: ${JSON.stringify(backlinks)}`,
     )
   })
 })
