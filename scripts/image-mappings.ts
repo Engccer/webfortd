@@ -27,7 +27,24 @@ import matter from 'gray-matter'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
-const REPO_ROOT = path.resolve(__dirname, '..')
+// 테스트는 IMG_MAPPINGS_ROOT로 fixture 디렉터리를 주입.
+// 안전장치(P1-2): fixture root에 `.image-mappings-test-root` sentinel 파일이 있을 때만 override 인정.
+// 운영 환경에 ENV가 실수로 설정돼도 sentinel 부재로 즉시 차단 + stderr 경고.
+const _defaultRoot = path.resolve(__dirname, '..')
+function _resolveRepoRoot(): string {
+  const override = process.env.IMG_MAPPINGS_ROOT
+  if (!override) return _defaultRoot
+  const resolved = path.resolve(override)
+  const sentinel = path.join(resolved, '.image-mappings-test-root')
+  if (!fs.existsSync(sentinel)) {
+    process.stderr.write(
+      `[image-mappings] IMG_MAPPINGS_ROOT='${resolved}' 이지만 sentinel '.image-mappings-test-root' 부재 — override 무시하고 기본 REPO_ROOT 사용.\n`,
+    )
+    return _defaultRoot
+  }
+  return resolved
+}
+const REPO_ROOT = _resolveRepoRoot()
 const CONTENT_DIR = path.join(REPO_ROOT, 'content')
 const MANIFEST_PATH = path.join(REPO_ROOT, 'public/source-images/manifest.json')
 const MAPPINGS_PATH = path.join(REPO_ROOT, 'content/_image-mappings.json')
@@ -67,6 +84,13 @@ interface MappingEntry {
   alt_override?: string | null
   /** 검수자 메모 */
   notes?: string
+  /**
+   * template/skeleton 생성 시점의 원본 alt. apply 단계에서 본문 TODO의 현재 alt와
+   * 교차 검증해 stale indexInFile 매칭을 차단한다 (M4-D P0 가드).
+   * mappings.json이 incremental 업데이트되면 indexInFile 번호가 본문 카운터와
+   * 어긋날 수 있으므로 alt 무결성 검증이 필요.
+   */
+  _alt_original?: string
 }
 
 function loadManifest(): ManifestEntry[] {
@@ -225,6 +249,16 @@ interface ApplyResult {
   unmatchedMappings: string[]
 }
 
+/**
+ * alt 비교용 정규화 — _alt_original ↔ occ.alt 교차 검증 시 사용 (M4-D P0).
+ *  - 연속 공백·줄바꿈을 단일 공백으로 squash (false positive 방지)
+ *  - Unicode NFC 정규화 (한글 합성형 통일)
+ *  - 양끝 trim
+ */
+function normalizeAlt(s: string): string {
+  return s.replace(/\s+/g, ' ').trim().normalize('NFC')
+}
+
 function applyMappings(occurrences: TodoOccurrence[], manifest: ManifestEntry[]): ApplyResult {
   const result: ApplyResult = {
     filesModified: 0,
@@ -282,6 +316,23 @@ function applyMappings(occurrences: TodoOccurrence[], manifest: ManifestEntry[])
     if (manifestEntry.source !== occ.source) {
       result.errors.push(
         `${key}: source 불일치 — TODO=${occ.source}, manifest=${manifestEntry.source} (다른 출처 이미지 삽입 차단)`,
+      )
+      continue
+    }
+    // M4-D P0 가드: _alt_original ↔ 본문 TODO alt 교차 검증.
+    // mappings.json이 incremental 업데이트되면 indexInFile이 본문 카운터와
+    // 어긋날 수 있다 (예: 일부 이미 inserted된 상태에서 추가 매핑 시도). 그러면
+    // mappings의 #0이 본문의 다른 #0 TODO에 매칭되어 잘못된 raster가 삽입됨.
+    // _alt_original을 채워 두면 stale 매칭을 사전 차단할 수 있다.
+    //
+    // 비교 정규화(P1-1): trim 단독은 내부 줄바꿈·연속 공백·Unicode 합성형(NFC/NFD)
+    // 차이로 false positive 차단 위험. whitespace를 단일 공백으로 squash 후 NFC 정규화.
+    if (
+      mapping._alt_original !== undefined &&
+      normalizeAlt(mapping._alt_original) !== normalizeAlt(occ.alt)
+    ) {
+      result.errors.push(
+        `${key}: _alt_original 불일치 — JSON='${mapping._alt_original.slice(0, 50)}...' 본문='${occ.alt.slice(0, 50)}...' (stale indexInFile 매칭 차단 — template 재생성 필요)`,
       )
       continue
     }
