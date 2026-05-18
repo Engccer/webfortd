@@ -1,0 +1,93 @@
+#!/usr/bin/env python3
+"""PyMuPDF 페이지 전체 렌더로 4개 PDF의 raster를 추출해 public/source-images/<source>/에 page-NNN-render.png로 저장.
+
+Phase 1.5b PR A에서 채택된 방식. baseline의 embedded raster(page-NNN-fig-MM.png)와 공존.
+dpi=150으로 평균 200KB/장 수준 유지.
+
+manifest.json도 함께 갱신 — image-mappings.ts apply가 manifest_path → ManifestEntry
+lookup으로 source 교차 검증하므로(M4 P0 가드) render raster도 등록 필요.
+render entry는 figure=0으로 baseline fig entry와 구분.
+"""
+from __future__ import annotations
+import json
+import sys
+from pathlib import Path
+
+import fitz
+
+ROOT = Path(__file__).resolve().parents[1]
+PDF_DIR = ROOT / "data" / "source-pdf"
+OUT_ROOT = ROOT / "public" / "source-images"
+MANIFEST_PATH = OUT_ROOT / "manifest.json"
+
+SOURCE_MAP = {
+    "2023 장애유형별 장애인교원 근무 지원 방안_최종보고서.pdf": "2023-disability-types-work-support-report",
+    "2023 장애인교원 인사관리 안내서.pdf": "2023-hr-guide",
+    "241210_책자_내지_중부대학교_장애인교원_근무지원_안내자료_V4.pdf": "2024-jbu-work-support-guide",
+    "내지_장애인교원_지원인력_직무_수행_안내자료인쇄용_156P_수정.pdf": "2024-support-staff-duty-guide",
+}
+
+
+def extract_pdf(pdf_path: Path, source_slug: str, dpi: int = 150) -> int:
+    out_dir = OUT_ROOT / source_slug
+    out_dir.mkdir(parents=True, exist_ok=True)
+    # 기존 render raster만 제거 (baseline fig raster는 보존)
+    for f in out_dir.glob("page-*-render.png"):
+        f.unlink()
+    count = 0
+    with fitz.open(pdf_path) as doc:
+        for page_num in range(len(doc)):
+            page = doc[page_num]
+            pix = page.get_pixmap(dpi=dpi)
+            out = out_dir / f"page-{page_num+1:03d}-render.png"
+            pix.save(out)
+            count += 1
+    return count
+
+
+def update_manifest(render_counts: dict[str, int]) -> int:
+    """manifest.json에 render entry를 추가/갱신. baseline fig entries는 보존."""
+    if MANIFEST_PATH.exists():
+        manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
+    else:
+        manifest = []
+    # source별로 기존 render entry 제거 (재실행 시 중복 방지)
+    manifest = [m for m in manifest if not (m["source"] in render_counts and m.get("figure") == 0)]
+    # 새 render entry 추가
+    added = 0
+    for source_slug, count in render_counts.items():
+        for page in range(1, count + 1):
+            manifest.append({
+                "source": source_slug,
+                "page": page,
+                "figure": 0,
+                "path": f"public/source-images/{source_slug}/page-{page:03d}-render.png",
+                "alt": None,
+            })
+            added += 1
+    # source → page → figure 순으로 정렬 (안정적 diff)
+    manifest.sort(key=lambda m: (m["source"], m["page"], m.get("figure", 0)))
+    MANIFEST_PATH.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return added
+
+
+def main() -> int:
+    total = 0
+    render_counts: dict[str, int] = {}
+    for pdf_name, source_slug in SOURCE_MAP.items():
+        pdf_path = PDF_DIR / pdf_name
+        if not pdf_path.exists():
+            print(f"SKIP: {pdf_path} not found", file=sys.stderr)
+            continue
+        count = extract_pdf(pdf_path, source_slug)
+        print(f"{source_slug}: {count}장 (dpi=150, page-NNN-render.png)")
+        render_counts[source_slug] = count
+        total += count
+    print(f"\n총 {total}장 추출 완료")
+    added = update_manifest(render_counts)
+    print(f"manifest.json render entry 갱신: {added}건 추가/갱신")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
