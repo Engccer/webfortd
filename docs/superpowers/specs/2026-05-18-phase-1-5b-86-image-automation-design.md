@@ -85,9 +85,16 @@ docparse·opendataloader-pdf는 SKIP (각각 image extraction 미지원, jar 로
 Task B1: slug→raster index 매핑 사전 구축
   - 도구: fitz.page.get_text() + search_for()
   - 대상: 4개 PDF × 86건 unmapped TODO
-  - 출력: /tmp/image-match-poc/slug-raster-map.json
-  - page-numbered slug: 페이지 번호 텍스트 검색 → 물리 페이지 index
-  - chapter slug: 챕터 제목 검색 → [시작 index, 끝 index] 범위
+  - 출력: /tmp/image-match-poc/slug-raster-map.json (+ slug-raster-unresolved.json)
+  - page-numbered slug 처리 흐름:
+    * 1차: PDF 페이지 텍스트에서 "p-NNN" 또는 페이지 번호 문자열 search_for() → 물리 페이지 index
+    * fallback: 슬러그 번호를 기준으로 ±N 범위(예: ±25) raster 후보 생성 후 alt-image 모델로 1차 후보 좁힘 (PR B Task B3 합의 게이트의 사전 단계)
+    * unresolved: 두 방법 모두 실패한 case → unresolved 목록에 별도 출력, closed-loop 검수 큐로 자동 routing
+  - chapter slug 처리 흐름:
+    * 1차: atomic 페이지 frontmatter title을 PDF text에서 search_for()
+    * fallback: alias/normalized-title table (공백·줄바꿈·접두사 "01 "·기호 정규화) 적용 후 재검색. 챕터 root slug의 path 위계(예: domains/2023-hr-1-2)로 인접 atomic 페이지의 매핑 결과를 inherit
+    * unresolved: 매칭 실패한 chapter slug → unresolved 목록에 별도 출력, closed-loop 검수 큐로 자동 routing
+  - acceptance criteria: 86건 중 매핑 성공 건수 + unresolved 목록이 자체 산출되어, PR B Task B2(자동 적용)가 unresolved를 closed-loop 검수 큐(PR C)로 자동 routing 가능. 매핑 성공률 < 60% 시 spec 재검토(텍스트 정규화 가설 자체 결함 신호).
 ```
 
 **Gemini API 제약**: REPO 외부 절대 경로 이미지 접근 불가. PR B에서 base64 `inlineData` API 직접 호출로 우회.
@@ -99,7 +106,7 @@ PoC 채택 도구 결정 후 진입.
 **단계**:
 
 1. **raster 재추출** — 채택 도구로 4개 PDF 전체 재추출 → `public/source-images/<source-slug>/` 갱신. 기존 baseline raster는 보존(파일명 충돌 방지 prefix 또는 별도 디렉터리)
-2. **chapter slug page-range 메타 부여** — PoC에서 outline 추출 가능 확인 시 60건 chapter slug에 page range 메타 부여
+2. **chapter slug page-range 메타 부여** — PR B Task B1에서 구축한 slug→raster 매핑 사전을 이용해 60건 chapter slug + 26건 page-numbered slug에 page range/index 메타 부여. unresolved 목록은 PR C closed-loop 검수 큐로 직행 (outline 자동 부여 경로는 §3.1.1에서 폐기됨)
 3. **4종 cross-validation 재실행** — `/tmp/image-match-poc/cross-validate.mjs` + `auto-mapping.mjs` 재사용. 합의 게이트 동일 조건 (Phase 1.5와 같이 4/4 또는 3/4 + 명시적 NO 0)
 4. **자동 적용** — `npm run image:apply`로 본문 반영. PR #5의 `_alt_original` 가드가 stale indexInFile 매칭 차단
 5. **빌드 검증** — `npm run build`로 564개 정적 페이지 변동 없음 확인
