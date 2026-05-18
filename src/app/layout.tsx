@@ -1,10 +1,6 @@
 import type { Metadata } from "next"
 import { ThemeProvider } from "next-themes"
 import "./globals.css"
-import { Header } from "@/components/layout/Header"
-import { Footer } from "@/components/layout/Footer"
-import { SkipLink } from "@/components/accessibility/SkipLink"
-import { FocusManager } from "@/components/accessibility/FocusManager"
 
 export const metadata: Metadata = {
   title: {
@@ -31,9 +27,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="ko" data-contrast="default" data-underline-links="false" suppressHydrationWarning>
       <body className="min-h-screen bg-background text-foreground antialiased">
@@ -43,15 +37,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <SkipLink />
-          <FocusManager />
-          <div className="flex min-h-screen flex-col">
-            <Header />
-            <main id="main-content" tabIndex={-1} className="flex-1">
-              {children}
-            </main>
-            <Footer />
-          </div>
+          {children}
         </ThemeProvider>
       </body>
     </html>

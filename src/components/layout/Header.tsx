@@ -9,6 +9,7 @@ import { mainNavigation } from "@/lib/navigation"
 import { playMenuOpenSound, playMenuFocusSound } from "@/lib/sound"
 import { AccessibilityToolbar } from "@/components/accessibility/AccessibilityToolbar"
 import { SiteSearch } from "@/components/search/SiteSearch"
+import { EntryToggle } from "@/components/wiki/EntryToggle"
 import { Button } from "@/components/ui/Button"
 import {
   Sheet,
@@ -113,6 +114,7 @@ export function Header() {
 
           {/* Search & Mobile Menu Button */}
           <div className="flex items-center gap-2">
+            <EntryToggle />
             <SiteSearch />
 
             {/* Mobile Menu */}
