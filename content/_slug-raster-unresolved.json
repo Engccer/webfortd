@@ -1,0 +1,39 @@
+{
+  "unresolved": [
+    {
+      "key": "2024-staff-19#2024-support-staff-duty-guide#0",
+      "source": "2024-support-staff-duty-guide",
+      "reason": "chapter title PDF text 매칭 실패"
+    },
+    {
+      "key": "2024-staff-p-165#2024-support-staff-duty-guide#0",
+      "source": "2024-support-staff-duty-guide",
+      "reason": "slug_num 165 out of pdf range 156"
+    },
+    {
+      "key": "2024-staff-p-169#2024-support-staff-duty-guide#0",
+      "source": "2024-support-staff-duty-guide",
+      "reason": "slug_num 169 out of pdf range 156"
+    },
+    {
+      "key": "2024-staff-p-184#2024-support-staff-duty-guide#0",
+      "source": "2024-support-staff-duty-guide",
+      "reason": "slug_num 184 out of pdf range 156"
+    },
+    {
+      "key": "2024-staff-p-185#2024-support-staff-duty-guide#0",
+      "source": "2024-support-staff-duty-guide",
+      "reason": "slug_num 185 out of pdf range 156"
+    },
+    {
+      "key": "2024-staff-p-177#2024-support-staff-duty-guide#0",
+      "source": "2024-support-staff-duty-guide",
+      "reason": "slug_num 177 out of pdf range 156"
+    },
+    {
+      "key": "2024-staff-p-182#2024-support-staff-duty-guide#0",
+      "source": "2024-support-staff-duty-guide",
+      "reason": "slug_num 182 out of pdf range 156"
+    }
+  ]
+}
