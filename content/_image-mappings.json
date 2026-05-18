@@ -45,8 +45,9 @@
     "2024-staff-p-023#2024-support-staff-duty-guide#0": {
       "_alt_original": "학생 좌석 배치 지원 절차를 시각장애인교원과 지원인력 간의 상호작용으로 보여주는 순서도입니다. 시각장애인교원이 좌석 배치 및 모둠 구성 지원을 요청하면, 지원인력이 그 내용을 확인하고 요청에 따라 좌석 배치와 모둠 구성을 수행합니다. 이후 지원인력이 완성된 현황을 설명하고 시각장애인교원이 요청 내용과의 일치 여부를 확인하는 4단계 과정으로 구성됩니다.",
       "_file": "content/disability-types/2024-staff-p-023.md",
-      "manifest_path": null,
-      "alt_override": null
+      "manifest_path": "public/source-images/2024-support-staff-duty-guide/page-025-render.png",
+      "alt_override": null,
+      "notes": "Phase 1.5b 자동 매핑 (method=known_answer, known_answer (PR A A8 검증))"
     },
     "2024-staff-p-095#2024-support-staff-duty-guide#0": {
       "_alt_original": "이 흐름도는 지체·뇌병변장애인교원이 지원인력에게 시연 및 모델링 지원을 요청하는 것부터 수업에 활용되기까지의 5단계 절차를 보여줍니다. 지원인력은 교원에게 시연 및 모델링할 내용을 구체적으로 안내받아 연습하고, 교원에게 의도와 일치하는지 확인받은 후, 최종적으로 해당 시연 및 모델링이 교원의 수업에 활용됩니다.",
@@ -215,26 +216,30 @@
     "2023-hr-p-046#2023-hr-guide#0": {
       "_alt_original": "보라색 배경 위에 흰색 숫자 '02'가 큰 글씨로 중앙에 배치되어 있으며, 페이지를 가로지르는 흰색 선에 걸쳐 있습니다. 선 아래에는 '장애인교원'과 '인사관리 안내서'라는 흰색 제목이 두 줄로 적혀 있어, 이 페이지가 문서의 두 번째 장을 알리는 인사관리 안내서임을 보여줍니다.",
       "_file": "content/domains/2023-hr-p-046.md",
-      "manifest_path": null,
-      "alt_override": null
+      "manifest_path": "public/source-images/2023-hr-guide/page-024-render.png",
+      "alt_override": null,
+      "notes": "Phase 1.5b 자동 매핑 (method=known_answer, known_answer (PR A A8 검증))"
     },
     "2023-hr-p-057#2023-hr-guide#0": {
       "_alt_original": "관련 법령으로 「사업주 및 장애인 등에 대한 융자·지원 규정」에 따른 근로지원인 유형 관련 내용을 설명하는 섹션 옆에 위치한 법령 아이콘입니다.",
       "_file": "content/domains/2023-hr-p-057.md",
-      "manifest_path": null,
-      "alt_override": null
+      "manifest_path": "public/source-images/2023-hr-guide/page-060-render.png",
+      "alt_override": null,
+      "notes": "Phase 1.5b 자동 매핑 (method=known_answer, known_answer (PR A A8 검증))"
     },
     "2023-hr-p-057#2023-hr-guide#1": {
       "_alt_original": "관련 법령으로 「장애인 고용촉진 및 직업재활법」 제21조의2에 따른 장애인 공무원 지원 내용을 설명하는 섹션 옆에 위치한 법령 아이콘입니다.",
       "_file": "content/domains/2023-hr-p-057.md",
-      "manifest_path": null,
-      "alt_override": null
+      "manifest_path": "public/source-images/2023-hr-guide/page-060-render.png",
+      "alt_override": null,
+      "notes": "Phase 1.5b 자동 매핑 (method=known_answer, known_answer (PR A A8 검증))"
     },
     "2024-jbu-p-061#2024-jbu-work-support-guide#0": {
       "_alt_original": "한 사람이 다른 사람의 복부를 발로 차 넘어뜨리는 신체적 학대 장면을 묘사한 일러스트.",
       "_file": "content/domains/2024-jbu-p-061.md",
       "manifest_path": "public/source-images/2024-jbu-work-support-guide/page-100-fig-01.png",
-      "alt_override": null
+      "alt_override": null,
+      "notes": "PR #4 잔재. 본문에 inserted 상태 + 이 entry manifest_path 일관성 유지. PR B 범위 밖, 별도 정리는 추후."
     },
     "2024-jbu-p-061#2024-jbu-work-support-guide#1": {
       "_alt_original": "신체적 학대 예시 일러스트와 학대 유형 목록을 연결하는 화살표 아이콘.",
@@ -491,20 +496,23 @@
     "2023-hr-p-052#2023-hr-guide#0": {
       "_alt_original": "파란색 법률 아이콘으로, 저울과 책이 그려져 있으며 「교육공무원법」 제44조(휴직)에 대한 설명을 시각적으로 나타냅니다.",
       "_file": "content/policies/2023-hr-p-052.md",
-      "manifest_path": null,
-      "alt_override": null
+      "manifest_path": "public/source-images/2023-hr-guide/page-046-render.png",
+      "alt_override": null,
+      "notes": "Phase 1.5b 자동 매핑 (method=known_answer, known_answer (PR A A8 검증))"
     },
     "2023-hr-p-052#2023-hr-guide#1": {
       "_alt_original": "파란색 법률 아이콘으로, 저울과 책이 그려져 있으며 「국가공무원 복무·징계 관련 예규」에 대한 설명을 시각적으로 나타냅니다.",
       "_file": "content/policies/2023-hr-p-052.md",
-      "manifest_path": null,
-      "alt_override": null
+      "manifest_path": "public/source-images/2023-hr-guide/page-046-render.png",
+      "alt_override": null,
+      "notes": "Phase 1.5b 자동 매핑 (method=known_answer, known_answer (PR A A8 검증))"
     },
     "2023-hr-p-052#2023-hr-guide#2": {
       "_alt_original": "법률 조항임을 나타내는 책과 저울 모양의 아이콘입니다.",
       "_file": "content/policies/2023-hr-p-052.md",
-      "manifest_path": null,
-      "alt_override": null
+      "manifest_path": "public/source-images/2023-hr-guide/page-046-render.png",
+      "alt_override": null,
+      "notes": "Phase 1.5b 자동 매핑 (method=known_answer, known_answer (PR A A8 검증))"
     },
     "2023-research-1-4#2023-disability-types-work-support-report#0": {
       "_alt_original": "데이컴 기법을 활용한 직무 분석 분류표 예시 다이어그램입니다. 세로축은 '임무(Duties)', 가로축은 '작업(Tasks)'으로 표시되어 있으며, 임무별로 수행되는 작업들을 분류할 수 있도록 빈 칸들이 배열된 매트릭스 형태로 구성되어 있습니다.",
@@ -535,13 +543,15 @@
       "_alt_original": "휠체어에 앉아 불편해하는 여성의 팔을 억지로 잡아당기는 남성의 모습. 이는 신체적 괴롭힘이나 성적 학대를 묘사한다.",
       "_file": "content/policies/2024-jbu-p-063.md",
       "manifest_path": "public/source-images/2024-jbu-work-support-guide/page-101-fig-02.png",
-      "alt_override": null
+      "alt_override": null,
+      "notes": "PR #4 잔재. 본문에 inserted 상태 + 이 entry manifest_path 일관성 유지. PR B 범위 밖, 별도 정리는 추후."
     },
     "2024-jbu-p-063#2024-jbu-work-support-guide#1": {
       "_alt_original": "경제적 착취를 시각적으로 보여주는 삽화입니다. 한 사람이 다른 사람의 가방에서 돈을 몰래 빼내고 있습니다.",
       "_file": "content/policies/2024-jbu-p-063.md",
       "manifest_path": "public/source-images/2024-jbu-work-support-guide/page-102-fig-01.png",
-      "alt_override": null
+      "alt_override": null,
+      "notes": "PR #4 잔재. 본문에 inserted 상태 + 이 entry manifest_path 일관성 유지. PR B 범위 밖, 별도 정리는 추후."
     },
     "2024-jbu-p-063#2024-jbu-work-support-guide#2": {
       "_alt_original": "경제적 착취 삽화와 그 유형 목록을 연결하는 오른쪽 방향 화살표입니다.",
