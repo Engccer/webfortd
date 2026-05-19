@@ -4,43 +4,28 @@
       "decision": "review",
       "manifest_path": "public/source-images/2024-jbu-work-support-guide/page-013-render.png",
       "method": "page_number_seed",
-      "verdicts": {
-        "claude": "NO",
-        "gemini": "NO",
-        "gemma": "NO",
-        "codex": "NO"
-      },
+      "verdicts": {},
       "yesCount": 0,
-      "noCount": 4,
-      "reason": "명시적 NO 4건"
+      "noCount": 0,
+      "reason": "±10 window 6건 Gemma YES, 4종 합의 미달"
     },
     "2024-jbu-p-013#2024-jbu-work-support-guide#1": {
       "decision": "review",
       "manifest_path": "public/source-images/2024-jbu-work-support-guide/page-013-render.png",
       "method": "page_number_seed",
-      "verdicts": {
-        "claude": "NO",
-        "gemini": "NO",
-        "gemma": "NO",
-        "codex": "NO"
-      },
+      "verdicts": {},
       "yesCount": 0,
-      "noCount": 4,
-      "reason": "명시적 NO 4건"
+      "noCount": 0,
+      "reason": "±10 window 9건 Gemma YES, 4종 합의 미달"
     },
     "2024-jbu-p-029#2024-jbu-work-support-guide#0": {
       "decision": "review",
       "manifest_path": "public/source-images/2024-jbu-work-support-guide/page-029-render.png",
       "method": "page_number_seed",
-      "verdicts": {
-        "claude": "NO",
-        "gemini": "NO",
-        "gemma": "NO",
-        "codex": "NO"
-      },
+      "verdicts": {},
       "yesCount": 0,
-      "noCount": 4,
-      "reason": "명시적 NO 4건"
+      "noCount": 0,
+      "reason": "±10 window 6건 Gemma YES, 4종 합의 미달"
     },
     "2024-staff-3-6#2024-support-staff-duty-guide#0": {
       "decision": "review",
@@ -88,29 +73,21 @@
       "decision": "review",
       "manifest_path": "public/source-images/2024-support-staff-duty-guide/page-095-render.png",
       "method": "page_number_seed",
-      "verdicts": {
-        "claude": "NO",
-        "gemini": "NO",
-        "gemma": "NO",
-        "codex": "NO"
-      },
+      "verdicts": {},
       "yesCount": 0,
-      "noCount": 4,
-      "reason": "명시적 NO 4건"
+      "noCount": 0,
+      "reason": "±10 window 7건 Gemma YES, 4종 합의 미달"
     },
     "2024-staff-p-127#2024-support-staff-duty-guide#0": {
       "decision": "review",
       "manifest_path": "public/source-images/2024-support-staff-duty-guide/page-127-render.png",
       "method": "page_number_seed",
       "verdicts": {
-        "claude": "NO",
-        "gemini": "NO",
-        "gemma": "NO",
-        "codex": "NO"
+        "gemma": "NO"
       },
       "yesCount": 0,
-      "noCount": 4,
-      "reason": "명시적 NO 4건"
+      "noCount": 21,
+      "reason": "Gemma 1차 stamp 0 YES (±10 window, 21 후보)"
     },
     "2023-hr-1-2#2023-hr-guide#0": {
       "decision": "review",
@@ -438,15 +415,10 @@
       "decision": "review",
       "manifest_path": "public/source-images/2024-jbu-work-support-guide/page-061-render.png",
       "method": "page_number_seed",
-      "verdicts": {
-        "claude": "NO",
-        "gemini": "NO",
-        "gemma": "YES",
-        "codex": "NO"
-      },
-      "yesCount": 1,
-      "noCount": 3,
-      "reason": "명시적 NO 3건"
+      "verdicts": {},
+      "yesCount": 0,
+      "noCount": 0,
+      "reason": "±10 window 1건 Gemma YES, 4종 합의 미달"
     },
     "2023-hr-1-3#2023-hr-guide#0": {
       "decision": "review",
@@ -998,29 +970,19 @@
       "decision": "review",
       "manifest_path": "public/source-images/2024-jbu-work-support-guide/page-063-render.png",
       "method": "page_number_seed",
-      "verdicts": {
-        "claude": "NO",
-        "gemini": "NO",
-        "gemma": "NO",
-        "codex": "NO"
-      },
+      "verdicts": {},
       "yesCount": 0,
-      "noCount": 4,
-      "reason": "명시적 NO 4건"
+      "noCount": 0,
+      "reason": "±10 window 2건 Gemma YES, 4종 합의 미달"
     },
     "2024-jbu-p-063#2024-jbu-work-support-guide#4": {
       "decision": "review",
       "manifest_path": "public/source-images/2024-jbu-work-support-guide/page-063-render.png",
       "method": "page_number_seed",
-      "verdicts": {
-        "claude": "NO",
-        "gemini": "NO",
-        "gemma": "NO",
-        "codex": "NO"
-      },
+      "verdicts": {},
       "yesCount": 0,
-      "noCount": 4,
-      "reason": "명시적 NO 4건"
+      "noCount": 0,
+      "reason": "±10 window 6건 Gemma YES, 4종 합의 미달"
     },
     "2024-staff-2-4#2024-support-staff-duty-guide#0": {
       "decision": "review",
@@ -1040,71 +1002,52 @@
       "decision": "review",
       "manifest_path": "public/source-images/2024-support-staff-duty-guide/page-116-render.png",
       "method": "page_number_seed",
-      "verdicts": {
-        "claude": "NO",
-        "gemini": "NO",
-        "gemma": "NO",
-        "codex": "NO"
-      },
+      "verdicts": {},
       "yesCount": 0,
-      "noCount": 4,
-      "reason": "명시적 NO 4건"
+      "noCount": 0,
+      "reason": "±10 window 2건 Gemma YES, 4종 합의 미달"
     },
     "2024-staff-p-149#2024-support-staff-duty-guide#0": {
       "decision": "review",
       "manifest_path": "public/source-images/2024-support-staff-duty-guide/page-149-render.png",
       "method": "page_number_seed",
       "verdicts": {
-        "claude": "NO",
-        "gemini": "NO",
-        "gemma": "NO",
-        "codex": "NO"
+        "gemma": "NO"
       },
       "yesCount": 0,
-      "noCount": 4,
-      "reason": "명시적 NO 4건"
+      "noCount": 18,
+      "reason": "Gemma 1차 stamp 0 YES (±10 window, 18 후보)"
     },
     "2024-staff-p-149#2024-support-staff-duty-guide#1": {
       "decision": "review",
       "manifest_path": "public/source-images/2024-support-staff-duty-guide/page-149-render.png",
       "method": "page_number_seed",
       "verdicts": {
-        "claude": "NO",
-        "gemini": "NO",
-        "gemma": "NO",
-        "codex": "NO"
+        "gemma": "NO"
       },
       "yesCount": 0,
-      "noCount": 4,
-      "reason": "명시적 NO 4건"
+      "noCount": 18,
+      "reason": "Gemma 1차 stamp 0 YES (±10 window, 18 후보)"
     },
     "2024-staff-p-149#2024-support-staff-duty-guide#2": {
       "decision": "review",
       "manifest_path": "public/source-images/2024-support-staff-duty-guide/page-149-render.png",
       "method": "page_number_seed",
-      "verdicts": {
-        "claude": "NO",
-        "gemini": "NO",
-        "gemma": "NO",
-        "codex": "NO"
-      },
+      "verdicts": {},
       "yesCount": 0,
-      "noCount": 4,
-      "reason": "명시적 NO 4건"
+      "noCount": 0,
+      "reason": "±10 window 1건 Gemma YES, 4종 합의 미달"
     },
     "2024-staff-p-149#2024-support-staff-duty-guide#3": {
       "decision": "review",
       "manifest_path": "public/source-images/2024-support-staff-duty-guide/page-149-render.png",
       "method": "page_number_seed",
       "verdicts": {
-        "claude": "NO",
-        "gemini": "NO",
-        "gemma": "NO",
-        "codex": "NO"
+        "gemma": "NO"
       },
       "yesCount": 0,
-      "noCount": 4,
-      "reason": "명시적 NO 4건"
+      "noCount": 18,
+      "reason": "Gemma 1차 stamp 0 YES (±10 window, 18 후보)"
     }
   }
 }
