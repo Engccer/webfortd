@@ -19,6 +19,9 @@ import { adaptFrontmatterToLegacy } from "@/lib/kb-adapter"
 import { Calendar, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import type { ContentAxis } from "@/types/kb"
+import { SkipLink } from "@/components/accessibility/SkipLink"
+import { FocusManager } from "@/components/accessibility/FocusManager"
+import { AccessibilityToolbar } from "@/components/accessibility/AccessibilityToolbar"
 
 const AXIS_LABEL: Record<ContentAxis, string> = {
   'disability-types': '장애유형별',
@@ -84,29 +87,35 @@ export async function KbPageLayout({ axis, slug }: KbPageLayoutProps) {
   const axisHref = `/${axis}`
 
   return (
-    <div className="fixed inset-0 z-50 overflow-auto bg-background">
-      <div className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur">
-        <div className="mx-auto flex h-14 max-w-4xl items-center justify-between px-4 sm:px-6">
-          <Link
-            href={axisHref}
-            className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-          >
-            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-            {axisLabel} 목록
-          </Link>
-          {fm.status === 'draft' && (
-            <span
-              role="status"
-              className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800"
-              aria-label="검수 진행 중인 초안입니다"
+    <>
+      <SkipLink />
+      <FocusManager />
+      <div className="fixed inset-0 z-50 overflow-auto bg-background">
+        <div className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur">
+          <div className="mx-auto flex h-14 max-w-4xl items-center justify-between gap-3 px-4 sm:px-6">
+            <Link
+              href={axisHref}
+              className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             >
-              초안
-            </span>
-          )}
+              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+              {axisLabel} 목록
+            </Link>
+            <div className="flex items-center gap-2">
+              {fm.status === 'draft' && (
+                <span
+                  role="status"
+                  className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800"
+                  aria-label="검수 진행 중인 초안입니다"
+                >
+                  초안
+                </span>
+              )}
+              <AccessibilityToolbar />
+            </div>
+          </div>
         </div>
-      </div>
 
-      <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
+        <main id="main-content" tabIndex={-1} className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
         <article>
           <header className="mb-8 border-b border-border pb-6">
             {/* M4-B: 출처 문서 내 상위 헤딩 경로 — 분해 페이지의 컨텍스트를
@@ -162,6 +171,7 @@ export async function KbPageLayout({ axis, slug }: KbPageLayoutProps) {
           <MDXClientWrapper source={mdxSource} headings={doc.headings} />
         </article>
       </main>
-    </div>
+      </div>
+    </>
   )
 }

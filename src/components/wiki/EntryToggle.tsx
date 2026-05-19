@@ -7,7 +7,11 @@ import { cn } from "@/lib/utils"
 
 export function EntryToggle() {
   const pathname = usePathname()
-  const onWiki = pathname.startsWith("/wiki") || pathname.startsWith("/chat")
+  const onWiki =
+    pathname === "/wiki" ||
+    pathname.startsWith("/wiki/") ||
+    pathname === "/chat" ||
+    pathname.startsWith("/chat/")
 
   return (
     <div
@@ -17,7 +21,7 @@ export function EntryToggle() {
     >
       <Link
         href="/"
-        aria-current={!onWiki ? "page" : undefined}
+        aria-current={pathname === "/" ? "page" : undefined}
         className={cn(
           "inline-flex items-center gap-1 rounded-md px-2 py-1 font-medium transition-colors",
           !onWiki
@@ -30,7 +34,7 @@ export function EntryToggle() {
       </Link>
       <Link
         href="/wiki"
-        aria-current={onWiki ? "page" : undefined}
+        aria-current={pathname === "/wiki" || pathname.startsWith("/wiki/") ? "page" : undefined}
         className={cn(
           "inline-flex items-center gap-1 rounded-md px-2 py-1 font-medium transition-colors",
           onWiki

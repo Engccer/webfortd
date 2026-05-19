@@ -23,6 +23,7 @@ export function ChatMockUI() {
   const [input, setInput] = useState("")
   const counter = useRef(0)
   const listRef = useRef<HTMLDivElement | null>(null)
+  const inputRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" })
@@ -41,6 +42,8 @@ export function ChatMockUI() {
     }
     setMessages((prev) => [...prev, userMsg, botMsg])
     setInput("")
+    // 추천 버튼 클릭 후 buttons subtree가 사라져도 키보드 사용자가 위치를 잃지 않도록 input으로 focus 이동
+    inputRef.current?.focus()
   }
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -129,6 +132,7 @@ export function ChatMockUI() {
         </label>
         <div className="flex items-center gap-2">
           <input
+            ref={inputRef}
             id="chat-input"
             type="text"
             value={input}
