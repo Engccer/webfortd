@@ -15,38 +15,17 @@ name: Content Validate
 # GITHUB_TOKEN은 자동 주입되며 별도 secret 불요.
 
 on:
+  # PR #12 후속 — paths 필터 제거.
+  # 이전 설계: content/* 또는 검증 스크립트 변경 시만 workflow 실행 (최소 CI 비용).
+  # 문제: branch protection이 `validate` job을 모든 PR에 required로 요구하므로
+  # paths에 매칭되지 않는 PR(예: src/app/* 변경)에서 workflow 자체가 실행되지 않아
+  # required check가 영원히 missing → merge 영구 차단(admin 우회 필요).
+  # 해결: paths 제거. 모든 PR·push에서 workflow 실행. content 변경 없으면
+  # validate:content / sync:content가 빠르게 PASS 처리되어 required check 충족.
   pull_request:
     branches: [main, master]
-    paths:
-      - 'content/**'
-      # codex-rescue M6 P1 #1: 콘텐츠 무결성 핵심 스크립트(decompose, image-mappings)도 포함.
-      # CODEOWNERS는 이 두 파일을 "검증·빌드 스크립트"로 소유 지정하므로 CI도 동일 계층 검증 필요.
-      - 'scripts/validate-frontmatter.ts'
-      - 'scripts/sync-content.ts'
-      - 'scripts/decompose-source.ts'
-      - 'scripts/image-mappings.ts'
-      - 'scripts/check-alt-text-labels.ts'
-      - 'scripts/check-mdx-escape.ts'
-      - 'src/types/kb.ts'
-      - 'package.json'
-      - 'package-lock.json'
-      - '.github/workflows/content-validate.yml'
   push:
-    # codex-rescue M5 P2: push trigger paths를 PR trigger와 대칭으로 유지.
-    # codex-rescue M6 P1 #1: decompose/image-mappings도 포함.
     branches: [main, master]
-    paths:
-      - 'content/**'
-      - 'scripts/validate-frontmatter.ts'
-      - 'scripts/sync-content.ts'
-      - 'scripts/decompose-source.ts'
-      - 'scripts/image-mappings.ts'
-      - 'scripts/check-alt-text-labels.ts'
-      - 'scripts/check-mdx-escape.ts'
-      - 'src/types/kb.ts'
-      - 'package.json'
-      - 'package-lock.json'
-      - '.github/workflows/content-validate.yml'
 
 permissions:
   contents: read
