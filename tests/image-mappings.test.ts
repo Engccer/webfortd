@@ -16,7 +16,7 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import path from 'node:path'
 import os from 'node:os'
-import { execFileSync } from 'node:child_process'
+import { execFileSync, spawnSync } from 'node:child_process'
 
 const REPO_ROOT = path.resolve(import.meta.dirname, '..')
 const TSX_BIN = path.join(REPO_ROOT, 'node_modules/.bin/tsx')
@@ -324,17 +324,14 @@ describe('image-mappings apply — 무결성 가드', () => {
     const noSentinelRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'img-mappings-nosent-'))
     fixturesToCleanup.push(noSentinelRoot)
 
-    let stderr = ''
-    try {
-      execFileSync(TSX_BIN, [APPLY_SCRIPT, 'apply'], {
-        cwd: REPO_ROOT,
-        encoding: 'utf-8',
-        env: { ...process.env, IMG_MAPPINGS_ROOT: noSentinelRoot },
-        stdio: ['ignore', 'pipe', 'pipe'],
-      })
-    } catch (e) {
-      stderr = ((e as { stderr?: Buffer | string }).stderr ?? '').toString()
-    }
+    // spawnSync: exit code(0 또는 non-zero) 무관하게 stderr 캡쳐.
+    // execFileSync는 exit 0이면 stderr를 결과로 반환하지 않아 sentinel 경고를 못 잡음.
+    const r = spawnSync(TSX_BIN, [APPLY_SCRIPT, 'apply'], {
+      cwd: REPO_ROOT,
+      encoding: 'utf-8',
+      env: { ...process.env, IMG_MAPPINGS_ROOT: noSentinelRoot },
+    })
+    const stderr = (r.stderr ?? '').toString()
 
     assert.match(stderr, /sentinel.*부재.*override 무시/, '경고 메시지 누락')
   })

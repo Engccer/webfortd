@@ -237,9 +237,9 @@
     "2024-jbu-p-061#2024-jbu-work-support-guide#0": {
       "_alt_original": "한 사람이 다른 사람의 복부를 발로 차 넘어뜨리는 신체적 학대 장면을 묘사한 일러스트.",
       "_file": "content/domains/2024-jbu-p-061.md",
-      "manifest_path": "public/source-images/2024-jbu-work-support-guide/page-100-fig-01.png",
+      "manifest_path": null,
       "alt_override": null,
-      "notes": "PR #4 잔재. 본문에 inserted 상태 + 이 entry manifest_path 일관성 유지. PR B 범위 밖, 별도 정리는 추후."
+      "notes": "PR #4 stale 정리 (PR C). 본문 image를 TODO 마커로 복원하면서 entry도 null로."
     },
     "2024-jbu-p-061#2024-jbu-work-support-guide#1": {
       "_alt_original": "신체적 학대 예시 일러스트와 학대 유형 목록을 연결하는 화살표 아이콘.",
@@ -542,16 +542,16 @@
     "2024-jbu-p-063#2024-jbu-work-support-guide#0": {
       "_alt_original": "휠체어에 앉아 불편해하는 여성의 팔을 억지로 잡아당기는 남성의 모습. 이는 신체적 괴롭힘이나 성적 학대를 묘사한다.",
       "_file": "content/policies/2024-jbu-p-063.md",
-      "manifest_path": "public/source-images/2024-jbu-work-support-guide/page-101-fig-02.png",
+      "manifest_path": null,
       "alt_override": null,
-      "notes": "PR #4 잔재. 본문에 inserted 상태 + 이 entry manifest_path 일관성 유지. PR B 범위 밖, 별도 정리는 추후."
+      "notes": "PR #4 stale 정리 (PR C). 본문 image를 TODO 마커로 복원하면서 entry도 null로."
     },
     "2024-jbu-p-063#2024-jbu-work-support-guide#1": {
       "_alt_original": "경제적 착취를 시각적으로 보여주는 삽화입니다. 한 사람이 다른 사람의 가방에서 돈을 몰래 빼내고 있습니다.",
       "_file": "content/policies/2024-jbu-p-063.md",
-      "manifest_path": "public/source-images/2024-jbu-work-support-guide/page-102-fig-01.png",
+      "manifest_path": null,
       "alt_override": null,
-      "notes": "PR #4 잔재. 본문에 inserted 상태 + 이 entry manifest_path 일관성 유지. PR B 범위 밖, 별도 정리는 추후."
+      "notes": "PR #4 stale 정리 (PR C). 본문 image를 TODO 마커로 복원하면서 entry도 null로."
     },
     "2024-jbu-p-063#2024-jbu-work-support-guide#2": {
       "_alt_original": "경제적 착취 삽화와 그 유형 목록을 연결하는 오른쪽 방향 화살표입니다.",
@@ -562,8 +562,9 @@
     "2024-jbu-p-063#2024-jbu-work-support-guide#3": {
       "_alt_original": "유기 및 방임을 보여주는 삽화입니다. 많은 짐 상자들 옆에 한 사람이 홀로 앉아 있으며 쓸쓸해 보이는 모습입니다.",
       "_file": "content/policies/2024-jbu-p-063.md",
-      "manifest_path": "public/source-images/2024-jbu-work-support-guide/page-102-fig-02.png",
-      "alt_override": null
+      "manifest_path": null,
+      "alt_override": null,
+      "notes": "PR #4 stale 추가 정리 (PR C). indexInFile drift로 alt 가드 차단됐던 항목. C1과 동일 패턴."
     },
     "2024-jbu-p-063#2024-jbu-work-support-guide#4": {
       "_alt_original": "유기 및 방임 삽화와 그 유형 목록을 연결하는 오른쪽 방향 화살표입니다.",

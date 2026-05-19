@@ -190,6 +190,104 @@ function consensusGate(verdicts) {
   return { decision: "review", reason: `YES=${yes} NO=${no} ERROR=${err}` };
 }
 
+// ─── page_number_seed ±10 window 헬퍼 ──────────────────────────
+
+/**
+ * page_number_seed 매핑에 ±10 raster window cross-validation 적용.
+ * 1) Gemma 로컬 1차 stamp로 후보 좁힘
+ * 2) Gemma YES 후보만 4종 합의 게이트
+ * 3) 최선(score) raster 선정
+ *
+ * 반환: { decision: "apply"|"review", raster, verdicts, yesCount, noCount, reason }
+ */
+async function processPageNumberSeedWindow(key, entry, altOriginal) {
+  const source = entry.source;
+  const seedRaster = entry.raster; // "page-NNN-render.png"
+  const seedMatch = seedRaster.match(/^page-(\d+)-render\.png$/);
+  if (!seedMatch) return null;
+  const seedNum = parseInt(seedMatch[1], 10);
+
+  const WINDOW = 10;
+  const candidatesList = [];
+  for (let n = Math.max(1, seedNum - WINDOW); n <= seedNum + WINDOW; n++) {
+    const raster = `page-${String(n).padStart(3, "0")}-render.png`;
+    const absPath = `${REPO}/public/source-images/${source}/${raster}`;
+    if (!existsSync(absPath)) continue;
+    candidatesList.push({ raster, absPath, num: n });
+  }
+
+  // 1차 Gemma stamp
+  const stamped = [];
+  for (const cand of candidatesList) {
+    const verdict = await callGemma(cand.absPath, altOriginal);
+    if (verdict.verdict === "YES") stamped.push(cand);
+    process.stderr.write(`    gemma p${cand.num}: ${verdict.verdict}\n`);
+  }
+
+  if (stamped.length === 0) {
+    return {
+      decision: "review",
+      raster: seedRaster,
+      verdicts: { gemma: "NO" },
+      yesCount: 0,
+      noCount: candidatesList.length,
+      reason: `Gemma 1차 stamp 0 YES (±${WINDOW} window, ${candidatesList.length} 후보)`,
+    };
+  }
+
+  // 2차 4종 합의 게이트 (Gemma YES 후보들)
+  let best = null;
+  for (const cand of stamped) {
+    const [claude, gemini, codex] = await Promise.all([
+      callClaude(cand.absPath, altOriginal),
+      callGemini(cand.absPath, altOriginal),
+      callCodex(cand.absPath, altOriginal),
+    ]);
+    const gemmaCached = await callGemma(cand.absPath, altOriginal); // cache hit
+    const verdicts = {
+      claude: claude.verdict,
+      gemini: gemini.verdict,
+      gemma: gemmaCached.verdict,
+      codex: codex.verdict,
+    };
+    const yes = Object.values(verdicts).filter((v) => v === "YES").length;
+    const no = Object.values(verdicts).filter((v) => v === "NO").length;
+    const err = Object.values(verdicts).filter((v) => v === "ERROR").length;
+    const okFourFour = yes === 4;
+    const okThreeFour = yes === 3 && no === 0;
+    const decision = okFourFour || okThreeFour ? "apply" : "review";
+    process.stderr.write(
+      `    p${cand.num} 4종: C=${verdicts.claude} G=${verdicts.gemini} M=${verdicts.gemma} X=${verdicts.codex} → ${decision} (yes=${yes} no=${no})\n`
+    );
+    if (decision === "apply") {
+      const score = yes - no - err * 0.5;
+      if (!best || score > best.score) {
+        best = { score, raster: cand.raster, verdicts, yes, no, num: cand.num };
+      }
+    }
+  }
+
+  if (best) {
+    return {
+      decision: "apply",
+      raster: best.raster,
+      verdicts: best.verdicts,
+      yesCount: best.yes,
+      noCount: best.no,
+      reason: `±${WINDOW} window 최선 p${best.num} (yes=${best.yes}, no=${best.no})`,
+    };
+  }
+
+  return {
+    decision: "review",
+    raster: seedRaster,
+    verdicts: {},
+    yesCount: 0,
+    noCount: 0,
+    reason: `±${WINDOW} window ${stamped.length}건 Gemma YES, 4종 합의 미달`,
+  };
+}
+
 // ─── 메인 루프 ──────────────────────────────────────────────────
 
 const candidates = {};
@@ -219,6 +317,24 @@ for (const key of keys) {
     };
     process.stderr.write(`[${idx}/${keys.length}] ${key} → apply (known_answer)\n`);
     continue;
+  }
+
+  // ── page_number_seed 13건: ±10 window cross-validation ──
+  if (entry.method === "page_number_seed") {
+    process.stderr.write(`[${idx}/${keys.length}] ${key} page_number_seed → ±10 window\n`);
+    const result = await processPageNumberSeedWindow(key, entry, altOriginal);
+    if (result) {
+      candidates[key] = {
+        decision: result.decision,
+        manifest_path: `public/source-images/${entry.source}/${result.raster}`,
+        method: entry.method,
+        verdicts: result.verdicts,
+        yesCount: result.yesCount ?? 0,
+        noCount: result.noCount ?? 0,
+        reason: result.reason,
+      };
+      continue;
+    }
   }
 
   // ── raster 파일 존재 확인 ──
