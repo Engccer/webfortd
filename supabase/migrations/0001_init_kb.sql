@@ -19,7 +19,8 @@ create table documents (
   subtitle text,
 
   -- Taxonomy (5축)
-  type text not null,
+  type text not null
+    check (type in ('법령', '지침', '연구보고서', '안내서', '사례', '통계', '카드뉴스', '영상', 'FAQ', '뉴스', '기타')),
   disability_types text[] not null default '{}',
   domains text[] not null default '{}',
   regions text[] not null default '{}',
@@ -28,6 +29,7 @@ create table documents (
 
   -- Source / references (references는 SQL reserved word → references_data)
   source jsonb not null,
+  -- references_data: kb-index.generated.json의 frontmatter.references 필드와 매핑 (M2 sync 스크립트가 컬럼명 remap)
   references_data jsonb not null default '[]'::jsonb,
 
   -- Governance
@@ -57,8 +59,8 @@ create table documents (
   source_origin text,         -- kb-index.generated.json의 source_origin 필드
   axis text not null,          -- 'agreements' | 'disability-types' | ...
 
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
 
 create index idx_documents_status              on documents(status);
@@ -83,7 +85,7 @@ create table document_chunks (
   char_end int,
   embedding vector(1536),
   metadata jsonb not null default '{}'::jsonb,
-  created_at timestamptz default now(),
+  created_at timestamptz not null default now(),
   unique (document_id, chunk_index)
 );
 
@@ -94,7 +96,7 @@ create index idx_chunks_embedding on document_chunks
 
 -- ============================================================
 -- 4. wiki_backlinks — 페이지 간 링크 그래프
--- D1: surrogate PK + 다중 행 허용 (anchor/link_text 보존)
+-- D1: surrogate PK + 다중 행 허용 (anchor/link_text/line 보존 대비 — 빌드 파이프라인은 이미 지원)
 -- ============================================================
 create table wiki_backlinks (
   id uuid primary key default gen_random_uuid(),
@@ -103,10 +105,9 @@ create table wiki_backlinks (
   anchor text,
   link_text text,
   line int,
-  created_at timestamptz default now()
+  created_at timestamptz not null default now()
 );
 
-create index idx_backlinks_source  on wiki_backlinks(source_doc_id);
 create index idx_backlinks_target  on wiki_backlinks(target_slug);
 create index idx_backlinks_pair    on wiki_backlinks(source_doc_id, target_slug);
 
@@ -122,7 +123,7 @@ create table taxonomy_terms (
   description text,
   parent_id text references taxonomy_terms(id),
   display_order int default 0,
-  created_at timestamptz default now()
+  created_at timestamptz not null default now()
 );
 
 create index idx_taxonomy_axis on taxonomy_terms(axis);
