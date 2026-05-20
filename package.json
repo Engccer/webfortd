@@ -14,7 +14,8 @@
     "image:apply": "tsx scripts/image-mappings.ts apply",
     "check:alt-text": "tsx scripts/check-alt-text-labels.ts",
     "check:mdx-escape": "tsx scripts/check-mdx-escape.ts",
-    "test": "node --import tsx --test 'tests/**/*.test.ts'"
+    "test": "node --import tsx --test 'tests/**/*.test.ts'",
+    "test:integration": "node --env-file=.env.local --import tsx --test 'tests/migrations/**/*.test.ts'"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -51,6 +52,7 @@
   },
   "devDependencies": {
     "@anthropic-ai/sdk": "^0.96.0",
+    "@supabase/supabase-js": "^2.106.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
