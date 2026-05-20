@@ -2,6 +2,9 @@
   "name": "webfortd",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=20.6.0"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "npm run validate:content && npm run sync:content && next build",

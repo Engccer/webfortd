@@ -56,6 +56,19 @@ describe('0001_init_kb migration', { skip: skipReason }, () => {
   })
 
   test('RLS: anon은 draft documents를 직접 insert 불가', async () => {
+    // Precondition: schema가 적용되어 있어야 RLS를 실제로 테스트 가능
+    // (적용 전 PGRST205 'table not found'가 regex /42501|PGRST/에 매치되어 false positive로 통과하는 문제 차단)
+    const { error: existsError } = await supabase
+      .from('documents')
+      .select('id')
+      .limit(0)
+    assert.equal(
+      existsError,
+      null,
+      `schema 미적용 — supabase db push 먼저. 실제 error: ${existsError?.code} ${existsError?.message}`,
+    )
+
+    // Actual RLS test
     const { error } = await supabase.from('documents').insert({
       slug: 'rls-test-' + Date.now(),
       title: 'RLS test',
@@ -64,12 +77,16 @@ describe('0001_init_kb migration', { skip: skipReason }, () => {
       source: { organization: 'test', citation: 'test' },
       axis: 'uncategorized',
     })
-    assert.notEqual(error, null, 'anon insert가 차단되어야 하는데 성공함 (RLS 게이트 누수)')
-    // 42501 = permission denied, PGRST = PostgREST RLS rejection
-    assert.match(
-      error?.code ?? '',
-      /42501|PGRST/,
-      `예상 error code 42501 또는 PGRST*, 실제: ${error?.code}`,
+    assert.notEqual(
+      error,
+      null,
+      'anon insert가 차단되어야 하는데 성공함 (RLS 게이트 누수)',
+    )
+    // 42501 = Postgres permission denied (RLS rejection의 정확한 SQLSTATE)
+    assert.equal(
+      error?.code,
+      '42501',
+      `예상 42501 (RLS rejection), 실제: ${error?.code} ${error?.message}`,
     )
   })
 })
