@@ -143,7 +143,8 @@ Expected: commit 성공. `supabase/.temp/`는 .gitignore로 제외됨.
 -- ============================================================
 
 -- 1. Extensions
-create extension if not exists pgvector;
+-- Note: pgvector의 Postgres extension 이름은 'vector' (Supabase docs 확인)
+create extension if not exists vector;
 create extension if not exists pg_trgm;       -- 한국어 fuzzy 검색
 
 -- ============================================================
