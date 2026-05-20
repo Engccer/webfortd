@@ -5,7 +5,8 @@
 -- ============================================================
 
 -- 1. Extensions
-create extension if not exists pgvector;
+-- Note: pgvector의 Postgres extension 이름은 'vector' (https://supabase.com/docs/guides/database/extensions/pgvector)
+create extension if not exists vector;
 create extension if not exists pg_trgm;       -- 한국어 fuzzy 검색
 
 -- ============================================================
