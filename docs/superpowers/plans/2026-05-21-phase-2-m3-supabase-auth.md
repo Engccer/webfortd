@@ -904,8 +904,17 @@ git checkout -b phase-2-m3-supabase-auth
 - [x] dodo-planet 패턴 참조 명시
 - [x] 환경 변수 NEXT_PUBLIC_SITE_URL 추가
 
+## codex-rescue 결과 (Task 7)
+
+Background dispatch (task `buxnw3hix`) partial review만 완료. final report 미완성.
+
+Partial finding (line 50): "라우트 구조상 (gov)와 (wiki)는 Next route group으로 같은 URL 공간을 공유하고, 현재 proxy matcher는 거의 전 라우트에 적용..." — plan §D3 invariant("(gov)도 cookie refresh 발생, 빈 세션이라 읽기 영향 0")에서 이미 다룬 사항.
+
+후속: PR 머지 후 또는 Phase 3 진입 시 별도 codex-rescue 재실행 권장. 추가 invariant gap 발견 시 hotfix PR로 처리.
+
 ## Plan 변경 이력
 
 | 일자 | 내용 |
 |------|------|
 | 2026-05-21 | 초기 작성 — Phase 2 M3 (Auth + carry-over) |
+| 2026-05-21 | Task 7 codex-rescue partial review 결과 박음 — line 50 finding은 §D3 invariant에서 다룬 사항, Phase 3 진입 시 재실행 carry-over |
