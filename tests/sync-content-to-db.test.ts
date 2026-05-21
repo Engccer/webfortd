@@ -1,6 +1,11 @@
 import { test, describe } from 'node:test'
 import assert from 'node:assert/strict'
-import { transformDocumentRow, upsertDocuments } from '../scripts/sync-content-to-db.ts'
+import {
+  transformDocumentRow,
+  upsertDocuments,
+  syncWikiBacklinks,
+  invertBacklinksToSourcePerspective,
+} from '../scripts/sync-content-to-db.ts'
 
 describe('transformDocumentRow', () => {
   test('frontmatter.references → references_data 컬럼 매핑', () => {
@@ -190,5 +195,103 @@ describe('upsertDocuments (mocked client)', () => {
       () => upsertDocuments(mockClient, [{ slug: 'x' } as any], { batchSize: 50 }),
       /unique violation/,
     )
+  })
+})
+
+describe('syncWikiBacklinks (mocked client)', () => {
+  test('빈 인덱스 → 0 inserts', async () => {
+    const ops: string[] = []
+    const mockClient = {
+      from: (table: string) => ({
+        delete: () => ({
+          in: async (_col: string, vals: string[]) => {
+            ops.push(`delete:${table}:${vals.length}`)
+            return { error: null }
+          },
+        }),
+        insert: async (rows: any[]) => {
+          ops.push(`insert:${table}:${rows.length}`)
+          return { error: null }
+        },
+      }),
+    } as any
+    const result = await syncWikiBacklinks(mockClient, {}, {})
+    assert.equal(result.totalInserted, 0)
+    assert.equal(ops.length, 0)
+  })
+
+  test('3개 source × 평균 2 backlinks → delete + insert', async () => {
+    const ops: any[] = []
+    const mockClient = {
+      from: (table: string) => ({
+        delete: () => ({
+          in: async (_col: string, vals: string[]) => {
+            ops.push({ op: 'delete', table, n: vals.length })
+            return { error: null }
+          },
+        }),
+        insert: async (rows: any[]) => {
+          ops.push({ op: 'insert', table, n: rows.length })
+          return { error: null }
+        },
+      }),
+    } as any
+    const slugToId: Record<string, string> = {
+      'a': 'id-a',
+      'b': 'id-b',
+      'c': 'id-c',
+    }
+    const backlinks: Record<string, { from: string; anchor?: string; link_text?: string }[]> = {
+      'a': [{ from: 'b' }, { from: 'c', anchor: 'sec1' }],
+      'b': [{ from: 'a' }],
+      'c': [{ from: 'a' }, { from: 'b' }],
+    }
+    const result = await syncWikiBacklinks(mockClient, backlinks, slugToId)
+    assert.equal(result.totalInserted, 5)
+    // delete는 source_doc_id 배열로 한 번
+    const deletes = ops.filter((o) => o.op === 'delete')
+    assert.equal(deletes.length, 1)
+    assert.equal(deletes[0].n, 3) // 3 source ids
+  })
+
+  test('slugToId에 없는 source → skip + warn (반환 미카운트)', async () => {
+    const ops: any[] = []
+    const mockClient = {
+      from: (_table: string) => ({
+        delete: () => ({
+          in: async () => {
+            ops.push('del')
+            return { error: null }
+          },
+        }),
+        insert: async (rows: any[]) => {
+          ops.push(rows)
+          return { error: null }
+        },
+      }),
+    } as any
+    const slugToId = { 'a': 'id-a' }
+    const backlinks = {
+      'a': [{ from: 'b' }], // a는 매핑됨
+      'missing-slug': [{ from: 'a' }], // missing은 X
+    }
+    const result = await syncWikiBacklinks(mockClient, backlinks, slugToId)
+    // missing-slug는 skip, 'a'만 inserted
+    assert.equal(result.totalInserted, 1)
+    assert.equal(result.skippedSources.length, 1)
+    assert.equal(result.skippedSources[0], 'missing-slug')
+  })
+})
+
+describe('invertBacklinksToSourcePerspective', () => {
+  test('invertBacklinksToSourcePerspective: target perspective → source', () => {
+    const byTarget = {
+      'page-a': [{ from: 'page-b' }, { from: 'page-c', anchor: 'sec' }],
+      'page-c': [{ from: 'page-a' }],
+    }
+    const bySource = invertBacklinksToSourcePerspective(byTarget)
+    assert.deepEqual(bySource['page-b'], [{ from: 'page-a' }])
+    assert.deepEqual(bySource['page-c'], [{ from: 'page-a' }])
+    assert.deepEqual(bySource['page-a'], [{ from: 'page-c' }])
   })
 })
