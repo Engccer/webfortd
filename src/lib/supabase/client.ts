@@ -1,13 +1,15 @@
-import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import { createBrowserClient } from '@supabase/ssr'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
-let _anonClient: SupabaseClient | null = null
+let _client: SupabaseClient | null = null
 
 /**
- * Browser-safe anon client (publishable key 사용).
+ * Browser-safe Supabase client (publishable anon key 사용, 쿠키 기반 세션).
+ * @supabase/ssr의 createBrowserClient — server/middleware와 cookie storage 공유.
  * RLS 정책에 따라 status='published' documents/chunks/backlinks만 read 가능.
  */
-export function getAnonClient(): SupabaseClient {
-  if (!_anonClient) {
+export function getBrowserClient(): SupabaseClient {
+  if (!_client) {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL
     const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     if (!url || !anonKey) {
@@ -15,7 +17,13 @@ export function getAnonClient(): SupabaseClient {
         'NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY 미설정',
       )
     }
-    _anonClient = createClient(url, anonKey)
+    _client = createBrowserClient(url, anonKey)
   }
-  return _anonClient
+  return _client
 }
+
+/**
+ * 기존 호환 alias — getAnonClient 호출자들이 영향받지 않도록 유지.
+ * 신규 코드는 getBrowserClient 사용.
+ */
+export const getAnonClient = getBrowserClient

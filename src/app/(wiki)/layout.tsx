@@ -5,12 +5,14 @@ import { FocusManager } from "@/components/accessibility/FocusManager"
 import { AccessibilityToolbar } from "@/components/accessibility/AccessibilityToolbar"
 import { EntryToggle } from "@/components/wiki/EntryToggle"
 import { SiteSearch } from "@/components/search/SiteSearch"
+import { AuthProvider } from "@/contexts/AuthContext"
+import { SignInButton } from "@/components/auth/SignInButton"
 
 export default function WikiLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <>
+    <AuthProvider>
       <SkipLink />
       <FocusManager />
       <div className="flex min-h-screen flex-col bg-background">
@@ -53,6 +55,7 @@ export default function WikiLayout({
               <EntryToggle />
               <SiteSearch />
               <AccessibilityToolbar />
+              <SignInButton />
             </div>
           </div>
         </header>
@@ -68,6 +71,6 @@ export default function WikiLayout({
           </p>
         </footer>
       </div>
-    </>
+    </AuthProvider>
   )
 }

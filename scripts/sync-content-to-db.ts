@@ -80,6 +80,23 @@ function createCliAdminClient(): SupabaseClient {
 const REPO_ROOT = process.cwd()
 
 /**
+ * slug→id fetch 결과의 길이를 검증. PostgREST 기본 1000 row cap이 미래 1000+ docs 시
+ * silent truncation 일으키는 것 차단. 부족하면 진단 메시지와 함께 throw.
+ */
+export function assertIdRowsComplete(
+  idRows: { id: string; slug: string }[] | null,
+  expectedCount: number,
+): void {
+  const actual = idRows?.length ?? 0
+  if (actual < expectedCount) {
+    throw new Error(
+      `slug→id fetch 누락: ${expectedCount} upserted but ${actual} returned. ` +
+        `Supabase default limit 1000 의심 — .range(0, expectedCount-1) 또는 페이징 필요.`,
+    )
+  }
+}
+
+/**
  * Supabase `documents` 테이블 row 객체 형태.
  *
  * D2: frontmatter의 `references`는 SQL reserved word라 컬럼명 `references_data`로 rename.
@@ -116,10 +133,13 @@ export interface DocumentRow {
  *
  * - D1: status는 입력 frontmatter 값을 무시하고 'draft'로 강제.
  * - D2: `references` → `references_data` 컬럼명 rename. row 객체에 `references` 키 *없음*.
+ * - wiki_links는 kb-index의 `wikilink_adjacency`에서 받은 값을 그대로 사용 (sync-content.ts의
+ *   code-block 마스킹된 추출 결과와 단일 source 보장). M2 codex-rescue carry-over 2 처리.
  */
 export function transformDocumentRow(
   doc: KBDocumentSummary,
   contentMd: string,
+  wikiLinksFromAdjacency: string[],
 ): DocumentRow {
   const fm = doc.frontmatter
   return {
@@ -141,7 +161,7 @@ export function transformDocumentRow(
     accessibility: fm.accessibility as Record<string, unknown>,
     content_md: contentMd,
     source_path: doc.filePath,
-    wiki_links: extractWikiLinks(contentMd),
+    wiki_links: wikiLinksFromAdjacency,
     embedded_media: extractEmbeddedMedia(contentMd),
     parent_headings: fm.parent_headings ?? [],
     source_origin: fm.source_origin ?? null,
@@ -150,16 +170,6 @@ export function transformDocumentRow(
 }
 
 // ---------- module-private 헬퍼 ----------
-
-const WIKI_LINK_RE = /\[\[([^\]|#]+)(?:#[^\]|]+)?(?:\|[^\]]+)?\]\]/g
-
-function extractWikiLinks(markdown: string): string[] {
-  const slugs = new Set<string>()
-  for (const m of markdown.matchAll(WIKI_LINK_RE)) {
-    slugs.add(m[1].trim())
-  }
-  return [...slugs]
-}
 
 const IMAGE_RE = /!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]+)")?\)/g
 
@@ -385,18 +395,21 @@ async function main(opts: MainOptions): Promise<void> {
       string,
       { from: string; anchor?: string; link_text?: string }[]
     >
+    wikilink_adjacency: Record<string, string[]>
   }
-  const { documents, wiki_backlinks } = index
+  const { documents, wiki_backlinks, wikilink_adjacency } = index
 
   console.log(
     `[sync] 입력: ${documents.length} documents, ${Object.keys(wiki_backlinks).length} target slugs`,
   )
 
-  // 1. transform (전체)
+  // 1. transform (전체) — wiki_links는 wikilink_adjacency single source 사용 (M2 carry-over 2).
+  // adjacency에 없는 doc.slug (즉 wiki_links 0건 페이지)는 빈 배열 default.
   const rows: DocumentRow[] = []
   for (const doc of documents) {
     const body = loadBody(doc.filePath)
-    rows.push(transformDocumentRow(doc, body))
+    const links = wikilink_adjacency[doc.slug] ?? []
+    rows.push(transformDocumentRow(doc, body, links))
   }
 
   // 2. dry-run validation — slug 중복 검증
@@ -434,13 +447,17 @@ async function main(opts: MainOptions): Promise<void> {
     },
   })
 
-  // 4. slug → id 매핑 fetch (535건 < Supabase 기본 limit 1000)
+  // 4. slug → id 매핑 fetch
+  // PostgREST 기본 1000 row cap을 미래 1000+ docs 시점에도 비활성화하기 위해
+  // .range(0, rows.length + 100)로 generous ceiling 명시 + assertIdRowsComplete로 검증.
   const { data: idRows, error: fetchError } = await client
     .from('documents')
     .select('id, slug')
+    .range(0, rows.length + 100)
   if (fetchError) {
     throw new Error(`documents id fetch 실패: ${fetchError.message}`)
   }
+  assertIdRowsComplete(idRows, rows.length)
   // reviewer I-1: DB에 중복 slug가 있으면 silent drop 방지 (UNIQUE constraint로 거의 불가능하지만 belt-and-suspenders)
   const slugToId: Record<string, string> = {}
   for (const r of idRows ?? []) {
