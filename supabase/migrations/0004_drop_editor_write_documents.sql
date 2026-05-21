@@ -1,0 +1,23 @@
+-- ============================================================
+-- 0004_drop_editor_write_documents.sql
+-- Phase 2 Finding 1: editor write RLS 제거 (계층 선택 재정의)
+--
+-- 배경 (codex-rescue 재실행 finding):
+-- 0002의 "editor write documents" 정책은 editor_roles 존재만 체크하고 컬럼/status
+-- 제한이 없어, editor가 published row의 content_md/title/source/accessibility를
+-- 직접 수정할 수 있는 경로가 열려 있었음. 이는 webfortd 핵심 원칙
+-- ("마크다운이 정본, DB는 파생 인덱스")과 충돌.
+--
+-- 결정 (위원장 옵션 B 채택, 2026-05-22):
+-- DB write 인터페이스를 닫음. documents 본문 변경은 *오직 sync 스크립트*
+-- (service_role)만 가능. editor/검수자도 마크다운 정본을 수정하고 sync 명령으로
+-- 반영. UI 편집 도구는 비개발자 친화성 위해 Phase 5 이후 별도 마일스톤에서
+-- 마크다운 자동 commit wrapper로 도입 검토.
+--
+-- 보존:
+-- - editor_roles 테이블 — Phase 4 댓글/피드 모더레이션 권한 등에서 재사용 가능
+-- - "editor read own role" SELECT 정책 — UI에서 본인 role 확인
+-- - guard_documents_status_transition 트리거 — status 전이는 여전히 service_role만
+-- ============================================================
+
+drop policy if exists "editor write documents" on documents;

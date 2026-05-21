@@ -20,6 +20,17 @@ export async function updateSession(request: NextRequest) {
     return supabaseResponse
   }
 
+  // Finding 2 (codex-rescue perf): sb-* auth cookie가 없으면 익명 트래픽이라
+  // 어차피 getUser()가 빈 결과를 반환. createServerClient + getUser 비용을 스킵해
+  // (gov) 익명 트래픽 + 향후 Phase 3 RAG public API 부담을 줄인다.
+  // 로그인 사용자는 sb-access-token/sb-refresh-token 쿠키 보유 → 정상 refresh 경로 진입.
+  const hasAuthCookie = request.cookies
+    .getAll()
+    .some((c) => c.name.startsWith('sb-'))
+  if (!hasAuthCookie) {
+    return supabaseResponse
+  }
+
   const supabase = createServerClient(url, anonKey, {
     cookies: {
       getAll() {

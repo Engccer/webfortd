@@ -41,5 +41,6 @@ export function parseDocumentRow(raw: unknown): DocumentRow {
     throw new TypeError('DocumentRow.accessibility must be Record | null')
   }
 
-  return r as DocumentRow
+  // r은 모든 guard를 통과했으므로 DocumentRow shape 보장 — TS hint대로 unknown 경유 cast.
+  return r as unknown as DocumentRow
 }
