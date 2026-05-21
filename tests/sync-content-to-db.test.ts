@@ -241,10 +241,10 @@ describe('syncWikiBacklinks (mocked client)', () => {
       'b': 'id-b',
       'c': 'id-c',
     }
-    const backlinks: Record<string, { from: string; anchor?: string; link_text?: string }[]> = {
-      'a': [{ from: 'b' }, { from: 'c', anchor: 'sec1' }],
-      'b': [{ from: 'a' }],
-      'c': [{ from: 'a' }, { from: 'b' }],
+    const backlinks: Record<string, { to: string; anchor?: string; link_text?: string }[]> = {
+      'a': [{ to: 'b' }, { to: 'c', anchor: 'sec1' }],
+      'b': [{ to: 'a' }],
+      'c': [{ to: 'a' }, { to: 'b' }],
     }
     const result = await syncWikiBacklinks(mockClient, backlinks, slugToId)
     assert.equal(result.totalInserted, 5)
@@ -272,8 +272,8 @@ describe('syncWikiBacklinks (mocked client)', () => {
     } as any
     const slugToId = { 'a': 'id-a' }
     const backlinks = {
-      'a': [{ from: 'b' }], // a는 매핑됨
-      'missing-slug': [{ from: 'a' }], // missing은 X
+      'a': [{ to: 'b' }], // a는 매핑됨
+      'missing-slug': [{ to: 'a' }], // missing은 X
     }
     const result = await syncWikiBacklinks(mockClient, backlinks, slugToId)
     // missing-slug는 skip, 'a'만 inserted
@@ -284,14 +284,17 @@ describe('syncWikiBacklinks (mocked client)', () => {
 })
 
 describe('invertBacklinksToSourcePerspective', () => {
-  test('invertBacklinksToSourcePerspective: target perspective → source', () => {
+  test('invertBacklinksToSourcePerspective: target perspective → source (with anchor pass-through)', () => {
     const byTarget = {
       'page-a': [{ from: 'page-b' }, { from: 'page-c', anchor: 'sec' }],
       'page-c': [{ from: 'page-a' }],
     }
     const bySource = invertBacklinksToSourcePerspective(byTarget)
-    assert.deepEqual(bySource['page-b'], [{ from: 'page-a' }])
-    assert.deepEqual(bySource['page-c'], [{ from: 'page-a' }])
-    assert.deepEqual(bySource['page-a'], [{ from: 'page-c' }])
+    // page-b는 page-a를 가리킴 (anchor 없음)
+    assert.deepEqual(bySource['page-b'], [{ to: 'page-a', anchor: undefined, link_text: undefined }])
+    // page-c는 page-a를 가리킴 + page-a section 'sec' anchor 보존 (forward-compat)
+    assert.deepEqual(bySource['page-c'], [{ to: 'page-a', anchor: 'sec', link_text: undefined }])
+    // page-a는 page-c를 가리킴 (anchor 없음)
+    assert.deepEqual(bySource['page-a'], [{ to: 'page-c', anchor: undefined, link_text: undefined }])
   })
 })

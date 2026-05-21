@@ -183,17 +183,22 @@ export interface SyncBacklinksResult {
  * 없어 unique constraint 활용 불가. "이 페이지의 backlinks를 현재 인덱스 기준
  * 으로 재구성"이라는 의미를 명시.
  *
- * D3: 모든 row의 `line`은 null.
+ * D3: 모든 row의 `line`은 null (sync-content.ts가 line을 미저장).
  *
  * 입력 `bySource`는 *source perspective* (Record<sourceSlug, links[]>).
+ * 각 link의 `to` 필드는 target slug (DB 컬럼 `target_slug`와 1:1 매핑).
  * kb-index.generated.json의 `wiki_backlinks`는 target perspective이므로 caller
  * 는 `invertBacklinksToSourcePerspective`로 변환해서 넘겨야 한다.
+ *
+ * `anchor`/`link_text`는 link에 있으면 *그대로 보존*해서 row에 들어간다 (현재
+ * sync-content.ts가 emit하지 않아 항상 null이지만, 미래 변경 시 자동 반영됨 —
+ * D1 surrogate PK 결정의 forward-compat 의도).
  */
 export async function syncWikiBacklinks(
   client: SupabaseClient,
   bySource: Record<
     string,
-    { from: string; anchor?: string; link_text?: string }[]
+    { to: string; anchor?: string; link_text?: string }[]
   >,
   slugToId: Record<string, string>,
 ): Promise<SyncBacklinksResult> {
@@ -212,7 +217,7 @@ export async function syncWikiBacklinks(
     for (const link of links) {
       inserts.push({
         source_doc_id: sourceId,
-        target_slug: link.from,
+        target_slug: link.to,
         anchor: link.anchor ?? null,
         link_text: link.link_text ?? null,
         line: null, // D3
@@ -247,34 +252,42 @@ export async function syncWikiBacklinks(
 }
 
 /**
- * kb-index의 `wiki_backlinks` (target perspective) → source perspective 변환.
+ * kb-index의 wiki_backlinks (target perspective) → source perspective 변환.
  *
  * 입력: `{ 'target-slug': [{ from: 'source-slug', anchor?, link_text? }] }`
- * 출력: `{ 'source-slug': [{ from: 'target-slug' }] }`
+ *   - 인덱스의 wiki_backlinks는 "이 target을 가리키는 source 목록"
+ *   - inner field `from`은 source slug
  *
- * 출력의 `from` 필드는 *target slug*를 가리킨다 (DB 컬럼이 `target_slug`라 호환).
+ * 출력: `{ 'source-slug': [{ to: 'target-slug', anchor?, link_text? }] }`
+ *   - source 페이지가 어떤 target을 가리키는가
+ *   - inner field `to`는 target slug (DB column wiki_backlinks.target_slug와 시맨틱 정합)
  *
- * **anchor/link_text는 의도적으로 drop**: target perspective에서 `anchor`는
- * *target 내부 섹션*을 가리키는 값인데, source perspective로 뒤집으면 source가
- * 보는 "어느 target을 가리키는가"만 남고 target 내부 위치 정보는 다른 의미가
- * 된다. wiki_backlinks 테이블의 anchor 컬럼은 sync 시점에 *source 본문에서
- * 추출한 anchor* 가 들어가야 정합이라 인덱스의 target-anchor를 그대로 넣지
- * 않는다. (kb-index 자체가 valid backlink push 시 anchor를 frontmatter
- * heading 기반으로만 채워 정밀도가 떨어짐.) 결과적으로 anchor/link_text는
- * 인덱스 invert 단계에서 drop하고 모두 null로 insert (D3와 동일 결).
+ * **anchor/link_text/line은 보존**: 현재 sync-content.ts가 valid backlink에 anchor/link_text를
+ * emit하지 않지만 (corpus 0건), forward-compat 위해 pass-through. 미래에 sync-content.ts가
+ * 변경되면 자동 반영됨 (D1 surrogate PK 결정과 정합).
  */
 export function invertBacklinksToSourcePerspective(
   byTarget: Record<
     string,
     { from: string; anchor?: string; link_text?: string }[]
   >,
-): Record<string, { from: string }[]> {
-  const bySource: Record<string, { from: string }[]> = {}
+): Record<
+  string,
+  { to: string; anchor?: string; link_text?: string }[]
+> {
+  const bySource: Record<
+    string,
+    { to: string; anchor?: string; link_text?: string }[]
+  > = {}
   for (const [targetSlug, links] of Object.entries(byTarget)) {
     for (const link of links) {
       const sourceSlug = link.from
       if (!bySource[sourceSlug]) bySource[sourceSlug] = []
-      bySource[sourceSlug].push({ from: targetSlug }) // source perspective: from = target slug
+      bySource[sourceSlug].push({
+        to: targetSlug,
+        anchor: link.anchor,
+        link_text: link.link_text,
+      })
     }
   }
   return bySource
