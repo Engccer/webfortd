@@ -32,6 +32,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.local.example
 
 # vercel
 .vercel
@@ -56,3 +57,5 @@ content/_image-mappings.template.json
 # codex-rescue M6 P1 #3: 외부 TTS/codex 도구가 잘못된 절대경로로 만든 artifact 차단.
 # 2026-05-17 발견된 'C:\Users\pc\.codex\tts-summary.txt' 루트 파일이 재발하지 않도록.
 /C:\\*
+supabase/.temp/
+supabase/.branches/
