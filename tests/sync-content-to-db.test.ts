@@ -106,4 +106,37 @@ describe('transformDocumentRow', () => {
     const row = transformDocumentRow(doc, '본문')
     assert.deepEqual(row.disability_types, ['시각', '청각'])
   })
+
+  test('D1 regression: frontmatter.status=published → row.status=draft 강제', () => {
+    const doc = {
+      slug: 'd1-regression',
+      axis: 'policies',
+      filePath: 'content/policies/d1-regression.md',
+      frontmatter: {
+        title: '이미 published 상태인 문서',
+        type: '지침',
+        disability_types: ['전체'],
+        domains: ['정책법령'],
+        regions: ['전국'],
+        year: 2026,
+        // frontmatter는 published이지만 transform은 draft 강제 (M5 검수에서만 published 전환)
+        status: 'published' as const,
+        source: { organization: 'o', citation: 'c' },
+        source_origin: 'd1-regression-fixture',
+        references: [],
+        accessibility: {
+          alt_text_complete: true,
+          captions_available: false,
+          reading_level: 'standard' as const,
+          audio_tts_ready: false,
+        },
+        authors: [],
+        reviewed_by: ['reviewer1'],
+        parent_headings: [],
+      },
+      body_excerpt: '',
+    }
+    const row = transformDocumentRow(doc, '본문')
+    assert.equal(row.status, 'draft', 'D1 위반: frontmatter.status가 row.status로 통과')
+  })
 })
