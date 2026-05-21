@@ -36,23 +36,11 @@ import { loadDotEnvLocalOverrides } from './lib/env-loader.ts'
 
 // ---------- types ----------
 
-/**
- * documents 테이블에서 가드 평가에 필요한 컬럼만 select한 부분 형태.
- *
- * `accessibility`/`source`는 jsonb 컬럼이라 `Record<string, unknown>` 타입.
- * `embedded_media`는 jsonb 배열이라 `unknown[]`.
- * null 가능성을 명시 — Postgres 컬럼 NOT NULL 제약이 있어도 select 결과 타입은
- * 보수적으로 처리한다.
- */
-export interface DocumentRow {
-  id: string
-  slug: string
-  status: string
-  reviewed_by: string[] | null
-  source: Record<string, unknown> | null
-  embedded_media: unknown[] | null
-  accessibility: Record<string, unknown> | null
-}
+// DocumentRow 정의 + runtime parser는 scripts/lib/parse-document-row.ts에 단일 source.
+// publish-content.ts는 backward-compat re-export로 기존 tests의 import path 유지.
+import { parseDocumentRow, type DocumentRow } from './lib/parse-document-row.ts'
+import { formatSupabaseError } from './lib/error-format.ts'
+export type { DocumentRow }
 
 export interface GuardResult {
   passed: boolean
@@ -174,6 +162,33 @@ export function formatReport(report: Report, applied: boolean): string {
   return lines.join('\n')
 }
 
+// formatReport의 apply variant: read-back 검증 결과(transitioned/stale)를 보고서에 노출.
+// batch UPDATE 후 .in('id', ids) 재조회로 실제 status='published' 수치 확인 → mismatch
+// 발생 시 stale 카운트로 visibility 보장. publish-content.ts의 main()에서만 사용.
+export function formatReportWithVerify(
+  report: Report,
+  verifiedCount: number,
+  staleCount: number,
+): string {
+  const base = formatReport(report, true)
+  const lines = base.split('\n')
+  const actionIdx = lines.findIndex((l) => l.startsWith('Action:'))
+  if (actionIdx < 0) return base
+  lines.splice(
+    actionIdx,
+    0,
+    `Verified transitioned (read-back):       ${verifiedCount}`,
+  )
+  if (staleCount > 0) {
+    lines.splice(
+      actionIdx + 1,
+      0,
+      `Stale (UPDATE 후 published 아님):        ${staleCount}`,
+    )
+  }
+  return lines.join('\n')
+}
+
 // ---------- CLI main ----------
 
 /**
@@ -222,7 +237,7 @@ async function main(): Promise<void> {
     .range(0, 9999)
 
   if (fetchError) {
-    console.error('documents 조회 실패:', fetchError.message)
+    console.error('documents 조회 실패:', formatSupabaseError(fetchError))
     process.exit(1)
   }
   if (!docs) {
@@ -230,10 +245,11 @@ async function main(): Promise<void> {
     process.exit(1)
   }
 
-  // 5. 보고서 생성
-  const report = buildReport(docs as DocumentRow[])
+  // 5. runtime parser로 shape 검증 → fail-fast (Supabase JS 결과의 silent type drift 차단)
+  const parsed: DocumentRow[] = (docs as unknown[]).map(parseDocumentRow)
+  const report = buildReport(parsed)
 
-  // 6. apply 모드 + 통과 페이지 있으면 UPDATE
+  // 6. apply 모드 + 통과 페이지 있으면 UPDATE + read-back 검증
   if (apply && report.passing.length > 0) {
     const ids = report.passing.map((p) => p.id)
     const { error: updateError } = await client
@@ -241,12 +257,37 @@ async function main(): Promise<void> {
       .update({ status: 'published' })
       .in('id', ids)
     if (updateError) {
-      console.error('status 전이 실패:', updateError.message)
+      console.error('status 전이 실패:', formatSupabaseError(updateError))
       process.exit(1)
     }
+
+    // read-back: 실제 transition된 row 검증 (partial failure observability)
+    const { data: verified, error: verifyError } = await client
+      .from('documents')
+      .select('id, slug, status')
+      .in('id', ids)
+    if (verifyError) {
+      console.error('read-back 실패:', formatSupabaseError(verifyError))
+      process.exit(1)
+    }
+    const verifiedRows = verified ?? []
+    const transitioned = verifiedRows.filter((v) => v.status === 'published')
+    const stale = verifiedRows.filter((v) => v.status !== 'published')
+
+    if (stale.length > 0) {
+      console.error(
+        `경고: ${stale.length}개 row가 read-back에서 published 아님 (intended ${ids.length}):`,
+      )
+      for (const s of stale) {
+        console.error(`  - id=${s.id} slug=${s.slug} status=${s.status}`)
+      }
+    }
+
+    console.log(formatReportWithVerify(report, transitioned.length, stale.length))
+    return
   }
 
-  // 7. 보고서 출력
+  // 7. dry-run 또는 apply지만 통과 0건 — 단순 보고서 출력
   console.log(formatReport(report, apply))
 }
 

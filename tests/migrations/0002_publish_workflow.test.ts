@@ -175,4 +175,23 @@ describe('0002 publish workflow — 통합', { skip: skipReason }, () => {
       )
     }
   })
+
+  // 0003 Task D — batch UPDATE read-back observability:
+  // publish-content.ts의 main()이 .update().in(ids) 후 동일 ids로 .select 재조회.
+  // 이 테스트는 *.in(ids)로 batch select가 정확한 row 수를 반환*하는지 검증.
+  // partial transition 시 stale 감지의 근거가 됨.
+  test('batch UPDATE 후 .in(ids) read-back이 모든 ids에 대응 row 반환', async () => {
+    const { data, error } = await admin
+      .from('documents')
+      .select('id, slug, status')
+      .in('id', ids)
+    assert.equal(error, null, error ? `read-back 실패: ${error.message}` : '')
+    assert.ok(data)
+    assert.equal(data?.length, ids.length, 'read-back row 수가 fixture id 수와 일치해야 함')
+    const transitioned = (data ?? []).filter((d) => d.status === 'published')
+    const stale = (data ?? []).filter((d) => d.status !== 'published')
+    // 직전 테스트로 ids[0]가 published, 나머지 3개는 draft
+    assert.equal(transitioned.length, 1, 'transitioned: ids[0] (m5-pass)만')
+    assert.equal(stale.length, 3, 'stale: 가드 차단된 3개 fixture')
+  })
 })

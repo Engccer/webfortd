@@ -6,6 +6,7 @@ import {
   formatReport,
   type DocumentRow,
 } from '../scripts/publish-content.ts'
+import { parseDocumentRow } from '../scripts/lib/parse-document-row.ts'
 
 // 가드 평가 fixture — DocumentRow interface와 정확히 match.
 // reviewed_by(string[]|null), source(Record|null), embedded_media(unknown[]|null),
@@ -136,5 +137,52 @@ describe('formatReport', () => {
     const outApply = formatReport(r, true)
     assert.match(outDry, /Mode: DRY-RUN/)
     assert.match(outApply, /Mode: APPLY/)
+  })
+})
+
+// 0003 hotfix Task C — runtime parser shape 검증.
+describe('parseDocumentRow', () => {
+  test('정상 shape → 그대로 반환', () => {
+    const raw = {
+      id: 'i',
+      slug: 's',
+      status: 'draft',
+      reviewed_by: ['a'],
+      source: { x: 1 },
+      embedded_media: [],
+      accessibility: { alt: true },
+    }
+    const out = parseDocumentRow(raw)
+    assert.equal(out.id, 'i')
+    assert.deepEqual(out.reviewed_by, ['a'])
+  })
+
+  test('null 입력 → TypeError', () => {
+    assert.throws(() => parseDocumentRow(null), TypeError)
+  })
+
+  test('id missing → TypeError', () => {
+    const raw = {
+      slug: 's',
+      status: 'draft',
+      reviewed_by: [],
+      source: null,
+      embedded_media: null,
+      accessibility: null,
+    }
+    assert.throws(() => parseDocumentRow(raw), /id missing/)
+  })
+
+  test('reviewed_by가 string이면 TypeError', () => {
+    const raw = {
+      id: 'i',
+      slug: 's',
+      status: 'draft',
+      reviewed_by: 'wrong',
+      source: null,
+      embedded_media: null,
+      accessibility: null,
+    }
+    assert.throws(() => parseDocumentRow(raw), /reviewed_by/)
   })
 })
