@@ -80,6 +80,23 @@ function createCliAdminClient(): SupabaseClient {
 const REPO_ROOT = process.cwd()
 
 /**
+ * slug→id fetch 결과의 길이를 검증. PostgREST 기본 1000 row cap이 미래 1000+ docs 시
+ * silent truncation 일으키는 것 차단. 부족하면 진단 메시지와 함께 throw.
+ */
+export function assertIdRowsComplete(
+  idRows: { id: string; slug: string }[] | null,
+  expectedCount: number,
+): void {
+  const actual = idRows?.length ?? 0
+  if (actual < expectedCount) {
+    throw new Error(
+      `slug→id fetch 누락: ${expectedCount} upserted but ${actual} returned. ` +
+        `Supabase default limit 1000 의심 — .range(0, expectedCount-1) 또는 페이징 필요.`,
+    )
+  }
+}
+
+/**
  * Supabase `documents` 테이블 row 객체 형태.
  *
  * D2: frontmatter의 `references`는 SQL reserved word라 컬럼명 `references_data`로 rename.
@@ -434,13 +451,17 @@ async function main(opts: MainOptions): Promise<void> {
     },
   })
 
-  // 4. slug → id 매핑 fetch (535건 < Supabase 기본 limit 1000)
+  // 4. slug → id 매핑 fetch
+  // PostgREST 기본 1000 row cap을 미래 1000+ docs 시점에도 비활성화하기 위해
+  // .range(0, rows.length + 100)로 generous ceiling 명시 + assertIdRowsComplete로 검증.
   const { data: idRows, error: fetchError } = await client
     .from('documents')
     .select('id, slug')
+    .range(0, rows.length + 100)
   if (fetchError) {
     throw new Error(`documents id fetch 실패: ${fetchError.message}`)
   }
+  assertIdRowsComplete(idRows, rows.length)
   // reviewer I-1: DB에 중복 slug가 있으면 silent drop 방지 (UNIQUE constraint로 거의 불가능하지만 belt-and-suspenders)
   const slugToId: Record<string, string> = {}
   for (const r of idRows ?? []) {

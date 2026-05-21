@@ -5,6 +5,7 @@ import {
   upsertDocuments,
   syncWikiBacklinks,
   invertBacklinksToSourcePerspective,
+  assertIdRowsComplete,
 } from '../scripts/sync-content-to-db.ts'
 
 describe('transformDocumentRow', () => {
@@ -296,5 +297,26 @@ describe('invertBacklinksToSourcePerspective', () => {
     assert.deepEqual(bySource['page-c'], [{ to: 'page-a', anchor: 'sec', link_text: undefined }])
     // page-a는 page-c를 가리킴 (anchor 없음)
     assert.deepEqual(bySource['page-a'], [{ to: 'page-c', anchor: undefined, link_text: undefined }])
+  })
+})
+
+describe('assertIdRowsComplete (paging guard)', () => {
+  test('idRows.length < expectedCount → throw with 진단 메시지', () => {
+    const idRows = Array.from({ length: 1000 }, (_, i) => ({
+      id: `id-${i}`,
+      slug: `s-${i}`,
+    }))
+    assert.throws(
+      () => assertIdRowsComplete(idRows, 1500),
+      /slug→id fetch 누락/,
+    )
+  })
+
+  test('idRows.length === expectedCount → no throw', () => {
+    const idRows = Array.from({ length: 535 }, (_, i) => ({
+      id: `id-${i}`,
+      slug: `s-${i}`,
+    }))
+    assert.doesNotThrow(() => assertIdRowsComplete(idRows, 535))
   })
 })
