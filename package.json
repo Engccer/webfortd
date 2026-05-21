@@ -14,6 +14,8 @@
     "sync:content": "tsx scripts/sync-content.ts",
     "kb:sync": "node --env-file=.env.local --import tsx scripts/sync-content-to-db.ts",
     "kb:sync:dry-run": "node --env-file=.env.local --import tsx scripts/sync-content-to-db.ts --dry-run",
+    "kb:publish": "node --env-file=.env.local --import tsx scripts/publish-content.ts",
+    "kb:publish:dry-run": "node --env-file=.env.local --import tsx scripts/publish-content.ts --dry-run",
     "image:report": "tsx scripts/image-mappings.ts report",
     "image:template": "tsx scripts/image-mappings.ts template",
     "image:apply": "tsx scripts/image-mappings.ts apply",

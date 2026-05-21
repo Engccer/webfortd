@@ -20,40 +20,9 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import type { KBDocumentSummary } from '@/lib/kb'
 import kbIndex from '@/lib/kb-index.generated.json'
 
-/**
- * .env.local을 직접 파싱해서 *기존 env 변수를 덮어쓴다*.
- *
- * **왜 `node --env-file=.env.local`로 충분하지 않은가**:
- * Node의 `--env-file`은 이미 process.env에 존재하는 키를 *덮어쓰지 않는다*.
- * 다중 프로젝트를 다루는 사용자 환경에서 `~/.zshrc`에 다른 프로젝트의
- * `SUPABASE_SECRET_KEY`가 export되어 있으면 webfortd/.env.local의 정확한
- * 키 대신 shell의 stale 키가 사용되어 "Invalid API key" 401을 받는다.
- *
- * 이 헬퍼는 `.env.local`에 명시된 키를 *우선시*해서 shadowing 사고를 차단.
- * direnv hook이 정상 작동하면 결과는 동일하지만, direnv가 미발동인 컨텍스트
- * (non-interactive shell, 일부 IDE)에서도 안전하게 동작.
- */
-export function loadDotEnvLocalOverrides(): void {
-  const dotenvPath = path.join(process.cwd(), '.env.local')
-  if (!fs.existsSync(dotenvPath)) return
-  const raw = fs.readFileSync(dotenvPath, 'utf8')
-  for (const line of raw.split('\n')) {
-    const trimmed = line.trim()
-    if (!trimmed || trimmed.startsWith('#')) continue
-    const eq = trimmed.indexOf('=')
-    if (eq < 0) continue
-    const key = trimmed.slice(0, eq).trim()
-    let value = trimmed.slice(eq + 1).trim()
-    // 큰따옴표/작은따옴표 stripping (matched pairs만)
-    if (
-      (value.startsWith('"') && value.endsWith('"')) ||
-      (value.startsWith("'") && value.endsWith("'"))
-    ) {
-      value = value.slice(1, -1)
-    }
-    process.env[key] = value
-  }
-}
+// .env.local shadowing 차단 helper — 단일 source of truth는 scripts/lib/env-loader.ts.
+// sync 스크립트(이 파일) / publish 스크립트 / 통합 테스트가 동일 함수를 공유한다.
+import { loadDotEnvLocalOverrides } from './lib/env-loader.ts'
 
 /**
  * Node CLI 환경 전용 admin client.

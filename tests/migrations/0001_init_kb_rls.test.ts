@@ -25,7 +25,7 @@
 import { test, describe, before } from 'node:test'
 import assert from 'node:assert/strict'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
-import { loadDotEnvLocalOverrides } from '../../scripts/sync-content-to-db.ts'
+import { loadDotEnvLocalOverrides } from '../../scripts/lib/env-loader.ts'
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL
 const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
