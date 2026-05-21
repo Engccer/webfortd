@@ -441,9 +441,16 @@ async function main(opts: MainOptions): Promise<void> {
   if (fetchError) {
     throw new Error(`documents id fetch 실패: ${fetchError.message}`)
   }
+  // reviewer I-1: DB에 중복 slug가 있으면 silent drop 방지 (UNIQUE constraint로 거의 불가능하지만 belt-and-suspenders)
   const slugToId: Record<string, string> = {}
   for (const r of idRows ?? []) {
-    slugToId[r.slug as string] = r.id as string
+    const slug = r.slug as string
+    if (slugToId[slug]) {
+      throw new Error(
+        `DB에 중복 slug 발견: ${slug} (id ${slugToId[slug]}, ${r.id}). documents 테이블 UNIQUE 제약 확인 필요.`,
+      )
+    }
+    slugToId[slug] = r.id as string
   }
 
   // 5. backlinks invert + sync
