@@ -14,9 +14,68 @@
 
 import fs from 'node:fs'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import matter from 'gray-matter'
-import type { SupabaseClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import type { KBDocumentSummary } from '@/lib/kb'
+import kbIndex from '@/lib/kb-index.generated.json'
+
+/**
+ * .env.local을 직접 파싱해서 *기존 env 변수를 덮어쓴다*.
+ *
+ * **왜 `node --env-file=.env.local`로 충분하지 않은가**:
+ * Node의 `--env-file`은 이미 process.env에 존재하는 키를 *덮어쓰지 않는다*.
+ * 다중 프로젝트를 다루는 사용자 환경에서 `~/.zshrc`에 다른 프로젝트의
+ * `SUPABASE_SECRET_KEY`가 export되어 있으면 webfortd/.env.local의 정확한
+ * 키 대신 shell의 stale 키가 사용되어 "Invalid API key" 401을 받는다.
+ *
+ * 이 헬퍼는 `.env.local`에 명시된 키를 *우선시*해서 shadowing 사고를 차단.
+ * direnv hook이 정상 작동하면 결과는 동일하지만, direnv가 미발동인 컨텍스트
+ * (non-interactive shell, 일부 IDE)에서도 안전하게 동작.
+ */
+function loadDotEnvLocalOverrides(): void {
+  const dotenvPath = path.join(process.cwd(), '.env.local')
+  if (!fs.existsSync(dotenvPath)) return
+  const raw = fs.readFileSync(dotenvPath, 'utf8')
+  for (const line of raw.split('\n')) {
+    const trimmed = line.trim()
+    if (!trimmed || trimmed.startsWith('#')) continue
+    const eq = trimmed.indexOf('=')
+    if (eq < 0) continue
+    const key = trimmed.slice(0, eq).trim()
+    let value = trimmed.slice(eq + 1).trim()
+    // 큰따옴표/작은따옴표 stripping (matched pairs만)
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1)
+    }
+    process.env[key] = value
+  }
+}
+
+/**
+ * Node CLI 환경 전용 admin client.
+ *
+ * `@/lib/supabase/admin`은 `import 'server-only'`로 Next.js client bundle을
+ * 차단하는데, 이 가드는 raw Node 환경(`node --import tsx`)에서도 throw하므로
+ * 이 스크립트에서는 import 불가. CLI는 항상 Node 컨텍스트이고 SUPABASE_SECRET_KEY가
+ * `.env.local`로만 주입되므로 client bundle 누출 위험이 원천 차단됨.
+ *
+ * 빌드/Server Component용 admin은 그대로 `@/lib/supabase/admin`이 책임지고,
+ * 이 스크립트는 동일 createClient 옵션을 그대로 사용한다.
+ */
+function createCliAdminClient(): SupabaseClient {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const secretKey = process.env.SUPABASE_SECRET_KEY
+  if (!url || !secretKey) {
+    throw new Error('NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SECRET_KEY 미설정')
+  }
+  return createClient(url, secretKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  })
+}
 
 const REPO_ROOT = process.cwd()
 
@@ -293,4 +352,129 @@ export function invertBacklinksToSourcePerspective(
   return bySource
 }
 
-// (main CLI는 Task 5에서 추가)
+// ---------- CLI main ----------
+
+interface MainOptions {
+  dryRun: boolean
+}
+
+/**
+ * sync-content-to-db CLI entry.
+ *
+ * 동작 모드:
+ *   - dry-run: kb-index 로드 → 전체 535건 transform → slug 중복 검증 → backlinks invert
+ *     까지만 수행하고 종료. DB write 없음.
+ *   - normal: dry-run 단계 + admin client로 documents upsert + slug→id fetch +
+ *     wiki_backlinks sync(delete+insert per source).
+ *
+ * 모든 단계는 idempotent. 중간 실패 시 재실행으로 회복 가능.
+ *
+ * 호출 컨텍스트:
+ *   - `npm run kb:sync:dry-run` — dry-run
+ *   - `npm run kb:sync` — 실 운영 적용
+ *   - 두 script 모두 `node --env-file=.env.local --import tsx` 통해 SUPABASE_SECRET_KEY 주입
+ */
+async function main(opts: MainOptions): Promise<void> {
+  // shadowing 차단: ~/.zshrc 등의 stale export보다 .env.local 우선
+  loadDotEnvLocalOverrides()
+
+  const startedAt = Date.now()
+  const index = kbIndex as unknown as {
+    documents: KBDocumentSummary[]
+    wiki_backlinks: Record<
+      string,
+      { from: string; anchor?: string; link_text?: string }[]
+    >
+  }
+  const { documents, wiki_backlinks } = index
+
+  console.log(
+    `[sync] 입력: ${documents.length} documents, ${Object.keys(wiki_backlinks).length} target slugs`,
+  )
+
+  // 1. transform (전체)
+  const rows: DocumentRow[] = []
+  for (const doc of documents) {
+    const body = loadBody(doc.filePath)
+    rows.push(transformDocumentRow(doc, body))
+  }
+
+  // 2. dry-run validation — slug 중복 검증
+  const slugCounts: Record<string, number> = {}
+  for (const r of rows) slugCounts[r.slug] = (slugCounts[r.slug] ?? 0) + 1
+  const duplicates = Object.entries(slugCounts).filter(([, n]) => n > 1)
+  if (duplicates.length > 0) {
+    throw new Error(
+      `slug 중복 ${duplicates.length}건: ${duplicates
+        .slice(0, 5)
+        .map((d) => d[0])
+        .join(', ')}...`,
+    )
+  }
+
+  if (opts.dryRun) {
+    console.log(
+      `[sync] DRY-RUN — transform ${rows.length} rows OK. DB write 생략.`,
+    )
+    const bySourceDry = invertBacklinksToSourcePerspective(wiki_backlinks)
+    console.log(
+      `[sync] backlinks (source perspective): ${Object.keys(bySourceDry).length} source pages`,
+    )
+    return
+  }
+
+  // 3. admin client + documents upsert (batch 50, 100/50 단위로 progress 로그)
+  const client = createCliAdminClient()
+  await upsertDocuments(client, rows, {
+    batchSize: 50,
+    onProgress: (done, total) => {
+      if (done % 100 === 0 || done === total) {
+        console.log(`[sync] documents ${done}/${total}`)
+      }
+    },
+  })
+
+  // 4. slug → id 매핑 fetch (535건 < Supabase 기본 limit 1000)
+  const { data: idRows, error: fetchError } = await client
+    .from('documents')
+    .select('id, slug')
+  if (fetchError) {
+    throw new Error(`documents id fetch 실패: ${fetchError.message}`)
+  }
+  const slugToId: Record<string, string> = {}
+  for (const r of idRows ?? []) {
+    slugToId[r.slug as string] = r.id as string
+  }
+
+  // 5. backlinks invert + sync
+  const bySource = invertBacklinksToSourcePerspective(wiki_backlinks)
+  const backlinksResult = await syncWikiBacklinks(client, bySource, slugToId)
+
+  console.log(
+    `[sync] backlinks inserted: ${backlinksResult.totalInserted}, skipped sources: ${backlinksResult.skippedSources.length}`,
+  )
+  if (backlinksResult.skippedSources.length > 0) {
+    console.warn(
+      `[sync] skipped sources sample: ${backlinksResult.skippedSources.slice(0, 5).join(', ')}`,
+    )
+  }
+
+  const elapsed = ((Date.now() - startedAt) / 1000).toFixed(1)
+  console.log(
+    `[sync] 완료 (${elapsed}s) — documents ${rows.length}, backlinks ${backlinksResult.totalInserted}`,
+  )
+}
+
+// Run if invoked directly (tsx ESM 환경: import.meta.url과 process.argv[1] 비교).
+// fileURLToPath로 양쪽 정규화해서 file:// scheme/encoding 차이를 흡수.
+const invokedPath = process.argv[1]
+  ? fileURLToPath(new URL(`file://${process.argv[1]}`))
+  : ''
+const modulePath = fileURLToPath(import.meta.url)
+if (invokedPath === modulePath) {
+  const dryRun = process.argv.includes('--dry-run')
+  main({ dryRun }).catch((err) => {
+    console.error(err)
+    process.exit(1)
+  })
+}
