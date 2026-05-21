@@ -160,8 +160,10 @@ export function buildReport(docs: DocumentRow[]): Report {
  */
 export function formatReport(report: Report, applied: boolean): string {
   const lines: string[] = []
+  const mode = applied ? 'APPLY (status 전이 실제 수행)' : 'DRY-RUN (변경 없음)'
   lines.push('========================================')
   lines.push(`Publish workflow report (${new Date().toISOString()})`)
+  lines.push(`Mode: ${mode}`)
   lines.push('========================================')
   lines.push(`Total candidate pages (draft/in_review): ${report.total}`)
   lines.push(`Pass all gates:                          ${report.passing.length}`)
@@ -228,7 +230,11 @@ async function main(): Promise<void> {
   }
 
   // 2. argv 파싱 — exact match ('--apply'만 통과, '--apply-foo' 등은 X)
-  const apply = process.argv.includes('--apply')
+  //    --dry-run이 명시되면 --apply가 함께 있어도 무조건 dry-run (safety override).
+  //    C1 fix: npm run kb:publish:dry-run -- --apply 같은 실수 패턴이 production 변경을 일으키지 않도록.
+  const dryRunFlag = process.argv.includes('--dry-run')
+  const applyFlag = process.argv.includes('--apply')
+  const apply = applyFlag && !dryRunFlag
 
   // 3. service_role client (M4 트리거 통과를 위해 필수)
   const client: SupabaseClient = createClient(SUPABASE_URL, SECRET_KEY, {
