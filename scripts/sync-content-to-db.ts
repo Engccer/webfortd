@@ -33,7 +33,7 @@ import kbIndex from '@/lib/kb-index.generated.json'
  * direnv hook이 정상 작동하면 결과는 동일하지만, direnv가 미발동인 컨텍스트
  * (non-interactive shell, 일부 IDE)에서도 안전하게 동작.
  */
-function loadDotEnvLocalOverrides(): void {
+export function loadDotEnvLocalOverrides(): void {
   const dotenvPath = path.join(process.cwd(), '.env.local')
   if (!fs.existsSync(dotenvPath)) return
   const raw = fs.readFileSync(dotenvPath, 'utf8')
