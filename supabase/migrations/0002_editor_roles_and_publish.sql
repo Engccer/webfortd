@@ -55,6 +55,8 @@ create policy "editor write documents"
 --   - authenticated session 시  → 'authenticated'
 --   - 정의되지 않은 경우         → null (coalesce로 안전 처리)
 -- ============================================================
+-- NOTE: raise exception 메시지에는 user_id/row 값 같은 PII를 절대 포함하지 말 것 — PostgREST가 client에 그대로 전달함.
+-- TODO(Task 6 codex-rescue): set search_path = '' 추가 (function hijacking 방지). 0001 set_updated_at()과 묶어 0003 hotfix.
 create or replace function guard_documents_status_transition()
 returns trigger language plpgsql as $$
 begin
