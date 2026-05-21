@@ -133,10 +133,13 @@ export interface DocumentRow {
  *
  * - D1: status는 입력 frontmatter 값을 무시하고 'draft'로 강제.
  * - D2: `references` → `references_data` 컬럼명 rename. row 객체에 `references` 키 *없음*.
+ * - wiki_links는 kb-index의 `wikilink_adjacency`에서 받은 값을 그대로 사용 (sync-content.ts의
+ *   code-block 마스킹된 추출 결과와 단일 source 보장). M2 codex-rescue carry-over 2 처리.
  */
 export function transformDocumentRow(
   doc: KBDocumentSummary,
   contentMd: string,
+  wikiLinksFromAdjacency: string[],
 ): DocumentRow {
   const fm = doc.frontmatter
   return {
@@ -158,7 +161,7 @@ export function transformDocumentRow(
     accessibility: fm.accessibility as Record<string, unknown>,
     content_md: contentMd,
     source_path: doc.filePath,
-    wiki_links: extractWikiLinks(contentMd),
+    wiki_links: wikiLinksFromAdjacency,
     embedded_media: extractEmbeddedMedia(contentMd),
     parent_headings: fm.parent_headings ?? [],
     source_origin: fm.source_origin ?? null,
@@ -167,16 +170,6 @@ export function transformDocumentRow(
 }
 
 // ---------- module-private 헬퍼 ----------
-
-const WIKI_LINK_RE = /\[\[([^\]|#]+)(?:#[^\]|]+)?(?:\|[^\]]+)?\]\]/g
-
-function extractWikiLinks(markdown: string): string[] {
-  const slugs = new Set<string>()
-  for (const m of markdown.matchAll(WIKI_LINK_RE)) {
-    slugs.add(m[1].trim())
-  }
-  return [...slugs]
-}
 
 const IMAGE_RE = /!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]+)")?\)/g
 
@@ -402,18 +395,21 @@ async function main(opts: MainOptions): Promise<void> {
       string,
       { from: string; anchor?: string; link_text?: string }[]
     >
+    wikilink_adjacency: Record<string, string[]>
   }
-  const { documents, wiki_backlinks } = index
+  const { documents, wiki_backlinks, wikilink_adjacency } = index
 
   console.log(
     `[sync] 입력: ${documents.length} documents, ${Object.keys(wiki_backlinks).length} target slugs`,
   )
 
-  // 1. transform (전체)
+  // 1. transform (전체) — wiki_links는 wikilink_adjacency single source 사용 (M2 carry-over 2).
+  // adjacency에 없는 doc.slug (즉 wiki_links 0건 페이지)는 빈 배열 default.
   const rows: DocumentRow[] = []
   for (const doc of documents) {
     const body = loadBody(doc.filePath)
-    rows.push(transformDocumentRow(doc, body))
+    const links = wikilink_adjacency[doc.slug] ?? []
+    rows.push(transformDocumentRow(doc, body, links))
   }
 
   // 2. dry-run validation — slug 중복 검증

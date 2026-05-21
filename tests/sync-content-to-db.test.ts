@@ -37,7 +37,7 @@ describe('transformDocumentRow', () => {
       },
       body_excerpt: '본문 발췌',
     }
-    const row = transformDocumentRow(doc, '본문 전체 마크다운')
+    const row = transformDocumentRow(doc, '본문 전체 마크다운', [])
     assert.equal(row.slug, 'test-doc')
     assert.equal(row.axis, 'agreements')
     assert.equal(row.source_path, 'content/agreements/test-doc.md')
@@ -77,7 +77,7 @@ describe('transformDocumentRow', () => {
       },
       body_excerpt: '',
     }
-    const row = transformDocumentRow(doc, '')
+    const row = transformDocumentRow(doc, '', [])
     assert.deepEqual(row.references_data, [])
   })
 
@@ -109,7 +109,7 @@ describe('transformDocumentRow', () => {
       },
       body_excerpt: '',
     }
-    const row = transformDocumentRow(doc, '본문')
+    const row = transformDocumentRow(doc, '본문', [])
     assert.deepEqual(row.disability_types, ['시각', '청각'])
   })
 
@@ -142,8 +142,44 @@ describe('transformDocumentRow', () => {
       },
       body_excerpt: '',
     }
-    const row = transformDocumentRow(doc, '본문')
+    const row = transformDocumentRow(doc, '본문', [])
     assert.equal(row.status, 'draft', 'D1 위반: frontmatter.status가 row.status로 통과')
+  })
+
+  test('wiki_links는 wikilink_adjacency를 source로 사용 (raw 추출 대신)', () => {
+    const doc = {
+      slug: 'test-wiki-links',
+      axis: 'agreements' as const,
+      filePath: 'content/agreements/test-wiki-links.md',
+      frontmatter: {
+        title: '테스트',
+        type: '지침' as const,
+        disability_types: ['전체' as const],
+        domains: ['정책법령' as const],
+        regions: ['전국' as const],
+        year: 2026,
+        status: 'draft' as const,
+        source: { organization: 'o', citation: 'c' },
+        source_origin: 'test-wiki-links',
+        references: [],
+        accessibility: {
+          alt_text_complete: true,
+          captions_available: false,
+          reading_level: 'standard' as const,
+          audio_tts_ready: false,
+        },
+        authors: [],
+        reviewed_by: [],
+        parent_headings: [],
+      },
+      body_excerpt: '',
+    }
+    // 본문에 [[fake-link]]가 코드블록 안에 있지만, adjacency는 'real-link'만 포함
+    const contentMd = '본문 [[fake-link-in-code-block]] ```js\n[[ignored]]\n```'
+    const adjacency = ['real-link'] // sync-content.ts가 마스킹 후 emit
+    const row = transformDocumentRow(doc, contentMd, adjacency)
+    // 코드블록 안 fake-link는 *없어야* 함, adjacency 그대로 사용
+    assert.deepEqual(row.wiki_links, ['real-link'])
   })
 })
 
