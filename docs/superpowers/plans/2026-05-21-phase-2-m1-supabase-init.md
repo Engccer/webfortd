@@ -51,7 +51,7 @@ KB_ARCHITECTURE.md §4의 PK `(source_doc_id, target_slug)`는 codex-rescue가 �
 
 **결정:** `id uuid primary key default gen_random_uuid()` + `(source_doc_id, target_slug)` 일반 인덱스. 다중 행 허용 → `kb-index.generated.json`의 `wiki_backlinks: Record<string, Backlink[]>` 배열 구조와 1:1 매핑.
 
-**근거:** Phase 1 빌드 인덱스가 이미 anchor/link_text 보존 배열을 만들고 있어 그대로 DB로 옮기려면 unique constraint를 풀어야 한다.
+**근거:** `scripts/sync-content.ts:48-68, 317-321`과 `tests/sync-content.test.ts:205-244`가 anchor/link_text 보존 로직과 fixture를 갖추고 있어 미래 데이터에서 anchor/link_text 다중 행이 발생할 수 있다. 현재 corpus(`src/lib/kb-index.generated.json`의 1040 backlinks)에는 anchor/link_text/line이 모두 0건이지만, composite PK는 미래 데이터에서 silent data loss를 일으킬 수 있어 surrogate PK로 박아둠 (forward-compatible).
 
 ### D2. 모든 테이블은 `documents.status`로 RLS 게이트
 
@@ -375,6 +375,8 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=<publishable key>
 
 - [ ] **Step 3.4: 테스트 파일 작성 — `tests/migrations/0001_init_kb.test.ts`**
 
+> **Implementation note (2026-05-21):** 본 Task의 실제 구현은 vitest가 아닌 Node 내장 test runner(`node:test`)를 사용. Phase 1의 89-test baseline이 모두 같은 runner라 일관성 유지. 코드 블록 참조 시 `describe`/`test`/`assert.equal`은 vitest API가 아니라 `node:test` + `node:assert/strict` 형식으로 해석.
+
 ```typescript
 import { describe, it, expect, beforeAll } from 'vitest'
 import { createClient } from '@supabase/supabase-js'
@@ -672,6 +674,19 @@ git checkout -b phase-2-m1-supabase-init
 ```
 
 이후 모든 commit은 이 브랜치에. PR 머지 후 master 동기화.
+
+---
+
+## M2 Carry-over 작업 항목 (codex-rescue 결과 반영)
+
+M2 implementation plan 작성 시 다음 항목을 반드시 spec에 포함:
+
+| 항목 | 내용 | 출처 |
+|------|------|------|
+| `wiki_backlinks.line` 직렬화 결정 | sync-content.ts는 broken link에만 line 저장. valid backlink push 시 line을 함께 저장할지 / DB 컬럼을 future-reserved로 남길지 결정 | codex-rescue concern 2 |
+| ivfflat REINDEX | M2 sync 후 535 페이지 × 청크 일괄 upsert + 임베딩 들어가면 `reindex index idx_chunks_embedding` 실행. 또는 hnsw 인덱스로 마이그레이션 평가 | codex-rescue concern 4 |
+| RLS 통합 테스트 fixture 확장 | 현재 5건은 빈 테이블 smoke. 실 데이터로 draft/published × documents/chunks/backlinks 4경로 양성/음성 검증 추가 | codex-rescue 후속 |
+| `wiki_backlinks` target-side 게이트 검토 | 현재 RLS는 source documents 기준. published 문서가 draft slug 링크 시 target_slug 노출 가능. draft slug 자체가 비밀 invariant라면 target_doc_id FK + target-status join 추가 | codex-rescue 아키텍처 관찰 3 |
 
 ---
 
