@@ -15,6 +15,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import matter from 'gray-matter'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import type { KBDocumentSummary } from '@/lib/kb'
 
 const REPO_ROOT = process.cwd()
@@ -124,4 +125,34 @@ export function loadBody(filePath: string): string {
   return content
 }
 
-// (upsert / backlinks / main CLI는 Task 3·4·5에서 추가)
+// ---------- documents batch upsert ----------
+
+export interface UpsertOptions {
+  batchSize?: number
+  onProgress?: (done: number, total: number) => void
+}
+
+export async function upsertDocuments(
+  client: SupabaseClient,
+  rows: DocumentRow[],
+  opts: UpsertOptions = {},
+): Promise<{ totalUpserted: number }> {
+  const batchSize = opts.batchSize ?? 50
+  let done = 0
+  for (let i = 0; i < rows.length; i += batchSize) {
+    const chunk = rows.slice(i, i + batchSize)
+    const { error } = await client
+      .from('documents')
+      .upsert(chunk, { onConflict: 'slug' })
+    if (error) {
+      throw new Error(
+        `documents upsert 실패 (batch ${i / batchSize + 1}, slugs ${chunk.map((r) => r.slug).slice(0, 3).join(', ')}...): ${error.message}`,
+      )
+    }
+    done += chunk.length
+    opts.onProgress?.(done, rows.length)
+  }
+  return { totalUpserted: done }
+}
+
+// (backlinks / main CLI는 Task 4·5에서 추가)

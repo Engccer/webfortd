@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test'
 import assert from 'node:assert/strict'
-import { transformDocumentRow } from '../scripts/sync-content-to-db.ts'
+import { transformDocumentRow, upsertDocuments } from '../scripts/sync-content-to-db.ts'
 
 describe('transformDocumentRow', () => {
   test('frontmatter.references → references_data 컬럼 매핑', () => {
@@ -138,5 +138,57 @@ describe('transformDocumentRow', () => {
     }
     const row = transformDocumentRow(doc, '본문')
     assert.equal(row.status, 'draft', 'D1 위반: frontmatter.status가 row.status로 통과')
+  })
+})
+
+describe('upsertDocuments (mocked client)', () => {
+  test('빈 배열 → 0 batches', async () => {
+    const upserted: any[] = []
+    const mockClient = {
+      from: () => ({
+        upsert: async (rows: any[]) => {
+          upserted.push(...rows)
+          return { error: null }
+        },
+      }),
+    } as any
+    const result = await upsertDocuments(mockClient, [], { batchSize: 50 })
+    assert.equal(result.totalUpserted, 0)
+    assert.equal(upserted.length, 0)
+  })
+
+  test('150건 → 50 batch 3회', async () => {
+    const upserted: any[] = []
+    let batchCount = 0
+    const mockClient = {
+      from: () => ({
+        upsert: async (rows: any[]) => {
+          batchCount++
+          upserted.push(...rows)
+          return { error: null }
+        },
+      }),
+    } as any
+    const rows = Array.from({ length: 150 }, (_, i) => ({
+      slug: `s-${i}`,
+      title: `t-${i}`,
+    })) as any
+    const result = await upsertDocuments(mockClient, rows, { batchSize: 50 })
+    assert.equal(result.totalUpserted, 150)
+    assert.equal(batchCount, 3)
+  })
+
+  test('upsert 실패 → throw with row context', async () => {
+    const mockClient = {
+      from: () => ({
+        upsert: async () => ({
+          error: { code: 'PGRST', message: 'unique violation' },
+        }),
+      }),
+    } as any
+    await assert.rejects(
+      () => upsertDocuments(mockClient, [{ slug: 'x' } as any], { batchSize: 50 }),
+      /unique violation/,
+    )
   })
 })
