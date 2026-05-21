@@ -118,24 +118,25 @@ describe('0001_init_kb RLS fixture (M2 sync 후)', { skip: skipReason }, () => {
   })
 
   test('published 페이지의 backlinks는 anon이 read 가능 (D6 — target_slug 노출 invariant)', async () => {
-    // backlinks 있는 페이지 1건 선택
+    // reviewer I-1: backlinks 보유한 source를 *명시적*으로 선택 (silent return 차단)
+    // 임의 첫 row 방식은 그 row가 backlinks 0건이면 D6 검증이 silently skip됨
+    const { data: candidates } = await admin
+      .from('wiki_backlinks')
+      .select('source_doc_id')
+      .limit(50)
+    const sourceDocId = candidates?.[0]?.source_doc_id
+    assert.ok(
+      sourceDocId,
+      'wiki_backlinks fixture가 비어있어 D6 invariant 검증 불가 — M2 sync 누락 의심',
+    )
+
     const { data: sourceDoc } = await admin
       .from('documents')
       .select('id, slug')
+      .eq('id', sourceDocId)
       .eq('status', 'draft')
-      .limit(1)
       .single()
-    assert.ok(sourceDoc)
-
-    // 해당 페이지의 backlinks가 있는지
-    const { count } = await admin
-      .from('wiki_backlinks')
-      .select('id, target_slug', { count: 'exact', head: true })
-      .eq('source_doc_id', sourceDoc.id)
-    if ((count ?? 0) === 0) {
-      // backlinks가 없는 페이지면 skip (다른 페이지로 보강 가능, 일단 skip)
-      return
-    }
+    assert.ok(sourceDoc, `source_doc_id ${sourceDocId}가 documents 테이블 또는 draft 상태에 없음`)
 
     // published 전환
     await admin
