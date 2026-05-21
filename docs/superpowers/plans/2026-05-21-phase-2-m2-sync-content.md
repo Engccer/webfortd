@@ -1196,6 +1196,39 @@ git checkout -b phase-2-m2-sync-content
 
 ---
 
+## M3 Carry-over 작업 항목 (codex-rescue 결과)
+
+M3 implementation plan 작성 시 다음 항목을 spec 입력으로 반드시 포함:
+
+### M3-block (M3 진입 *전* 처리 권장)
+
+| 항목 | 작업량 | 출처 |
+|------|--------|------|
+| `slugToId` 페이징 가드 | 30분 — `.range(0, COUNT-1)` + `idRows.length === rows.length` assertion. Supabase JS 기본 1000 row cap 회피 | codex-rescue (2) |
+| `documents.wiki_links` derivation 정책 통일 | 1~2h — wikilink_adjacency invert를 single source로. `sync-content.ts` 마스킹된 추출과 `sync-content-to-db.ts` raw 추출의 divergence 해소 | codex-rescue (1) |
+
+### M3-backlog (차단 X, 자연스러운 시점에)
+
+| 항목 | 출처 |
+|------|------|
+| `src/lib/supabase/admin-options.ts` 추출 — `createCliAdminClient` ↔ `getAdminClient` 옵션 single source | codex-rescue (3) |
+| RLS test를 role-parameterized로 일반화 — M3 auth fixture 폭증 대비 | codex-rescue (6) |
+
+### Phase 3+ backlog
+
+| 항목 | 출처 |
+|------|------|
+| PL/pgSQL RPC `sync_wiki_backlinks` — delete+insert atomicity (published 페이지 늘면 가시성 gap 위험) | codex-rescue (4) |
+| ivfflat REINDEX — chunks 채운 직후 (M1 carry-over 2 그대로) | M1 plan |
+
+### Phase 4 backlog
+
+| 항목 | 출처 |
+|------|------|
+| feed_* RLS invariant 분리 — wiki 쪽 D6와 다른 정책 (사용자 댓글/포스트 PII 가능성) | codex-rescue (5) |
+
+---
+
 ## 후속 plan 예고 (M3~M5)
 
 | 마일스톤 | 범위 | 예상 plan 파일명 |
