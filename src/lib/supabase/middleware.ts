@@ -14,9 +14,10 @@ export async function updateSession(request: NextRequest) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   if (!url || !anonKey) {
-    throw new Error(
-      'NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY 미설정',
-    )
+    // env 미설정 — preview deployment 등에서 session refresh를 건너뛴다.
+    // throw하면 모든 라우트 (gov 포함)가 500. defensive no-op으로 페이지 렌더 자체는 보존.
+    // production env가 누락된 경우 매직링크 로그인 자체가 작동 안 함 (AuthContext 가드).
+    return supabaseResponse
   }
 
   const supabase = createServerClient(url, anonKey, {
