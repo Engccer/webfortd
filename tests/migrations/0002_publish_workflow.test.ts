@@ -21,7 +21,7 @@
 import { test, describe, before, after } from 'node:test'
 import assert from 'node:assert/strict'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
-import { loadDotEnvLocalOverrides } from '../../scripts/sync-content-to-db.ts'
+import { loadDotEnvLocalOverrides } from '../../scripts/lib/env-loader.ts'
 import { evaluateGuards, type DocumentRow } from '../../scripts/publish-content.ts'
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL

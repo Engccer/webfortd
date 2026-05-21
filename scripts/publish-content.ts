@@ -26,42 +26,13 @@
  * 표준 흐름.
  */
 
-import fs from 'node:fs'
-import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
-// ---------- env loader (sync-content-to-db.ts와 동일 패턴, Task 5에서 helper 추출 예정) ----------
-
-/**
- * `.env.local`을 직접 파싱해서 *기존 env 변수를 덮어쓴다*.
- *
- * Node `--env-file`은 이미 process.env에 존재하는 키를 덮어쓰지 않는다. 다중
- * 프로젝트 환경(`~/.zshrc`의 stale export)에서 webfortd `.env.local`의 정확한
- * SUPABASE_SECRET_KEY 대신 shadowing이 발생하면 "Invalid API key" 401을 받는다.
- *
- * 이 헬퍼는 `.env.local`에 명시된 키를 우선시해서 shadowing 사고를 차단.
- */
-export function loadDotEnvLocalOverrides(): void {
-  const dotenvPath = path.join(process.cwd(), '.env.local')
-  if (!fs.existsSync(dotenvPath)) return
-  const raw = fs.readFileSync(dotenvPath, 'utf8')
-  for (const line of raw.split('\n')) {
-    const trimmed = line.trim()
-    if (!trimmed || trimmed.startsWith('#')) continue
-    const eq = trimmed.indexOf('=')
-    if (eq < 0) continue
-    const key = trimmed.slice(0, eq).trim()
-    let value = trimmed.slice(eq + 1).trim()
-    if (
-      (value.startsWith('"') && value.endsWith('"')) ||
-      (value.startsWith("'") && value.endsWith("'"))
-    ) {
-      value = value.slice(1, -1)
-    }
-    process.env[key] = value
-  }
-}
+// `.env.local` shadowing 차단 helper — 단일 source of truth는 scripts/lib/env-loader.ts.
+// Node `--env-file`은 기존 env를 덮어쓰지 않음. ~/.zshrc의 stale SUPABASE_SECRET_KEY가
+// shadowing되면 "Invalid API key" 401. 이 helper가 .env.local 값을 우선시.
+import { loadDotEnvLocalOverrides } from './lib/env-loader.ts'
 
 // ---------- types ----------
 
