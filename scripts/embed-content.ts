@@ -26,6 +26,36 @@ function createCliAdminClient(): SupabaseClient {
   return createClient(url, secretKey, { auth: { persistSession: false, autoRefreshToken: false } })
 }
 
+interface ChunkInsertRow {
+  document_id: string
+  chunk_text: string
+  chunk_index: number
+  section: string | null
+  embedding: number[]
+  metadata: Record<string, unknown>
+}
+
+async function deleteExistingChunks(client: SupabaseClient, documentIds: string[]): Promise<number> {
+  if (documentIds.length === 0) return 0
+  const { error, count } = await client
+    .from('document_chunks')
+    .delete({ count: 'exact' })
+    .in('document_id', documentIds)
+  if (error) throw new Error(`기존 청크 삭제 실패: ${formatSupabaseError(error)}`)
+  return count ?? 0
+}
+
+async function insertChunks(client: SupabaseClient, rows: ChunkInsertRow[]): Promise<void> {
+  if (rows.length === 0) return
+  // PostgREST 1 request payload 한도 회피용 500건 분할 (sync-content-to-db.ts 패턴 동일)
+  const BATCH = 500
+  for (let i = 0; i < rows.length; i += BATCH) {
+    const batch = rows.slice(i, i + BATCH)
+    const { error } = await client.from('document_chunks').insert(batch)
+    if (error) throw new Error(`청크 insert 실패 (batch ${i}): ${formatSupabaseError(error)}`)
+  }
+}
+
 async function fetchSlugToIdMap(client: SupabaseClient, slugs: string[]): Promise<Map<string, string>> {
   const { data, error } = await client
     .from('documents')
@@ -119,8 +149,50 @@ async function main(): Promise<void> {
   const embeddings = await embedTexts(inputs)
   console.log(`[embed-content] 임베딩 완료 ${embeddings.length}건 (${Date.now() - t0}ms)`)
 
-  // Task 9에서 DB 쓰기 추가
-  console.log('[embed-content] DB 쓰기는 Task 9 구현 후 실행')
+  // 3. DB 쓰기
+  const supabase = createCliAdminClient()
+  const slugs = docChunks.map((dc) => dc.slug)
+  const slugToId = await fetchSlugToIdMap(supabase, slugs)
+
+  // embedding 결과를 refId 기준 lookup
+  const embedMap = new Map(embeddings.map((e) => [e.refId, e.embedding]))
+
+  const insertRows: ChunkInsertRow[] = []
+  for (const dc of docChunks) {
+    const documentId = slugToId.get(dc.slug)
+    if (!documentId) {
+      console.warn(`[embed-content] slug ${dc.slug} document_id 없음 — skip`)
+      continue
+    }
+    for (const c of dc.chunks) {
+      const embedding = embedMap.get(`${dc.slug}::${c.metadata.chunk_index}`)
+      if (!embedding) throw new Error(`임베딩 결과 누락: ${dc.slug}::${c.metadata.chunk_index}`)
+      insertRows.push({
+        document_id: documentId,
+        chunk_text: c.text,
+        chunk_index: c.metadata.chunk_index,
+        section: c.metadata.section,
+        embedding,
+        metadata: c.metadata,
+      })
+    }
+  }
+
+  const targetDocIds = Array.from(new Set(insertRows.map((r) => r.document_id)))
+  const deleted = await deleteExistingChunks(supabase, targetDocIds)
+  console.log(`[embed-content] 기존 청크 ${deleted}건 삭제`)
+  await insertChunks(supabase, insertRows)
+  console.log(`[embed-content] 신규 청크 ${insertRows.length}건 삽입`)
+
+  console.log('')
+  console.log('=== 임베딩 보고서 ===')
+  console.log(`문서 ${docs.length}개 / 청크 ${insertRows.length}개`)
+  console.log(`삭제: ${deleted}건, 삽입: ${insertRows.length}건`)
+  const docsByAxis = new Map<string, number>()
+  for (const d of docs) docsByAxis.set(d.axis, (docsByAxis.get(d.axis) ?? 0) + 1)
+  for (const [axis, n] of [...docsByAxis.entries()].sort()) {
+    console.log(`  ${axis}: ${n}개 문서`)
+  }
 }
 
 main().catch((err) => {
