@@ -73,15 +73,40 @@ export async function embedTexts(
     const batch = inputs.slice(i, i + BATCH_SIZE)
     const values = batch.map((inp) => inp.text)
 
-    const { embeddings } = await embedMany({
-      model,
-      values,
-      providerOptions: {
-        google: {
-          outputDimensionality: OUTPUT_DIMENSIONALITY,
+    // Change 1: Wrap embedMany call in try/catch with batch context
+    let embeddings: number[][]
+    try {
+      const response = await embedMany({
+        model,
+        values,
+        providerOptions: {
+          google: {
+            outputDimensionality: OUTPUT_DIMENSIONALITY,
+          },
         },
-      },
-    })
+      })
+      embeddings = response.embeddings
+    } catch (err) {
+      const firstRef = batch[0]?.refId ?? '(empty)'
+      throw new Error(
+        `embedMany 실패 (batch start=${i}, first refId=${firstRef}): ${err instanceof Error ? err.message : String(err)}`,
+      )
+    }
+
+    // Change 2: Length-mismatch guard
+    if (embeddings.length !== batch.length) {
+      const firstRef = batch[0]?.refId ?? '(empty)'
+      throw new Error(
+        `embedMany 응답 길이 불일치 (batch start=${i}, first refId=${firstRef}): expected ${batch.length}, got ${embeddings.length}`,
+      )
+    }
+
+    // Change 3: First-batch dimensionality guard
+    if (i === 0 && embeddings[0]?.length !== OUTPUT_DIMENSIONALITY) {
+      throw new Error(
+        `embedMany 임베딩 차원 불일치: expected ${OUTPUT_DIMENSIONALITY}, got ${embeddings[0]?.length}. providerOptions.google.outputDimensionality가 무시됐을 가능성.`,
+      )
+    }
 
     for (let j = 0; j < batch.length; j++) {
       results.push({ refId: batch[j].refId, embedding: embeddings[j] })
