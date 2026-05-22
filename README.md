@@ -1,8 +1,8 @@
 # 장애인교원 교육전념 여건 지원 플랫폼
 
-[![Vercel](https://img.shields.io/badge/Deploy-Vercel-black?logo=vercel)](https://webfortd.vercel.app/)
+[![Vercel](https://img.shields.io/badge/Deploy-Vercel-black?logo=vercel)](https://webfortd-khudt-s-projects.vercel.app/)
 
-> **배포 URL**: https://webfortd.vercel.app/
+> **배포 URL**: https://webfortd-khudt-s-projects.vercel.app/ (장교조 KHUDT 명의)
 
 장애인교원이 필요한 지원 정보를 한곳에서 쉽고 빠르게 확인할 수 있는 **사용자 중심 위키 형식 웹사이트**입니다.
 
@@ -188,8 +188,9 @@ npm run dev
 
 ### 현재 배포 환경
 
-- **Vercel**: 메인 배포 플랫폼 (자동 배포)
-  - **URL**: https://webfortd.vercel.app/
+- **Vercel**: 메인 배포 플랫폼 (자동 배포, 장교조 KHUDT 명의)
+  - **URL**: https://webfortd-khudt-s-projects.vercel.app/
+  - 이전: https://webfortd.vercel.app/ (engccer 개인 계정, 2026-05-23 이관 후 역사 기록물)
   - `master` 브랜치 푸시 시 자동 배포
   - SSR/ISR 기능 활용 가능
 
