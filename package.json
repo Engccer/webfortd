@@ -16,6 +16,8 @@
     "kb:sync:dry-run": "node --env-file=.env.local --import tsx scripts/sync-content-to-db.ts --dry-run",
     "kb:publish": "node --env-file=.env.local --import tsx scripts/publish-content.ts",
     "kb:publish:dry-run": "node --env-file=.env.local --import tsx scripts/publish-content.ts --dry-run",
+    "kb:embed": "node --env-file=.env.local --import tsx scripts/embed-content.ts",
+    "kb:embed:dry-run": "node --env-file=.env.local --import tsx scripts/embed-content.ts --dry-run",
     "image:report": "tsx scripts/image-mappings.ts report",
     "image:template": "tsx scripts/image-mappings.ts template",
     "image:apply": "tsx scripts/image-mappings.ts apply",
@@ -25,6 +27,7 @@
     "test:integration": "node --env-file=.env.local --import tsx --test 'tests/migrations/**/*.test.ts'"
   },
   "dependencies": {
+    "@ai-sdk/google": "^3.0.79",
     "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-checkbox": "^1.3.3",
     "@radix-ui/react-dialog": "^1.1.15",
@@ -38,6 +41,7 @@
     "@radix-ui/react-tabs": "^1.1.13",
     "@radix-ui/react-tooltip": "^1.2.8",
     "@supabase/ssr": "^0.10.3",
+    "ai": "^6.0.190",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "flexsearch": "^0.8.212",
