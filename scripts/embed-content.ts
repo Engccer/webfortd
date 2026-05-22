@@ -61,7 +61,6 @@ async function fetchSlugToIdMap(client: SupabaseClient, slugs: string[]): Promis
     .from('documents')
     .select('id, slug')
     .in('slug', slugs)
-    .range(0, slugs.length - 1)
   if (error) throw new Error(`slug→id fetch 실패: ${formatSupabaseError(error)}`)
   assertIdRowsComplete(data, slugs.length)
   const map = new Map<string, string>()
@@ -158,10 +157,12 @@ async function main(): Promise<void> {
   const embedMap = new Map(embeddings.map((e) => [e.refId, e.embedding]))
 
   const insertRows: ChunkInsertRow[] = []
+  const skippedSlugs: string[] = []
   for (const dc of docChunks) {
     const documentId = slugToId.get(dc.slug)
     if (!documentId) {
       console.warn(`[embed-content] slug ${dc.slug} document_id 없음 — skip`)
+      skippedSlugs.push(dc.slug)
       continue
     }
     for (const c of dc.chunks) {
@@ -188,10 +189,20 @@ async function main(): Promise<void> {
   console.log('=== 임베딩 보고서 ===')
   console.log(`문서 ${docs.length}개 / 청크 ${insertRows.length}개`)
   console.log(`삭제: ${deleted}건, 삽입: ${insertRows.length}건`)
+  if (skippedSlugs.length > 0) {
+    console.log(`slug 미매핑 skip: ${skippedSlugs.length}건 (kb:sync 누락 의심)`)
+    console.log(`  ${skippedSlugs.slice(0, 5).join(', ')}${skippedSlugs.length > 5 ? ' …' : ''}`)
+  }
   const docsByAxis = new Map<string, number>()
   for (const d of docs) docsByAxis.set(d.axis, (docsByAxis.get(d.axis) ?? 0) + 1)
+  const chunksByAxis = new Map<string, number>()
+  for (const r of insertRows) {
+    const axis = (r.metadata as { axis?: string }).axis ?? 'uncategorized'
+    chunksByAxis.set(axis, (chunksByAxis.get(axis) ?? 0) + 1)
+  }
   for (const [axis, n] of [...docsByAxis.entries()].sort()) {
-    console.log(`  ${axis}: ${n}개 문서`)
+    const c = chunksByAxis.get(axis) ?? 0
+    console.log(`  ${axis}: ${n}개 문서 / ${c}개 청크`)
   }
 }
 
