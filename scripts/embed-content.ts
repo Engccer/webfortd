@@ -97,13 +97,16 @@ function loadDocuments(): MarkdownDoc[] {
     const raw = fs.readFileSync(filePath, 'utf8')
     const { data } = matter(raw)
     const slug = (data.slug as string) ?? path.basename(filePath, '.md')
+    // axis는 content/<axis>/... 디렉토리 첫 segment에서 derive (frontmatter 키 아님)
+    const relativeFromContent = path.relative(CONTENT_ROOT, filePath)
+    const axisFromPath = relativeFromContent.split(path.sep)[0] ?? 'uncategorized'
     docs.push({
       filePath,
       raw,
       frontmatter: data,
       slug,
       title: (data.title as string) ?? slug,
-      axis: (data.axis as string) ?? 'uncategorized',
+      axis: (data.axis as string) ?? axisFromPath,
       type: (data.type as string) ?? 'unknown',
       sourceOrigin: (data.source_origin as string) ?? null,
     })
