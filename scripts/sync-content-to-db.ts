@@ -53,6 +53,7 @@ const REPO_ROOT = process.cwd()
  * silent truncation 일으키는 것 차단. 부족하면 진단 메시지와 함께 throw.
  * 실제 구현은 scripts/lib/assert-id-rows.ts — 여기서는 re-export.
  */
+import { assertIdRowsComplete } from './lib/assert-id-rows.ts'
 export { assertIdRowsComplete } from './lib/assert-id-rows.ts'
 
 /**

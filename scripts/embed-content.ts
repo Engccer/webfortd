@@ -177,7 +177,7 @@ async function main(): Promise<void> {
         chunk_index: c.metadata.chunk_index,
         section: c.metadata.section,
         embedding,
-        metadata: c.metadata,
+        metadata: c.metadata as unknown as Record<string, unknown>,
       })
     }
   }
