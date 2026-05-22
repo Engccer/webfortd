@@ -93,9 +93,13 @@ type: 안내서
     assert.equal(result[i].metadata.axis, 'policies')
     assert.ok(!result[i].text.includes('<page_header>'))
     assert.ok(!result[i].text.includes('---\nslug:'))
-    assert.ok(result[i].char_start >= 0)
-    assert.ok(result[i].char_end > result[i].char_start)
   }
+})
+
+test('chunkDocument — frontmatter-only doc → 빈 배열', () => {
+  const raw = '---\nslug: empty\n---\n\n'
+  const result = chunkDocument(raw, { slug: 'empty', title: 'Empty', axis: 'policies', type: 't', source_origin: null })
+  assert.deepEqual(result, [])
 })
 
 test('chunkDocument — chunk_index 연속성', () => {

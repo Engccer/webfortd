@@ -46,43 +46,26 @@ export interface ChunkMetadata {
 export interface Chunk {
   text: string
   metadata: ChunkMetadata
-  char_start: number
-  char_end: number
 }
 
-export interface ChunkDocumentInput {
-  slug: string
-  title: string
-  axis: string
-  type: string
-  source_origin: string | null
-}
+export type ChunkDocumentInput = Omit<ChunkMetadata, 'section' | 'chunk_index'>
 
 export function chunkDocument(raw: string, meta: ChunkDocumentInput): Chunk[] {
   const body = stripPageHeaders(stripFrontmatter(raw))
   const sections = applyCharLimits(splitByH2(body))
 
-  let cursor = 0
-  return sections.map((sec, i) => {
-    const charStart = body.indexOf(sec.text, cursor)
-    const resolvedStart = charStart === -1 ? cursor : charStart
-    const charEnd = resolvedStart + sec.text.length
-    cursor = charEnd
-    return {
-      text: sec.text,
-      metadata: {
-        slug: meta.slug,
-        title: meta.title,
-        axis: meta.axis,
-        type: meta.type,
-        section: sec.section,
-        chunk_index: i,
-        source_origin: meta.source_origin,
-      },
-      char_start: resolvedStart,
-      char_end: charEnd,
-    }
-  })
+  return sections.map((sec, i) => ({
+    text: sec.text,
+    metadata: {
+      slug: meta.slug,
+      title: meta.title,
+      axis: meta.axis,
+      type: meta.type,
+      section: sec.section,
+      chunk_index: i,
+      source_origin: meta.source_origin,
+    },
+  }))
 }
 
 export const MAX_CHUNK_CHARS = 800
@@ -118,7 +101,7 @@ export function applyCharLimits(sections: RawSection[]): RawSection[] {
       buffer = { ...sec }
     } else {
       buffer.text = buffer.text + '\n\n' + sec.text
-      buffer.section = buffer.section // 첫 섹션 라벨 유지 — 검색·인용에 우호적
+      // 첫 섹션 라벨 유지 — 검색·인용에 우호적
     }
     if (buffer.text.length >= MIN_CHUNK_CHARS) {
       result.push(buffer)
