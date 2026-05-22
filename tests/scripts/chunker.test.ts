@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { stripFrontmatter, stripPageHeaders, splitByH2, applyCharLimits, MAX_CHUNK_CHARS, MIN_CHUNK_CHARS } from '../../scripts/lib/chunker.ts'
+import { stripFrontmatter, stripPageHeaders, splitByH2, applyCharLimits, MAX_CHUNK_CHARS, MIN_CHUNK_CHARS, chunkDocument, type ChunkMetadata } from '../../scripts/lib/chunker.ts'
 
 test('stripFrontmatter — frontmatter 블록 제거', () => {
   const input = '---\nslug: foo\ntitle: bar\n---\n\n본문 내용입니다.'
@@ -61,4 +61,46 @@ test('applyCharLimits — 50자 미만 인접 섹션 병합', () => {
   for (const r of result) {
     assert.ok(r.text.length >= MIN_CHUNK_CHARS || result.length === 1, '최소 길이 보장')
   }
+})
+
+test('chunkDocument — frontmatter+page_header strip → 청크 배열 + metadata', () => {
+  const raw = `---
+slug: test-1
+title: 테스트
+axis: policies
+type: 안내서
+---
+
+서두.
+
+## 섹션 A
+내용 A.
+<page_header>p.5</page_header>
+
+## 섹션 B
+내용 B.`
+  const result = chunkDocument(raw, {
+    slug: 'test-1',
+    title: '테스트',
+    axis: 'policies',
+    type: '안내서',
+    source_origin: 'sample-source',
+  })
+  assert.ok(result.length >= 1)
+  for (let i = 0; i < result.length; i++) {
+    assert.equal(result[i].metadata.chunk_index, i)
+    assert.equal(result[i].metadata.slug, 'test-1')
+    assert.equal(result[i].metadata.axis, 'policies')
+    assert.ok(!result[i].text.includes('<page_header>'))
+    assert.ok(!result[i].text.includes('---\nslug:'))
+    assert.ok(result[i].char_start >= 0)
+    assert.ok(result[i].char_end > result[i].char_start)
+  }
+})
+
+test('chunkDocument — chunk_index 연속성', () => {
+  const raw = `---\nslug: x\n---\n\n## A\n` + '가'.repeat(900) + '\n\n## B\n' + '나'.repeat(900)
+  const result = chunkDocument(raw, { slug: 'x', title: 'X', axis: 'policies', type: 't', source_origin: null })
+  const indices = result.map((c) => c.metadata.chunk_index)
+  assert.deepEqual(indices, Array.from({ length: result.length }, (_, i) => i))
 })

@@ -33,6 +33,58 @@ export function splitByH2(body: string): RawSection[] {
   return sections
 }
 
+export interface ChunkMetadata {
+  slug: string
+  title: string
+  axis: string
+  type: string
+  section: string
+  chunk_index: number
+  source_origin: string | null
+}
+
+export interface Chunk {
+  text: string
+  metadata: ChunkMetadata
+  char_start: number
+  char_end: number
+}
+
+export interface ChunkDocumentInput {
+  slug: string
+  title: string
+  axis: string
+  type: string
+  source_origin: string | null
+}
+
+export function chunkDocument(raw: string, meta: ChunkDocumentInput): Chunk[] {
+  const body = stripPageHeaders(stripFrontmatter(raw))
+  const sections = applyCharLimits(splitByH2(body))
+
+  let cursor = 0
+  return sections.map((sec, i) => {
+    const charStart = body.indexOf(sec.text, cursor)
+    const resolvedStart = charStart === -1 ? cursor : charStart
+    const charEnd = resolvedStart + sec.text.length
+    cursor = charEnd
+    return {
+      text: sec.text,
+      metadata: {
+        slug: meta.slug,
+        title: meta.title,
+        axis: meta.axis,
+        type: meta.type,
+        section: sec.section,
+        chunk_index: i,
+        source_origin: meta.source_origin,
+      },
+      char_start: resolvedStart,
+      char_end: charEnd,
+    }
+  })
+}
+
 export const MAX_CHUNK_CHARS = 800
 export const MIN_CHUNK_CHARS = 50
 
