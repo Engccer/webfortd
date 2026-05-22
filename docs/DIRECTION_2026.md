@@ -38,8 +38,8 @@ app/
 
 ### 회의용 entry 선택
 
-- 교육부·중부대 회의(보수적 청중): `https://webfortd.vercel.app/`(현재 도메인 = `(gov)` 그룹)
-- 위원장 비전 시연: `https://webfortd.vercel.app/wiki`
+- 교육부·중부대 회의(보수적 청중): `https://webfortd-khudt-s-projects.vercel.app/`(현재 도메인 = `(gov)` 그룹)
+- 위원장 비전 시연: `https://webfortd-khudt-s-projects.vercel.app/wiki`
 
 도메인 단위 분리(별 deployment)는 채택하지 않는다 — 빌드 2배·환경변수 관리 부담이 명료성 이점보다 큼.
 
