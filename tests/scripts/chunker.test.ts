@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { stripFrontmatter, stripPageHeaders, splitByH2 } from '../../scripts/lib/chunker.ts'
+import { stripFrontmatter, stripPageHeaders, splitByH2, applyCharLimits, MAX_CHUNK_CHARS, MIN_CHUNK_CHARS } from '../../scripts/lib/chunker.ts'
 
 test('stripFrontmatter — frontmatter 블록 제거', () => {
   const input = '---\nslug: foo\ntitle: bar\n---\n\n본문 내용입니다.'
@@ -35,4 +35,30 @@ test('splitByH2 — H2 없으면 단일 청크', () => {
   const result = splitByH2(input)
   assert.equal(result.length, 1)
   assert.equal(result[0].section, '(no-section)')
+})
+
+test('applyCharLimits — 800자 cap 초과 시 문단 단위 분할', () => {
+  const longSection = {
+    section: '## 긴 섹션',
+    text: '## 긴 섹션\n' + Array(20).fill('가나다라마바사아자차카타파하'.repeat(8)).join('\n\n'),
+  }
+  // 각 라인 ~96자 × 20개 ≈ 1900자, 문단 구분이 있어야 분할 가능
+  const result = applyCharLimits([longSection])
+  assert.ok(result.length >= 2, '800자 초과는 최소 2개로 분할')
+  for (const r of result) {
+    assert.ok(r.text.length <= MAX_CHUNK_CHARS + 100, '하드 cap 근사치')
+  }
+})
+
+test('applyCharLimits — 50자 미만 인접 섹션 병합', () => {
+  const tiny = [
+    { section: '(no-section)', text: '짧은 한 줄.' },
+    { section: '## A', text: '## A\n또 짧음.' },
+    { section: '## B', text: '## B\n' + '내용'.repeat(50) },
+  ]
+  const result = applyCharLimits(tiny)
+  // 앞의 두 단편은 병합 또는 다음 정상 청크에 합류, 50자 이상 청크만 남음
+  for (const r of result) {
+    assert.ok(r.text.length >= MIN_CHUNK_CHARS || result.length === 1, '최소 길이 보장')
+  }
 })
