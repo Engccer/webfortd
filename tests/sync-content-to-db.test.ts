@@ -116,14 +116,14 @@ describe('transformDocumentRow', () => {
   test('D1 regression: frontmatter.status=published → row.status=draft 강제', () => {
     const doc = {
       slug: 'd1-regression',
-      axis: 'policies',
+      axis: 'policies' as const,
       filePath: 'content/policies/d1-regression.md',
       frontmatter: {
         title: '이미 published 상태인 문서',
-        type: '지침',
-        disability_types: ['전체'],
-        domains: ['정책법령'],
-        regions: ['전국'],
+        type: '지침' as const,
+        disability_types: ['전체' as const],
+        domains: ['정책법령' as const],
+        regions: ['전국' as const],
         year: 2026,
         // frontmatter는 published이지만 transform은 draft 강제 (M5 검수에서만 published 전환)
         status: 'published' as const,

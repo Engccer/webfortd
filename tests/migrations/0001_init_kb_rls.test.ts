@@ -180,9 +180,9 @@ describe('0001_init_kb RLS fixture (M2 sync 후)', { skip: skipReason }, () => {
     assert.ok(sample)
     const { error, count } = await anon
       .from('documents')
-      .update({ status: 'published' })
+      .update({ status: 'published' }, { count: 'exact' })
       .eq('id', sample.id)
-      .select('*', { count: 'exact', head: true })
+      .select()
 
     // RLS는 row visibility 필터라 update affected 0 + error null이거나 explicit error.
     // Supabase는 RLS로 invisible한 row를 update할 때 count를 0 또는 null로 반환할 수 있음
