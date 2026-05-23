@@ -24,7 +24,6 @@ import {
 } from 'ai'
 import { retrieveChunks } from '@/lib/rag/retrieval.ts'
 import { buildSystemPrompt, clampHistory } from '@/lib/rag/prompt-builder.ts'
-import { formatSupabaseError } from '../../../../scripts/lib/error-format.ts'
 
 export const runtime = 'nodejs' // service_role + retrieval RPC (Edge 비호환)
 export const maxDuration = 60 // streamText 60초 timeout
@@ -83,7 +82,11 @@ export async function POST(req: Request): Promise<Response> {
     // M5 검수 자동화로 published 비중 증가 시 default 재검토 (Phase 3 M5 carry-over).
     retrieval = await retrieveChunks(queryText, { topK: RETRIEVAL_TOP_K })
   } catch (err) {
-    console.error('[chat] retrieval failed:', formatSupabaseError(err))
+    // retrieval.ts:92가 이미 formatSupabaseError로 마스킹된 Error 객체를 throw
+    // (`match_chunks RPC 실패: [code] 한국어 description` 형태).
+    // 여기서는 그대로 .message 사용 — PII 노출 없음 + catch unknown 타입 강제 캐스트 회피.
+    const errorMessage = err instanceof Error ? err.message : String(err)
+    console.error('[chat] retrieval failed:', errorMessage)
     return json500('자료 검색 중 오류가 발생했어요. 잠시 후 다시 시도해 주세요.')
   }
 
