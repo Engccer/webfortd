@@ -255,9 +255,13 @@ describe('F. M3 codex-rescue P0/P1 패치 회귀 방지', () => {
     // M3 P1 #3 정책: domains 매칭 실패 시 axis=uncategorized (placeholder 'policies' 자동 승격 금지).
     // M4: 위원장 수동 검수가 content/_axis-overrides.json으로 override 가능.
     //     overrides가 비어있지 않으면 uncategorized는 비어도 됨(수동 처리 완료).
+    //     수동 처리 완료 후 uncategorized 디렉터리 자체가 제거된 상태도 동일하게 허용 —
+    //     아래 OR 조건의 의도가 "디렉터리 있지만 비어 있음 == 디렉터리 자체가 없음"이므로
+    //     존재 강제 assertion은 제거하고 files=[] 처리.
     const dir = path.join(REPO_ROOT, 'content/uncategorized')
-    assert.ok(fs.existsSync(dir), 'content/uncategorized/ 디렉터리가 있어야 함')
-    const files = fs.readdirSync(dir).filter(f => f.endsWith('.md'))
+    const files = fs.existsSync(dir)
+      ? fs.readdirSync(dir).filter(f => f.endsWith('.md'))
+      : []
     const overridesPath = path.join(REPO_ROOT, 'content/_axis-overrides.json')
     let overrideCount = 0
     if (fs.existsSync(overridesPath)) {
