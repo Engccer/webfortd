@@ -40,6 +40,8 @@ async function replaceDocumentChunks(
   documentId: string,
   chunks: Omit<ChunkInsertRow, 'document_id'>[],
 ): Promise<number> {
+  // SQL payload: char_start/char_end 제외 (Phase 3 M1에서 DEFERRED, Phase 4 backfill).
+  //   ChunkInsertRow에 새 컬럼 추가 시 여기도 함께 갱신할 것.
   const payload = chunks.map((c) => ({
     chunk_index: c.chunk_index,
     chunk_text: c.chunk_text,
@@ -56,7 +58,12 @@ async function replaceDocumentChunks(
       `replace_document_chunks 실패 (document_id=${documentId}): ${formatSupabaseError(error)}`,
     )
   }
-  return (data as number) ?? 0
+  if (data === null) {
+    throw new Error(
+      `replace_document_chunks: document_id=${documentId} — RPC returned null (expected int)`,
+    )
+  }
+  return data as number
 }
 
 async function fetchSlugToIdMap(client: SupabaseClient, slugs: string[]): Promise<Map<string, string>> {
@@ -176,7 +183,7 @@ async function main(): Promise<void> {
   // embedding 결과를 refId 기준 lookup
   const embedMap = new Map(embeddings.map((e) => [e.refId, e.embedding]))
 
-  // M1 carry #2: per-doc atomic replace. reader gap 차단.
+  // per-doc 그룹화: 문서당 한 번의 RPC 호출로 모을 청크 collection.
   const rowsByDoc = new Map<string, ChunkInsertRow[]>()
   const skippedSlugs: string[] = []
   for (const dc of docChunksFiltered) {
@@ -204,6 +211,9 @@ async function main(): Promise<void> {
 
   let totalInserted = 0
   let docIndex = 0
+  // M1 carry #2: per-doc RPC = 트랜잭션 1개.
+  // 독자는 이 문서의 old 또는 new 청크를 보지, DELETE 직후 INSERT 전의 빈 상태를 보지 않는다.
+  // 전체 535-doc 루프 진행 중 아직 처리 안 된 문서는 old 청크를 그대로 서빙한다.
   for (const [documentId, rows] of rowsByDoc) {
     docIndex++
     const inserted = await replaceDocumentChunks(supabase, documentId, rows)

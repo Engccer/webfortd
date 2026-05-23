@@ -59,7 +59,7 @@ describe('applyCharLimits + splitLongParagraph 통합', () => {
     }
   })
 
-  test('Task 4 carry: 800자 단일 문단 + 짧은 꼬리 문단 → MIN 미만 청크 검출 가능', () => {
+  test('Task 1 reviewer carry: 800자 단일 문단 + 짧은 꼬리 문단 → MIN 미만 청크 검출 가능', () => {
     // 사용자 보고된 케이스: '가'.repeat(800) + '\n\n끝.' → [800자, 3자]
     const section = {
       section: '## 테스트',
