@@ -24,6 +24,7 @@ import {
 } from 'ai'
 import { retrieveChunks } from '@/lib/rag/retrieval.ts'
 import { buildSystemPrompt, clampHistory } from '@/lib/rag/prompt-builder.ts'
+import { formatSupabaseError } from '../../../scripts/lib/error-format.ts'
 
 export const runtime = 'nodejs' // service_role + retrieval RPC (Edge 비호환)
 export const maxDuration = 60 // streamText 60초 timeout
@@ -74,9 +75,15 @@ export async function POST(req: Request): Promise<Response> {
   // 5. RAG retrieval (M2)
   let retrieval
   try {
+    // D4 (plan §1): retrieveChunks default includeDrafts=true 그대로 사용.
+    // 근거: M2 baseline 535 docs 중 published 8건 / draft 527건.
+    // published-only로 제한하면 채팅 정보 자산 활용 불가.
+    // draft는 자동 sync된 atomic 페이지의 *기본 상태*(승인 대기)이지 "오류 의심" 아님.
+    // 0009 화이트리스트 + retrieval.ts:99 runtime guard로 archived/deprecated 누설 차단.
+    // M5 검수 자동화로 published 비중 증가 시 default 재검토 (Phase 3 M5 carry-over).
     retrieval = await retrieveChunks(queryText, { topK: RETRIEVAL_TOP_K })
   } catch (err) {
-    console.error('[chat] retrieval failed:', (err as Error).message)
+    console.error('[chat] retrieval failed:', formatSupabaseError(err))
     return json500('자료 검색 중 오류가 발생했어요. 잠시 후 다시 시도해 주세요.')
   }
 
@@ -84,16 +91,13 @@ export async function POST(req: Request): Promise<Response> {
   const systemPrompt = buildSystemPrompt(retrieval.chunks)
 
   // 7. AI SDK v6 model messages 변환
-  const systemMessage: UIMessage = {
-    id: 'sys',
-    role: 'system',
-    parts: [{ type: 'text', text: systemPrompt }],
-  }
-  const modelMessages = await convertToModelMessages([systemMessage, ...clamped])
+  // AI SDK v6 권장: system은 별도 파라미터로 분리 (UIMessage system role prepend는 비표준).
+  const modelMessages = await convertToModelMessages(clamped)
 
   // 8. streaming 응답
   const result = streamText({
     model: gateway('google/gemini-3.5-flash'),
+    system: systemPrompt,
     messages: modelMessages,
     onFinish: ({ usage }) => {
       // 비용·토큰 로그 (PIPA — user query 본문은 로그 X)

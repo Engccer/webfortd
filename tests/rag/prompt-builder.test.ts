@@ -78,19 +78,19 @@ describe('rag/prompt-builder', () => {
   test('clampHistory — 12 messages 입력 시 11개 슬라이스 (5턴 + 1 user)', () => {
     // 12 messages: 6쌍 (user/assistant 반복) + 마지막이 user
     const messages: UIMessage[] = [
-      { id: '1', role: 'user', content: 'Q1' },
-      { id: '2', role: 'assistant', content: 'A1' },
-      { id: '3', role: 'user', content: 'Q2' },
-      { id: '4', role: 'assistant', content: 'A2' },
-      { id: '5', role: 'user', content: 'Q3' },
-      { id: '6', role: 'assistant', content: 'A3' },
-      { id: '7', role: 'user', content: 'Q4' },
-      { id: '8', role: 'assistant', content: 'A4' },
-      { id: '9', role: 'user', content: 'Q5' },
-      { id: '10', role: 'assistant', content: 'A5' },
-      { id: '11', role: 'user', content: 'Q6' },
-      { id: '12', role: 'assistant', content: 'A6' },
-      { id: '13', role: 'user', content: 'Q7' },
+      { id: '1', role: 'user', parts: [{ type: 'text', text: 'Q1' }] },
+      { id: '2', role: 'assistant', parts: [{ type: 'text', text: 'A1' }] },
+      { id: '3', role: 'user', parts: [{ type: 'text', text: 'Q2' }] },
+      { id: '4', role: 'assistant', parts: [{ type: 'text', text: 'A2' }] },
+      { id: '5', role: 'user', parts: [{ type: 'text', text: 'Q3' }] },
+      { id: '6', role: 'assistant', parts: [{ type: 'text', text: 'A3' }] },
+      { id: '7', role: 'user', parts: [{ type: 'text', text: 'Q4' }] },
+      { id: '8', role: 'assistant', parts: [{ type: 'text', text: 'A4' }] },
+      { id: '9', role: 'user', parts: [{ type: 'text', text: 'Q5' }] },
+      { id: '10', role: 'assistant', parts: [{ type: 'text', text: 'A5' }] },
+      { id: '11', role: 'user', parts: [{ type: 'text', text: 'Q6' }] },
+      { id: '12', role: 'assistant', parts: [{ type: 'text', text: 'A6' }] },
+      { id: '13', role: 'user', parts: [{ type: 'text', text: 'Q7' }] },
     ]
 
     const result = clampHistory(messages, 5)
@@ -103,9 +103,9 @@ describe('rag/prompt-builder', () => {
 
   test('clampHistory — 3 messages 입력 시 3 그대로 (user/assistant/user)', () => {
     const messages: UIMessage[] = [
-      { id: '1', role: 'user', content: 'Q1' },
-      { id: '2', role: 'assistant', content: 'A1' },
-      { id: '3', role: 'user', content: 'Q2' },
+      { id: '1', role: 'user', parts: [{ type: 'text', text: 'Q1' }] },
+      { id: '2', role: 'assistant', parts: [{ type: 'text', text: 'A1' }] },
+      { id: '3', role: 'user', parts: [{ type: 'text', text: 'Q2' }] },
     ]
 
     const result = clampHistory(messages, 5)
@@ -116,8 +116,8 @@ describe('rag/prompt-builder', () => {
 
   test('clampHistory — 마지막이 assistant이면 throw', () => {
     const messages: UIMessage[] = [
-      { id: '1', role: 'user', content: 'Q1' },
-      { id: '2', role: 'assistant', content: 'A1' },
+      { id: '1', role: 'user', parts: [{ type: 'text', text: 'Q1' }] },
+      { id: '2', role: 'assistant', parts: [{ type: 'text', text: 'A1' }] },
     ]
 
     assert.throws(() => clampHistory(messages, 5), /last message must be user role/)
