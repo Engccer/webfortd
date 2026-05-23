@@ -279,7 +279,7 @@ Markdown 문법과 React 컴포넌트를 함께 사용할 수 있습니다.
 - [ ] 원본 PDF 4개에서 이미지·도표 복구
 - [ ] git PR 기반 검수 워크플로 + CI(`content-validate.yml`)
 
-**Phase 2 이후** — Supabase 연결(장교조 명의 결정 후), 임베딩·RAG, AI 챗봇, TTS·이미지 alt 자동 생성, 다국어.
+**Phase 2 이후** — Supabase 연결(장교조 명의 결정 후), 임베딩·RAG, AI 채팅, TTS·이미지 alt 자동 생성, 다국어.
 
 ## 기여 방법
 

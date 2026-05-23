@@ -39,7 +39,7 @@ export const MOCK_RESPONSES: MockResponse[] = [
 
 export const FALLBACK_RESPONSE = {
   answer:
-    "현재 챗봇은 데모 단계로, 미리 준비된 주제(특수 마우스, 편의지원 조례, 학교생활기록부 입력)에 대해서만 답변합니다. 정식 Phase 3 단계에서 535개 페이지 전체에 대한 RAG 검색이 도입됩니다.",
+    "현재 채팅은 데모 단계로, 미리 준비된 주제(특수 마우스, 편의지원 조례, 학교생활기록부 입력)에 대해서만 답변합니다. 정식 Phase 3 단계에서 535개 페이지 전체에 대한 RAG 검색이 도입됩니다.",
   sources: [] as { href: string; title: string }[],
 }
 

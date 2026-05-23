@@ -10,7 +10,7 @@
 
 ### 결정
 
-위키+챗봇 중심 UI(위원장 비전)와 전통 관공서 랜딩 페이지(중부대·교육부 기대) 두 방향을 **단일 코드베이스 + Next.js 16 Route Groups**로 병행 유지한다. Git 브랜치 분리는 채택하지 않는다.
+위키+채팅 중심 UI(위원장 비전)와 전통 관공서 랜딩 페이지(중부대·교육부 기대) 두 방향을 **단일 코드베이스 + Next.js 16 Route Groups**로 병행 유지한다. Git 브랜치 분리는 채택하지 않는다.
 
 ### 근거
 
@@ -26,9 +26,9 @@ app/
 │   ├── page.tsx            # 현재 홈 그대로
 │   ├── support/...
 │   └── ...
-├── (wiki)/                 # 위원장 비전 — 위키+챗봇+소셜 피드
+├── (wiki)/                 # 위원장 비전 — 위키+채팅+소셜 피드
 │   ├── wiki/page.tsx       # 검색 prominent 홈
-│   ├── chat/page.tsx       # 챗봇
+│   ├── chat/page.tsx       # 채팅
 │   ├── feed/page.tsx       # 소셜 피드
 │   └── ...
 ├── disability-types/[slug] # atomic 페이지 — 양쪽 공유
@@ -74,13 +74,13 @@ app/
 ### 적용 범위
 
 - `(gov)` 그룹: **인증 게이트 없음** — 익명 정부 사이트로 유지. 로그인 게이트가 끼면 관공서 측 거부감 큼.
-- `(wiki)` 그룹: 위키 reading은 익명 허용. 피드 작성·챗봇 사용 이력 저장 등 기능은 로그인 요구.
+- `(wiki)` 그룹: 위키 reading은 익명 허용. 피드 작성·채팅 사용 이력 저장 등 기능은 로그인 요구.
 
-## 4. 챗봇
+## 4. 채팅
 
 ### 결정
 
-**RAG 기반 챗봇** — 정책 문서·atomic 페이지 임베딩 → 검색 → Claude/Gemini로 응답. dodo-planet의 function-calling 방식은 webfortd 도메인(정책·법령·사례)에 맞지 않아 채택하지 않는다.
+**RAG 기반 채팅** — 정책 문서·atomic 페이지 임베딩 → 검색 → Claude/Gemini로 응답. dodo-planet의 function-calling 방식은 webfortd 도메인(정책·법령·사례)에 맞지 않아 채택하지 않는다.
 
 ### 구성
 
@@ -113,7 +113,7 @@ app/
 
 `(wiki)` 그룹의 정체성은 *유연하게 확장 가능한 구조*. 사용자 피드백 통해 기능을 점진 추가하되, 다음 원칙 준수.
 
-- 새 기능은 **별도 도메인 모듈**로 시작. atomic 페이지·피드·챗봇과 명확한 도메인 경계.
+- 새 기능은 **별도 도메인 모듈**로 시작. atomic 페이지·피드·채팅과 명확한 도메인 경계.
 - **Feature flag** 도입 검토 — Vercel Flags 또는 자체 토글. 작은 변경을 `(wiki)` 그룹에 빠르게 출시·검증한 후 확장.
 - 도입 결정 기록은 본 문서를 갱신해 추적.
 
@@ -123,18 +123,18 @@ app/
 |------|------|---------|--------------|
 | 인증 | `middleware.ts`, `AuthContext.tsx`, `AuthModal.tsx` | 직접 복사 + 도메인 모델 재작성 | `traveler` → `조합원/사용자` 모델로 재작성 |
 | 피드 | `useFeedPosts.ts`, `FeedPost.tsx`, `supabase/migrations/20260105_*.sql` | 스키마 그대로, UI 리스타일 | `(wiki)/feed`에 적용 |
-| 챗봇 | `api/chat/route.ts`, `useChat.ts` (Gemini function-calling) | 라우트 구조·훅 *패턴*만 | RAG 신규 작성 |
+| 채팅 | `api/chat/route.ts`, `useChat.ts` (Gemini function-calling) | 라우트 구조·훅 *패턴*만 | RAG 신규 작성 |
 | 라이브 채팅 | (없음) | dodo-planet에 패턴 없음 | Supabase Realtime 필요 시 신규 구축 |
 
 ## 8. 회의별 시연 범위
 
 ### 오늘 교육부 회의 (사업 전반)
 
-범위 (b) — Route Groups 분리 + `(wiki)` 그룹 entry 페이지 신규 디자인 + 챗봇 mock UI(응답은 더미). 시연 동선은 `docs/`에 별도 cheat sheet 없이 plan에 포함.
+범위 (b) — Route Groups 분리 + `(wiki)` 그룹 entry 페이지 신규 디자인 + 채팅 mock UI(응답은 더미). 시연 동선은 `docs/`에 별도 cheat sheet 없이 plan에 포함.
 
 ### 웹사이트 구축 회의 (일정 미정)
 
-챗봇 작동본(RAG 실연) + 인증/피드 stub. Phase 3 정식 PR 단위로 진행하므로 시연 대상은 *현재 production 상태*가 곧 demo.
+채팅 작동본(RAG 실연) + 인증/피드 stub. Phase 3 정식 PR 단위로 진행하므로 시연 대상은 *현재 production 상태*가 곧 demo.
 
 ## 9. Phase 로드맵 갱신 (CLAUDE.md와 정합)
 
@@ -145,7 +145,7 @@ CLAUDE.md의 Phase 표를 본 문서와 정합하게 갱신한다.
 | 1 | 완료 | 콘텐츠 정본·빌드 파이프라인 |
 | 1.5 / 1.5b | 진행 중 | 이미지 매핑 자동화 |
 | **2 (개정)** | 대기 | Supabase 연결 + 인증(Supabase Auth) + Route Groups 분리 + `(wiki)` 그룹 entry 페이지 |
-| **3 (개정)** | 대기 | 임베딩 파이프라인 + RAG 챗봇 + AI Elements 채팅 UI |
+| **3 (개정)** | 대기 | 임베딩 파이프라인 + RAG 채팅 + AI Elements 채팅 UI |
 | **4 (개정)** | 대기 | 소셜 피드(`(wiki)` 그룹) |
 | 5 | 대기 | TTS·이미지 alt 자동생성 |
 | 6 | — | 다국어·정책 통계 시각화 |
@@ -154,7 +154,7 @@ Phase 2 spec은 본 문서 작성 후 *작업 계획* 단계에서 별도 plan�
 
 ## 10. 다음 단계
 
-1. **오늘 데모 plan 작성** — `(b)` 범위 (Route Groups 분리 + `(wiki)` entry + 챗봇 mock).
+1. **오늘 데모 plan 작성** — `(b)` 범위 (Route Groups 분리 + `(wiki)` entry + 채팅 mock).
 2. **plan 실행** — Claude가 끝까지 구현.
 3. **회의 결과 반영** — 교육부 회의 후 본 문서 §1·§2 갱신 필요 여부 판단.
 4. **Phase 2 본격 spec 작성** — 웹사이트 구축 회의 일정 잡힌 후, 또는 위원장 명시 신호 후.

@@ -1,4 +1,4 @@
-# Phase 3 RAG 챗봇 — 설계 문서
+# Phase 3 RAG 채팅 — 설계 문서
 
 > 작성일: 2026-05-23
 > 상태: 위원장 검토 대기 (구현 착수 금지)
@@ -17,7 +17,7 @@ Phase 3는 webfortd의 **정책 지식베이스를 대화형 인터페이스로 
 
 ### 1.2 비전
 
-장애인교원이 "육아휴직 복직 후 편의지원 신청 절차가 어떻게 되나요?"라고 물으면, 챗봇이 관련 정책 페이지 3~5개를 검색해 핵심 내용을 요약하고 원문 링크를 첨부한다. 사용자는 답변을 신뢰하고, 필요 시 원문 페이지로 이동해 전체 내용을 확인할 수 있다.
+장애인교원이 "육아휴직 복직 후 편의지원 신청 절차가 어떻게 되나요?"라고 물으면, 채팅이 관련 정책 페이지 3~5개를 검색해 핵심 내용을 요약하고 원문 링크를 첨부한다. 사용자는 답변을 신뢰하고, 필요 시 원문 페이지로 이동해 전체 내용을 확인할 수 있다.
 
 ### 1.3 의존성
 
@@ -25,13 +25,13 @@ Phase 3는 webfortd의 **정책 지식베이스를 대화형 인터페이스로 
 |--------|----------|-----------------|
 | `document_chunks` 테이블 | 0001 마이그레이션에서 정의됨, `embedding vector(1536)` 컬럼 있음, 데이터 없음 | 0005 마이그레이션으로 ivfflat 인덱스 재튜닝 + 청크 채우기 |
 | `documents` 테이블 | 535 rows (status='draft') | RAG는 status='draft'도 검색 가능해야 함 — 별도 RLS 결정 필요 |
-| Supabase Auth | Phase 2 M3 완료 | 비로그인 챗봇 허용(V1), 히스토리 저장 시 로그인 분기 |
+| Supabase Auth | Phase 2 M3 완료 | 비로그인 채팅 허용(V1), 히스토리 저장 시 로그인 분기 |
 | Vercel AI SDK | `package.json`에 미포함 | M3에서 신규 추가 |
 | Google Generative AI | `package.json`에 미포함 (`@anthropic-ai/sdk`는 devDependencies에 있음) | M1(임베딩) · M3(응답) 신규 추가 |
 
 ### 1.4 전략적 위치 (시범 → 중부대 이관 트랙)
 
-Phase 3 RAG 챗봇은 webfortd의 **핵심 설득 자산**이다. 작년 PHP 사이트와 가장 극명하게 차별화되는 기능이며, 중부대·교육부 회의에서 "AI 기반 정책 안내"를 실연할 수 있는 유일한 요소다. 이관 시 임베딩 데이터(pgvector)와 대화 히스토리(chat_threads/chat_messages)는 Supabase 덤프로 일체 이관 가능하다.
+Phase 3 RAG 채팅은 webfortd의 **핵심 설득 자산**이다. 작년 PHP 사이트와 가장 극명하게 차별화되는 기능이며, 중부대·교육부 회의에서 "AI 기반 정책 안내"를 실연할 수 있는 유일한 요소다. 이관 시 임베딩 데이터(pgvector)와 대화 히스토리(chat_threads/chat_messages)는 Supabase 덤프로 일체 이관 가능하다.
 
 ---
 
@@ -44,7 +44,7 @@ Phase 3 RAG 챗봇은 webfortd의 **핵심 설득 자산**이다. 작년 PHP 사
 | V1: 임베딩 모델 | `gemini-embedding-2` (Google AI), `output_dimensionality=1536`, Matryoshka truncation, Batch API 50% 할인 |
 | V2: 응답 모델 | `gemini-3.5-flash` (GA stable, 2026-05), $1.50/$9.00 per 1M tokens, 1M context window |
 | V3: AI Gateway | Vercel AI Gateway (Phase 3부터), AI SDK 표준 인터페이스, 옵저버빌리티·비용추적 |
-| V4: History — 비로그인 허용 | 비로그인도 챗봇 사용 가능 (V1) |
+| V4: History — 비로그인 허용 | 비로그인도 채팅 사용 가능 (V1) |
 | V5: History — 저장소 | sessionStorage (탭 닫으면 소멸, reload 유지) |
 | V6: History — thread 모델 | 다중 thread (정책별 대화 분리), 90일 자동 삭제(PIPA), 개별 메시지·thread 삭제·export 권한 |
 | V7: History — 컨텍스트 | 최근 N턴(5~10) + retrieved chunks, 익명→로그인 전환 시 history 이관 안 함 |
@@ -437,7 +437,7 @@ INSERT 시 기록
 
 ---
 
-### M4: 챗봇 UI — Vercel AI Elements + aria-live + 출처 인용 표시
+### M4: 채팅 UI — Vercel AI Elements + aria-live + 출처 인용 표시
 
 **목표**: `ChatMockUI`를 실제 RAG 연동 `ChatUI`로 교체. Vercel AI Elements 채팅 컴포넌트 적용. `aria-live` 스트리밍 응답 알림. 출처 인용 카드 렌더.
 
@@ -678,19 +678,19 @@ INSERT 시 기록
 | Tab 순서 | 입력 → 전송 버튼 → 출처 카드 링크 목록 순 |
 | Enter | 폼 전송 (현재 ChatMockUI 패턴 유지) |
 | Escape | 열린 다이얼로그 닫기 (Radix Dialog 기본 처리) |
-| Alt+3 | 검색으로 이동 (AccessibilityToolbar 기존 단축키) — 챗봇 페이지에서도 동일 적용 |
+| Alt+3 | 검색으로 이동 (AccessibilityToolbar 기존 단축키) — 채팅 페이지에서도 동일 적용 |
 
 ### 9.4 AccessibilityToolbar 정합
 
-`(wiki)/layout.tsx`에 `AccessibilityToolbar`가 이미 있다. 챗봇 UI가 추가돼도:
-- `fontSize` CSS 변수 변경 → 챗봇 텍스트 크기에 자동 적용 (Tailwind `text-sm` 등 비율 기반이므로)
+`(wiki)/layout.tsx`에 `AccessibilityToolbar`가 이미 있다. 채팅 UI가 추가돼도:
+- `fontSize` CSS 변수 변경 → 채팅 텍스트 크기에 자동 적용 (Tailwind `text-sm` 등 비율 기반이므로)
 - `reduceMotion` → 스트리밍 토큰 append 애니메이션 없음 (`framer-motion` 사용 시 `AnimatePresence` 조건 처리)
-- `contrast` CSS 변수 → 챗봇 버블 배경색에 적용 (shadcn/ui CSS variable 사용 시 자동)
+- `contrast` CSS 변수 → 채팅 버블 배경색에 적용 (shadcn/ui CSS variable 사용 시 자동)
 
 ### 9.5 시각장애 사용자 검증 절차
 
 M4 완료 후 위원장 직접 검증 필수:
-1. VoiceOver(macOS) + Safari로 챗봇 페이지 접근
+1. VoiceOver(macOS) + Safari로 채팅 페이지 접근
 2. 질의 입력 → 전송 → 스트리밍 응답 낭독 확인
 3. 출처 카드 링크 Tab 이동 및 활성화 확인
 4. 에러 케이스: 네트워크 오류 시 에러 메시지 낭독 확인
@@ -714,7 +714,7 @@ M4 완료 후 위원장 직접 검증 필수:
 
 | 변수 | 현재 상태 | 필요 조치 |
 |------|----------|----------|
-| AI 응답 면책 조항 UI | 시스템 프롬프트 + 챗봇 하단 고정 문구로 처리 예정 | M4 UI에서 "본 답변은 정보 제공 목적이며 법적 효력이 없습니다" 상시 표시. 위원장 문구 검토 필요. |
+| AI 응답 면책 조항 UI | 시스템 프롬프트 + 채팅 하단 고정 문구로 처리 예정 | M4 UI에서 "본 답변은 정보 제공 목적이며 법적 효력이 없습니다" 상시 표시. 위원장 문구 검토 필요. |
 | PIPA 개인정보 처리방침 | 현재 webfortd에 없음 | M6 이전(로그인 사용자 chat_messages 저장 시점)에 개인정보 처리방침 페이지 작성 필요. 위원장이 주체. |
 | PIPA 수집 목적 동의 | 미구현 | 로그인 첫 사용 시 "대화 내용은 서비스 개선 목적으로 저장됩니다. 90일 후 자동 삭제됩니다" 동의 UI 필요. |
 | 국외 이전 고지 (Google Singapore region) | 미처리 | Google AI API는 데이터가 Singapore 데이터센터에서 처리될 수 있음. PIPA 제17조 국외 이전 고지 의무. 처리방침에 명시 필요. |
@@ -804,4 +804,4 @@ Phase 3 마일스톤 완료 직전 codex-rescue 재실행 시 다음 영역에 �
 
 | 일자 | 내용 |
 |------|------|
-| 2026-05-23 | 초기 작성 — Phase 3 brainstorming 7건 결정사항 기반 RAG 챗봇 설계 문서 |
+| 2026-05-23 | 초기 작성 — Phase 3 brainstorming 7건 결정사항 기반 RAG 채팅 설계 문서 |
