@@ -79,9 +79,12 @@ describe('0005_rag_infrastructure (hnsw 인덱스 + M1 임베딩 baseline)', { s
       from += PAGE
     }
 
+    // Task 4 MIN_CHUNK_CHARS(50) 필터 도입 이후 본문 50자 미만 doc은 청크 0건 가능
+    // (예: 2020-ca-28 '교육부는 업무포탈의 웹접근성을 점검·개선한다.' 같은 매우 짧은 조항).
+    // 새 baseline: 530+ (535 - 짧은 doc 5건 정도 여유). 정확한 count는 운영 변동 흡수.
     assert.ok(
-      documentIds.size >= 535,
-      `chunks가 커버하는 documents 수: ${documentIds.size} (M1 baseline 535 필요)`,
+      documentIds.size >= 530,
+      `chunks가 커버하는 documents 수: ${documentIds.size} (Task 4 MIN filter 후 baseline 530+ 필요)`,
     )
   })
 })
