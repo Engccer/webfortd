@@ -49,7 +49,7 @@
 1. **벤더·도구 lock-in 없음**: 어떤 CMS·에디터·플랫폼이 사라져도 콘텐츠 자산은 그대로 (.md 파일은 영구 포맷).
 2. **편집자 다양성 수용**: 위원장은 Claude Code, 정책실은 옵시디언, 외부 기고자는 웹 폼 — 동일 정본에 다중 경로 가능.
 3. **검수 워크플로우 단순화**: git PR 머지가 published 상태 전환과 동치. revisions는 git 커밋 히스토리로 자연 보존(별도 테이블 불필요).
-4. **2025 자문 1순위 권고와 정합**: MkDocs 모델이었던 작년 권고의 자연스러운 확장. taxonomy·AI 챗봇·검수 거버넌스를 그 위에 얹는 형태.
+4. **2025 자문 1순위 권고와 정합**: MkDocs 모델이었던 작년 권고의 자연스러운 확장. taxonomy·AI 채팅·검수 거버넌스를 그 위에 얹는 형태.
 5. **외주 견적 축소 가능**: Tiptap WikiLink 확장·revisions 테이블·앱 내 status 전환 UI 등을 옵션화하면 외주 범위가 빌드 파이프라인과 RAG 통합 모듈 중심으로 좁아짐.
 
 ### 0.4 편집 협업의 시간 구조
@@ -718,7 +718,7 @@ as $$
 $$;
 ```
 
-### 7.3 AI 챗봇 응답 (Vercel AI SDK)
+### 7.3 AI 채팅 응답 (Vercel AI SDK)
 
 ```ts
 // src/app/api/chat/route.ts
@@ -800,7 +800,7 @@ export function KbChat({ initialFilter }: { initialFilter?: QueryFilter }) {
   })
 
   return (
-    <Conversation aria-label="장애인교원 정책 챗봇">
+    <Conversation aria-label="장애인교원 정책 채팅">
       {messages.map((m) => (
         <Message key={m.id} from={m.role}>
           <MessageContent>{m.parts.map(renderPart)}</MessageContent>
@@ -902,7 +902,7 @@ export function KbChat({ initialFilter }: { initialFilter?: QueryFilter }) {
 - [ ] `rag_search` PostgreSQL function 작성
 - [ ] 기존 published 콘텐츠 일괄 임베딩 스크립트
 
-### Phase 4: AI 챗봇 (2~3주)
+### Phase 4: AI 채팅 (2~3주)
 
 - [ ] Vercel AI SDK 통합 (`@ai-sdk/anthropic` 또는 `@ai-sdk/google`)
 - [ ] `/api/chat` 라우트 구현

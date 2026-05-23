@@ -5,7 +5,7 @@ import { PopularPages } from "@/components/wiki/PopularPages"
 export const metadata: Metadata = {
   title: "위키",
   description:
-    "장애인교원에 관한 535개 정책·법령·사례·보조공학 페이지를 위키 형태로 검색하고 챗봇에 질문하세요.",
+    "장애인교원에 관한 535개 정책·법령·사례·보조공학 페이지를 위키 형태로 검색하고 채팅으로 질문하세요.",
 }
 
 export default function WikiHomePage() {

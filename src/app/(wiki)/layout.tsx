@@ -45,7 +45,7 @@ export default function WikiLayout({
                       className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                     >
                       <MessageCircle className="h-3.5 w-3.5" aria-hidden="true" />
-                      챗봇
+                      채팅
                     </Link>
                   </li>
                 </ul>

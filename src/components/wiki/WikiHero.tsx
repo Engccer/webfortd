@@ -29,7 +29,7 @@ export function WikiHero() {
         </h1>
         <p className="mx-auto mt-5 max-w-2xl text-base text-muted-foreground sm:text-lg">
           535개의 정책·법령·사례·보조공학 페이지가 위키로 연결되어 있습니다.
-          단어 하나로 답을 찾거나, 챗봇에게 자연어로 질문하세요.
+          단어 하나로 답을 찾거나, 채팅으로 자연어 질문도 가능합니다.
         </p>
         <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
           <button
@@ -47,7 +47,7 @@ export function WikiHero() {
             href="/chat"
             className="inline-flex h-12 items-center gap-2 rounded-full bg-primary px-5 text-base font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring"
           >
-            챗봇에 질문
+            채팅으로 질문
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </Link>
         </div>

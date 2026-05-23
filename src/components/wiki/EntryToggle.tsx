@@ -43,7 +43,7 @@ export function EntryToggle() {
         )}
       >
         <BookOpenText className="h-3 w-3" aria-hidden="true" />
-        위키·챗봇
+        위키·채팅
         <span className="ml-1 rounded bg-amber-100 px-1 text-[10px] font-semibold text-amber-800">
           베타
         </span>
