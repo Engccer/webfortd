@@ -45,6 +45,8 @@ M1에서 `gemini-embedding-2` → `gemini-embedding-2-preview`로 정정한 패�
 - design spec의 `google/gemini-3.5-flash`는 *가설*로 취급.
 - Task 1에서 실 호출(저비용 더미 질의)로 200 응답 확인. 실패 시 `google/gemini-2.5-flash`·`google/gemini-2.0-flash` 등 대체 후보 순차 시도 후 plan §1 D2와 §시스템 프롬프트 헤더 갱신.
 
+**Task 1 실측 결과 (2026-05-23)**: `google/gemini-3.5-flash` 직접 provider 호출 200 응답 정상. 응답 텍스트 확인 (재실행 시 응답 텍스트는 비결정적).
+
 ### D3. 시스템 프롬프트 단일 기준점
 
 **기준 문서 3종** (변경 시 위원장 명시 결정 필요):
@@ -483,3 +485,4 @@ Final PR 전:
 | 일자 | 내용 |
 |------|------|
 | 2026-05-23 | 초기 작성. Q1~Q6 위원장 결정 반영 (정체성·톤·includeDrafts·history clamp·rate limit·모델 ID 실측). D1~D11 결정 잠금. Task 1~10 분해. |
+| 2026-05-23 | Task 1 — SDK v6 export 5건 (gateway/streamText/convertToModelMessages/validateUIMessages + result.toUIMessageStreamResponse) + @ai-sdk/google v3 `google()` provider 실재 확인. `google('gemini-3.5-flash')` 직접 호출 검증 통과. tests/scripts/m3-sdk-probe.test.ts 신규 (RUN_PROBE=1 gate). |
