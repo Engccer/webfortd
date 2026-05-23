@@ -51,19 +51,10 @@ const REPO_ROOT = process.cwd()
 /**
  * slug→id fetch 결과의 길이를 검증. PostgREST 기본 1000 row cap이 미래 1000+ docs 시
  * silent truncation 일으키는 것 차단. 부족하면 진단 메시지와 함께 throw.
+ * 실제 구현은 scripts/lib/assert-id-rows.ts — 여기서는 re-export.
  */
-export function assertIdRowsComplete(
-  idRows: { id: string; slug: string }[] | null,
-  expectedCount: number,
-): void {
-  const actual = idRows?.length ?? 0
-  if (actual < expectedCount) {
-    throw new Error(
-      `slug→id fetch 누락: ${expectedCount} upserted but ${actual} returned. ` +
-        `Supabase default limit 1000 의심 — .range(0, expectedCount-1) 또는 페이징 필요.`,
-    )
-  }
-}
+import { assertIdRowsComplete } from './lib/assert-id-rows.ts'
+export { assertIdRowsComplete } from './lib/assert-id-rows.ts'
 
 /**
  * Supabase `documents` 테이블 row 객체 형태.
