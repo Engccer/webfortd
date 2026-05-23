@@ -16,6 +16,42 @@ Phase 3 M3 Route Handler(`/api/chat`)를 실 Gemini + Supabase로 검증하는 �
 - AI Gateway 활성화 + OIDC 토큰 구성 완료 (Task 8 완료 후)
   - 미완 시 OIDC 인증 실패 가능. 이 경우 직접 provider fallback 가능 (gateway → google로 변경 1줄 hotfix)
 
+## 환경 설정 (Vercel AI Gateway OIDC)
+
+본 M3는 Vercel AI Gateway의 OIDC 인증을 기본 경로로 채택. 정적 API key는 사용하지 않음 (D8).
+
+### 1회 설정
+
+```bash
+cd /Users/hunyongkim/Mac-Projects/webfortd-phase-3-m3-impl
+
+# Vercel 프로젝트 연결 (이미 연결된 경우 skip)
+vercel link --yes
+
+# OIDC 토큰 발급 (24h 유효)
+vercel env pull .env.local --yes
+```
+
+### 24h 만료 시 재발급
+
+토큰이 만료되면 401/auth 에러 발생. 동일 명령으로 재발급:
+
+```bash
+vercel env pull .env.local --yes
+```
+
+`.env.local`에 `VERCEL_OIDC_TOKEN`이 포함돼 있는지 확인 (값은 마스킹):
+
+```bash
+grep VERCEL_OIDC_TOKEN .env.local | sed 's/=.*/=***/'
+```
+
+### 폴백 — 직접 provider 사용 (AI Gateway 미활성화 시)
+
+Task 8 AI Gateway 활성화 전이거나 OIDC 발급 불가 상황에서는 `app/api/chat/route.ts`의 `gateway('google/gemini-3.5-flash')`를 일시적으로 `google('gemini-3.5-flash')`로 1줄 변경 후 smoke 실행 가능. 이 경우 `GOOGLE_GENERATIVE_AI_API_KEY` 환경변수가 export되어 있어야 함.
+
+→ 폴백은 임시 검증 용도. PR 머지 전 Gateway 경로로 복원 필수.
+
 ## 실행
 
 ### 옵션 1 — 단위 테스트 형식 (권장)

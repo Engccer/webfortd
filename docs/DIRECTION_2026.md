@@ -164,3 +164,4 @@ Phase 2 spec은 본 문서 작성 후 *작업 계획* 단계에서 별도 plan�
 | 일자 | 내용 |
 |------|------|
 | 2026-05-19 | 초기 작성 — 2026-05-19 대화 결정 사항 통합 정리 |
+| 2026-05-23 | Phase 3 M3 진입 — `app/api/chat/route.ts` Route Handler + AI SDK v6 streaming + Vercel AI Gateway OIDC. 시스템 프롬프트는 위원장 영구 원칙(채팅 정체성 = 대한민국 장애인교원 제도·정책 안내, 다정·명료 톤)을 반영. Task 8 AI Gateway 활성화는 controller 직접 작업, 머지는 명시 신호 후. |
