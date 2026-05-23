@@ -24,7 +24,7 @@ import {
 } from 'ai'
 import { retrieveChunks } from '@/lib/rag/retrieval.ts'
 import { buildSystemPrompt, clampHistory } from '@/lib/rag/prompt-builder.ts'
-import { formatSupabaseError } from '../../../scripts/lib/error-format.ts'
+import { formatSupabaseError } from '../../../../scripts/lib/error-format.ts'
 
 export const runtime = 'nodejs' // service_role + retrieval RPC (Edge 비호환)
 export const maxDuration = 60 // streamText 60초 timeout
