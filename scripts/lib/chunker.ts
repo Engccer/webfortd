@@ -71,6 +71,50 @@ export function chunkDocument(raw: string, meta: ChunkDocumentInput): Chunk[] {
 export const MAX_CHUNK_CHARS = 800
 export const MIN_CHUNK_CHARS = 50
 
+/**
+ * 문장 경계 후보 정규식 — 한국어/영어 마침표·물음표·느낌표·전각부호·줄바꿈
+ * lookbehind: 부호 뒤에서만 split (부호는 직전 문장에 붙어 남음)
+ */
+const SENTENCE_BOUNDARY = /(?<=[\.!\?。！？\n])\s+/
+
+/**
+ * 800자 초과 단일 문단을 sentence boundary 단위로 split.
+ * sentence가 여전히 800자 초과면 hard char-slice fallback.
+ * hard slice path는 모든 글자 보존. sentence split path는 경계 공백이 단일 공백으로 정규화된다.
+ */
+export function splitLongParagraph(p: string): string[] {
+  if (p.length === 0) return []
+  if (p.length <= MAX_CHUNK_CHARS) return [p]
+
+  // 1단계: sentence boundary로 split
+  const sentences = p.split(SENTENCE_BOUNDARY).filter((s) => s.length > 0)
+  const merged: string[] = []
+  let buf = ''
+  for (const s of sentences) {
+    const candidate = buf ? buf + ' ' + s : s
+    if (candidate.length > MAX_CHUNK_CHARS && buf) {
+      merged.push(buf)
+      buf = s
+    } else {
+      buf = candidate
+    }
+  }
+  if (buf) merged.push(buf)
+
+  // 2단계: 여전히 cap 초과면 hard slice
+  const final: string[] = []
+  for (const chunk of merged) {
+    if (chunk.length <= MAX_CHUNK_CHARS) {
+      final.push(chunk)
+    } else {
+      for (let i = 0; i < chunk.length; i += MAX_CHUNK_CHARS) {
+        final.push(chunk.slice(i, i + MAX_CHUNK_CHARS))
+      }
+    }
+  }
+  return final
+}
+
 export function applyCharLimits(sections: RawSection[]): RawSection[] {
   const result: RawSection[] = []
   let buffer: RawSection | null = null
@@ -85,11 +129,15 @@ export function applyCharLimits(sections: RawSection[]): RawSection[] {
       const paragraphs = sec.text.split(/\n\n+/)
       let chunk = ''
       for (const p of paragraphs) {
-        if ((chunk + '\n\n' + p).length > MAX_CHUNK_CHARS && chunk) {
-          result.push({ section: sec.section, text: chunk.trim() })
-          chunk = p
-        } else {
-          chunk = chunk ? chunk + '\n\n' + p : p
+        // M1 carry #1: 단일 문단이 cap 초과면 split 후 각각 처리
+        const pieces = splitLongParagraph(p)
+        for (const piece of pieces) {
+          if ((chunk + '\n\n' + piece).length > MAX_CHUNK_CHARS && chunk) {
+            result.push({ section: sec.section, text: chunk.trim() })
+            chunk = piece
+          } else {
+            chunk = chunk ? chunk + '\n\n' + piece : piece
+          }
         }
       }
       if (chunk.trim()) result.push({ section: sec.section, text: chunk.trim() })

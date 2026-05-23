@@ -23,7 +23,7 @@
     "image:apply": "tsx scripts/image-mappings.ts apply",
     "check:alt-text": "tsx scripts/check-alt-text-labels.ts",
     "check:mdx-escape": "tsx scripts/check-mdx-escape.ts",
-    "test": "node --import tsx --test 'tests/*.test.ts' 'tests/auth/**/*.test.ts' 'tests/scripts/**/*.test.ts'",
+    "test": "node --conditions react-server --import tsx --test 'tests/*.test.ts' 'tests/auth/**/*.test.ts' 'tests/rag/**/*.test.ts' 'tests/scripts/**/*.test.ts'",
     "test:integration": "node --env-file=.env.local --import tsx --test 'tests/migrations/**/*.test.ts'",
     "test:all": "npm test && npm run test:integration"
   },
