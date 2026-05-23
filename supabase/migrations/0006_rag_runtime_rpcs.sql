@@ -104,6 +104,7 @@ as $$
 declare
   v_query public.vector(1536) := p_query_embedding::public.vector(1536);
 begin
+  -- 50 = Gemini Flash 컨텍스트 블로우업 방어 상한. M3 Route Handler도 동일 cap 적용.
   if p_top_k is null or p_top_k < 1 or p_top_k > 50 then
     raise exception 'match_chunks: p_top_k must be 1..50, got %', p_top_k;
   end if;

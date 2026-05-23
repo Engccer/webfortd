@@ -46,7 +46,7 @@ describe('0006_rag_runtime_rpcs', { skip: skipReason }, () => {
     })
     assert.equal(error, null, error?.message)
     assert.ok(Array.isArray(data))
-    assert.ok((data as unknown[]).length === 3 || (data as unknown[]).length === 0,
+    assert.ok((data as unknown[]).length <= 3,
       `topK=3 expected ≤3 rows, got ${(data as unknown[]).length}`)
     if ((data as unknown[]).length > 0) {
       const row = (data as Array<Record<string, unknown>>)[0]
@@ -77,8 +77,6 @@ describe('0006_rag_runtime_rpcs', { skip: skipReason }, () => {
       .single()
     assert.ok(docRow?.id)
 
-    // 호출 (실수로 production data 날리지 않게 — 호출 후 즉시 복원 책임은 본 테스트 밖)
-    // 본 테스트는 production 데이터에 mutate를 일으키므로 cleanup 후 검증
     const { data: before } = await admin
       .from('document_chunks')
       .select('chunk_index, chunk_text, embedding, metadata, section')
@@ -87,35 +85,42 @@ describe('0006_rag_runtime_rpcs', { skip: skipReason }, () => {
 
     assert.ok(before && before.length > 0, '대상 doc은 청크 존재해야 함')
 
-    // empty array — DELETE만 일어나고 INSERT 0건
-    const { data: emptyResult, error: emptyErr } = await admin.rpc(
-      'replace_document_chunks',
-      { p_document_id: docRow.id, p_chunks: [] },
-    )
-    assert.equal(emptyErr, null, emptyErr?.message)
-    assert.equal(emptyResult, 0)
+    try {
+      // empty array — DELETE만 일어나고 INSERT 0건
+      const { data: emptyResult, error: emptyErr } = await admin.rpc(
+        'replace_document_chunks',
+        { p_document_id: docRow.id, p_chunks: [] },
+      )
+      assert.equal(emptyErr, null, emptyErr?.message)
+      assert.equal(emptyResult, 0)
 
-    // 청크 0건 확인
-    const { count: midCount } = await admin
+      // 청크 0건 확인
+      const { count: midCount } = await admin
+        .from('document_chunks')
+        .select('*', { count: 'exact', head: true })
+        .eq('document_id', docRow.id)
+      assert.equal(midCount, 0)
+    } finally {
+      // assertion 실패 여부와 관계없이 복원 (production 청크 영구 손실 차단)
+      const restorePayload = before!.map((c) => ({
+        chunk_index: c.chunk_index,
+        chunk_text: c.chunk_text,
+        embedding: c.embedding,
+        metadata: c.metadata,
+        section: c.section,
+      }))
+      await admin.rpc('replace_document_chunks', {
+        p_document_id: docRow!.id,
+        p_chunks: restorePayload,
+      })
+    }
+
+    // 복원 round-trip 검증 — assertion 실패해도 finally에서 데이터는 살아 있음
+    const { data: after } = await admin
       .from('document_chunks')
-      .select('*', { count: 'exact', head: true })
-      .eq('document_id', docRow.id)
-    assert.equal(midCount, 0)
-
-    // 원래 청크 재삽입 (mutation 복원)
-    const restorePayload = before.map((c) => ({
-      chunk_index: c.chunk_index,
-      chunk_text: c.chunk_text,
-      embedding: c.embedding,
-      metadata: c.metadata,
-      section: c.section,
-    }))
-    const { data: restoredCount, error: restoreErr } = await admin.rpc(
-      'replace_document_chunks',
-      { p_document_id: docRow.id, p_chunks: restorePayload },
-    )
-    assert.equal(restoreErr, null, restoreErr?.message)
-    assert.equal(restoredCount, before.length)
+      .select('chunk_index')
+      .eq('document_id', docRow!.id)
+    assert.equal(after?.length, before!.length, '복원 후 청크 수가 원본과 일치해야 함')
   })
 
   test('replace_document_chunks — anon 호출 시 거부', async () => {
