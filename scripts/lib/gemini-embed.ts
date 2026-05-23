@@ -16,10 +16,29 @@
 import { google } from '@ai-sdk/google'
 import { embedMany } from 'ai'
 
-// ─── 상수 ───────────────────────────────────────────────────────────────────
-export const MODEL_NAME = 'gemini-embedding-2-preview'
-export const OUTPUT_DIMENSIONALITY = 1536
+// ─── 상수 / env override ───────────────────────────────────────────────────
+const DEFAULT_MODEL = 'gemini-embedding-2-preview'
+const DEFAULT_DIM = 1536
+
+export function getEmbedModel(): string {
+  return process.env.EMBED_MODEL ?? DEFAULT_MODEL
+}
+
+export function getEmbedDim(): number {
+  const raw = process.env.EMBED_DIM
+  if (raw === undefined) return DEFAULT_DIM
+  const n = parseInt(raw, 10)
+  if (!Number.isFinite(n) || n < 1 || n > 8192) {
+    throw new Error(`Invalid EMBED_DIM env: "${raw}" — must be integer 1..8192`)
+  }
+  return n
+}
+
 export const BATCH_SIZE = 100
+
+// backward compat re-exports — load-time evaluated, stale if env changes after import
+export const MODEL_NAME = getEmbedModel()
+export const OUTPUT_DIMENSIONALITY = getEmbedDim()
 
 // ─── 타입 ───────────────────────────────────────────────────────────────────
 export interface EmbeddingInput {
@@ -65,7 +84,9 @@ export async function embedTexts(
 
   assertEmbedEnv()
 
-  const model = google.embedding(MODEL_NAME)
+  const modelName = getEmbedModel()
+  const dim = getEmbedDim()
+  const model = google.embedding(modelName)
   const results: EmbeddingResult[] = []
 
   // 100건 단위 배치로 순차 처리
@@ -81,7 +102,7 @@ export async function embedTexts(
         values,
         providerOptions: {
           google: {
-            outputDimensionality: OUTPUT_DIMENSIONALITY,
+            outputDimensionality: dim,
           },
         },
       })
@@ -89,7 +110,7 @@ export async function embedTexts(
     } catch (err) {
       const firstRef = batch[0]?.refId ?? '(empty)'
       throw new Error(
-        `embedMany 실패 (batch start=${i}, first refId=${firstRef}): ${err instanceof Error ? err.message : String(err)}`,
+        `embedMany 실패 (model=${modelName}, batch start=${i}, first refId=${firstRef}): ${err instanceof Error ? err.message : String(err)}`,
       )
     }
 
@@ -102,9 +123,9 @@ export async function embedTexts(
     }
 
     // Change 3: First-batch dimensionality guard
-    if (i === 0 && embeddings[0]?.length !== OUTPUT_DIMENSIONALITY) {
+    if (i === 0 && embeddings[0]?.length !== dim) {
       throw new Error(
-        `embedMany 임베딩 차원 불일치: expected ${OUTPUT_DIMENSIONALITY}, got ${embeddings[0]?.length}. providerOptions.google.outputDimensionality가 무시됐을 가능성.`,
+        `embedMany 임베딩 차원 불일치: expected ${dim}, got ${embeddings[0]?.length}. providerOptions.google.outputDimensionality가 무시됐을 가능성. (model=${modelName})`,
       )
     }
 

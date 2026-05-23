@@ -8,7 +8,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import matter from 'gray-matter'
 import { loadDotEnvLocalOverrides } from './lib/env-loader.ts'
 import { chunkDocument } from './lib/chunker.ts'
-import { embedTexts, type EmbeddingInput } from './lib/gemini-embed.ts'
+import { embedTexts, getEmbedModel, getEmbedDim, type EmbeddingInput } from './lib/gemini-embed.ts'
 import { formatSupabaseError } from './lib/error-format.ts'
 import { assertIdRowsComplete } from './lib/assert-id-rows.ts'
 
@@ -116,6 +116,7 @@ function loadDocuments(): MarkdownDoc[] {
 
 async function main(): Promise<void> {
   console.log(dryRun ? '=== DRY-RUN MODE ===' : '=== APPLY MODE ===')
+  console.log(`모델: ${getEmbedModel()} / dim: ${getEmbedDim()}`)
   const docs = loadDocuments()
   console.log(`[embed-content] 마크다운 문서 ${docs.length}개 로드`)
 
@@ -190,6 +191,7 @@ async function main(): Promise<void> {
 
   console.log('')
   console.log('=== 임베딩 보고서 ===')
+  console.log(`모델: ${getEmbedModel()} / dim: ${getEmbedDim()}`)
   console.log(`문서 ${docs.length}개 / 청크 ${insertRows.length}개`)
   console.log(`삭제: ${deleted}건, 삽입: ${insertRows.length}건`)
   if (skippedSlugs.length > 0) {

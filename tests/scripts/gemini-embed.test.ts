@@ -23,3 +23,45 @@ test('embedTexts — 0건 input 즉시 빈 배열', async () => {
   const result = await embedTexts([])
   assert.deepEqual(result, [])
 })
+
+import { describe } from 'node:test'
+import { getEmbedModel, getEmbedDim } from '../../scripts/lib/gemini-embed.ts'
+
+describe('env override (M1 carry #3)', () => {
+  test('EMBED_MODEL 미설정 시 기본값 gemini-embedding-2-preview', () => {
+    delete process.env.EMBED_MODEL
+    assert.equal(getEmbedModel(), 'gemini-embedding-2-preview')
+  })
+
+  test('EMBED_MODEL 설정 시 그 값 반환', () => {
+    process.env.EMBED_MODEL = 'gemini-embedding-3'
+    try {
+      assert.equal(getEmbedModel(), 'gemini-embedding-3')
+    } finally {
+      delete process.env.EMBED_MODEL
+    }
+  })
+
+  test('EMBED_DIM 미설정 시 1536', () => {
+    delete process.env.EMBED_DIM
+    assert.equal(getEmbedDim(), 1536)
+  })
+
+  test('EMBED_DIM 설정 시 그 값 (number) 반환', () => {
+    process.env.EMBED_DIM = '768'
+    try {
+      assert.equal(getEmbedDim(), 768)
+    } finally {
+      delete process.env.EMBED_DIM
+    }
+  })
+
+  test('EMBED_DIM 비숫자 값은 throw', () => {
+    process.env.EMBED_DIM = 'abc'
+    try {
+      assert.throws(() => getEmbedDim(), /EMBED_DIM/)
+    } finally {
+      delete process.env.EMBED_DIM
+    }
+  })
+})
