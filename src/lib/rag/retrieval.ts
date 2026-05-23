@@ -2,6 +2,7 @@ import 'server-only'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { embedQuery as defaultEmbedQuery } from './embed-query.ts'
 import { getAdminClient } from '../supabase/admin.ts'
+import { formatSupabaseError } from '../../../scripts/lib/error-format.ts'
 import type {
   RetrievedChunk,
   SourceRef,
@@ -38,6 +39,7 @@ export interface RetrievalDeps {
 
 const DEFAULT_TOP_K = 5
 const DEFAULT_MIN_SIMILARITY = 0.0
+// Phase 3 정책: draft도 검색 가능 (M3 Route Handler가 인증 분기로 정책 미세 조정).
 const DEFAULT_INCLUDE_DRAFTS = true
 const MAX_TOP_K = 50  // 0006 match_chunks 의 raise exception 과 정합
 
@@ -87,7 +89,7 @@ export async function retrieveChunksWith(
     p_include_drafts: includeDrafts,
   })
   if (error) {
-    throw new Error(`match_chunks RPC 실패: ${error.message ?? String(error)}`)
+    throw new Error(`match_chunks RPC 실패: ${formatSupabaseError(error)}`)
   }
 
   const rows = (data ?? []) as MatchChunksRow[]
@@ -103,6 +105,8 @@ export async function retrieveChunksWith(
     documentTitle: r.document_title,
     documentAxis: r.document_axis,
     documentType: r.document_type,
+    // DB 필터: (p_include_drafts OR status='published') → 이 두 값만 반환 (0006 match_chunks).
+    // 필터 정책이 변경되면 types.ts RetrievedChunk.documentStatus 유니온도 갱신 필요.
     documentStatus: (r.document_status as 'draft' | 'published'),
   }))
 
