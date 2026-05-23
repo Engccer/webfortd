@@ -12,12 +12,17 @@ export interface RetrievedChunk {
   chunkText: string
   section: string | null
   chunkIndex: number
+  /** DB raw는 nullable. retrieval.ts에서 `?? {}` 방어 후 보장된 객체. */
   metadata: Record<string, unknown>
   similarity: number
   documentSlug: string
   documentTitle: string
   documentAxis: string
   documentType: string
+  /**
+   * RPC 필터 후 반환 값. DB 원시 status는 5개(draft/in_review/published/archived/deprecated)지만
+   * match_chunks의 (includeDrafts OR status='published') 필터가 이 두 값만 통과시킨다.
+   */
   documentStatus: 'draft' | 'published'
 }
 
@@ -33,7 +38,7 @@ export interface SourceRef {
 export interface RetrieveOptions {
   /** 반환 청크 최대 개수. 기본 5, 최대 50. */
   topK?: number
-  /** 유사도 임계 (cosine sim, 0=무관, 1=동일). 기본 0.0 (필터 없음). */
+  /** 유사도 임계 (cosine sim, 0=무관, 1=동일). 기본 0.0 = 필터 없음. 실용 권장 범위 0.3~0.7. */
   minSimilarity?: number
   /** draft 문서도 포함 여부. 기본 true (Phase 3는 draft도 검색 가능). */
   includeDrafts?: boolean

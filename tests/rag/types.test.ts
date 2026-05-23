@@ -20,7 +20,7 @@ describe('rag/types — export shape 회귀', () => {
       documentSlug: 's',
       documentTitle: 't',
       documentAxis: 'policies',
-      documentType: 'unknown',
+      documentType: '안내서',
       documentStatus: 'draft',
     }
     assert.equal(c.chunkId, 'a')
