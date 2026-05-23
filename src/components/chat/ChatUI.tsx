@@ -37,7 +37,8 @@ import {
 } from '@/components/ai-elements/prompt-input'
 import { Suggestion, Suggestions } from '@/components/ai-elements/suggestion'
 import { Spinner } from '@/components/ui/spinner'
-import { SourceCard, type SourceRef } from '@/components/chat/SourceCard'
+import { SourceCard } from '@/components/chat/SourceCard'
+import type { SourceRef } from '@/lib/rag/types'
 
 const SUGGESTIONS = [
   '특수 마우스에는 어떤 종류가 있나요?',
@@ -72,7 +73,15 @@ export function ChatUI() {
 
   return (
     <div className="mx-auto flex h-[calc(100vh-8rem)] max-w-3xl flex-col px-4 sm:px-6">
-      <Conversation aria-label="대화 내역" className="flex-1">
+      {/* aria-live="polite" — codex-rescue PR #31 P2 권고.
+          AI Elements Conversation은 role="log"만 갖는다(implicit polite).
+          VoiceOver 스트리밍 낭독을 확실히 보장하기 위해 명시. spec §6.1 정합. */}
+      <Conversation
+        aria-label="대화 내역"
+        aria-live="polite"
+        aria-relevant="additions text"
+        className="flex-1"
+      >
         <ConversationContent>
           {messages.length === 0 ? (
             <div className="mx-auto mt-8 max-w-2xl text-center">

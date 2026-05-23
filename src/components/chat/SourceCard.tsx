@@ -9,6 +9,11 @@
  *
  * spec §4.1 표의 Source/Sources 채택 결정 deviation — 디자인 의도(미니멀 칩 한 줄)는 동일.
  *
+ * codex-rescue PR #31 P1 fix:
+ *   - href는 retrieval.ts(server)가 canonical 합성해 박은 값을 그대로 사용.
+ *     UI에서 `/${axis}/${slug}` 합성 금지 (nested resource 404 회피).
+ *   - 터치 타깃 44×44px (CLAUDE.md 모바일 접근성 원칙) — min-h-11.
+ *
  * 접근성:
  *   - 시맨틱 <ul>/<li>/<Link>
  *   - title 안의 이모지(📄)는 시각 보조이며 스크린리더는 link 라벨로 본문 낭독
@@ -16,12 +21,9 @@
  */
 
 import Link from 'next/link'
+import type { SourceRef } from '@/lib/rag/types'
 
-export interface SourceRef {
-  slug: string
-  title: string
-  axis: string
-}
+export type { SourceRef }
 
 interface SourceCardProps {
   sources: readonly SourceRef[]
@@ -39,8 +41,8 @@ export function SourceCard({ sources }: SourceCardProps) {
       {sources.map((src) => (
         <li key={src.slug}>
           <Link
-            href={`/${src.axis}/${src.slug}`}
-            className="inline-flex items-center gap-1 rounded-full border border-border bg-muted px-3 py-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            href={src.href}
+            className="inline-flex min-h-11 items-center gap-1 rounded-full border border-border bg-muted px-3 py-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
           >
             <span aria-hidden="true">📄</span>
             <span>{src.title}</span>

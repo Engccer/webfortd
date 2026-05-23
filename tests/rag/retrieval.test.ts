@@ -13,6 +13,7 @@ import assert from 'node:assert/strict'
  */
 import {
   retrieveChunksWith,
+  sourcePathToHref,
   type RetrievalDeps,
 } from '../../src/lib/rag/retrieval.ts'
 
@@ -37,9 +38,18 @@ const FAKE_ROWS = [
   },
 ]
 
+// codex P1: retrieval이 documents.source_path 보조 select → canonical href 합성.
+// mock client는 from('documents').select('id, source_path').in('id', ids) 흐름을 시뮬레이트.
+const FAKE_DOCS = [
+  { id: 'd1', source_path: 'content/policies/slug-a.md' },
+  { id: 'd2', source_path: 'content/disability-types/slug-b.md' },
+]
+
 function buildMockDeps(opts: {
   expectArgs?: (args: Record<string, unknown>) => void
   rows?: typeof FAKE_ROWS
+  docs?: Array<{ id: string; source_path: string }>
+  docsError?: { message: string; code: string } | null
 } = {}): RetrievalDeps {
   return {
     embedQuery: async (_text: string) => new Array(1536).fill(0.1),
@@ -48,6 +58,21 @@ function buildMockDeps(opts: {
         assert.equal(name, 'match_chunks')
         opts.expectArgs?.(args)
         return { data: opts.rows ?? FAKE_ROWS, error: null }
+      },
+      from: (table: string) => {
+        assert.equal(table, 'documents')
+        return {
+          select: (cols: string) => {
+            assert.equal(cols, 'id, source_path')
+            return {
+              in: async (col: string, _ids: string[]) => {
+                assert.equal(col, 'id')
+                if (opts.docsError) return { data: null, error: opts.docsError }
+                return { data: opts.docs ?? FAKE_DOCS, error: null }
+              },
+            }
+          },
+        }
       },
     }) as unknown as ReturnType<RetrievalDeps['createClient']>,
   }
@@ -85,12 +110,42 @@ describe('rag/retrieval', () => {
     assert.equal(result.chunks[2].documentStatus, 'draft')
   })
 
-  test('sources — slug dedup (slug-a 청크 2개 → 인용 카드 1개)', async () => {
+  test('sources — slug dedup + canonical href (codex P1 fix)', async () => {
     const result = await retrieveChunksWith('q', {}, buildMockDeps())
     assert.equal(result.sources.length, 2)  // slug-a, slug-b
     assert.equal(result.sources[0].slug, 'slug-a')
     assert.equal(result.sources[0].title, '제목 A')
+    assert.equal(result.sources[0].href, '/policies/slug-a')
     assert.equal(result.sources[1].slug, 'slug-b')
+    assert.equal(result.sources[1].href, '/disability-types/slug-b')
+  })
+
+  test('sources — nested resource path canonical 합성 (예: /resources/law/<slug>)', async () => {
+    // 단일 chunk + 단일 doc(source_path가 nested path)
+    const rows = [
+      { ...FAKE_ROWS[0], document_id: 'd9', document_slug: 'ordinance', document_axis: 'resources' },
+    ]
+    const docs = [{ id: 'd9', source_path: 'content/resources/law/ordinance.md' }]
+    const result = await retrieveChunksWith('q', {}, buildMockDeps({ rows, docs }))
+    assert.equal(result.sources[0].href, '/resources/law/ordinance')
+  })
+
+  test('sources — source_path 누락 시 fallback /<axis>/<slug>', async () => {
+    const rows = [
+      { ...FAKE_ROWS[0], document_id: 'd-orphan', document_slug: 'orphan', document_axis: 'policies' },
+    ]
+    const docs: Array<{ id: string; source_path: string }> = []  // 보조 select 결과 0건
+    const result = await retrieveChunksWith('q', {}, buildMockDeps({ rows, docs }))
+    assert.equal(result.sources[0].href, '/policies/orphan')
+  })
+
+  test('sources — documents 보조 select 에러 시 throw', async () => {
+    await assert.rejects(
+      () => retrieveChunksWith('q', {}, buildMockDeps({
+        docsError: { message: 'permission denied', code: '42501' },
+      })),
+      /source_path 조회 실패/,
+    )
   })
 
   test('빈 질의 — embedQuery 호출 전 throw', async () => {
@@ -113,10 +168,31 @@ describe('rag/retrieval', () => {
     )
   })
 
-  test('빈 결과 — 빈 배열 두 개', async () => {
+  test('빈 결과 — 빈 배열 두 개 (documents 보조 select 호출 skip)', async () => {
+    // rows가 빈 배열이면 dedupedDocs도 비어 documentIds=[] — from('documents') 호출 안 됨.
+    // mock의 from() assert가 호출 안 되어야 PASS.
     const deps = buildMockDeps({ rows: [] })
     const result = await retrieveChunksWith('q', {}, deps)
     assert.deepEqual(result, { chunks: [], sources: [] })
+  })
+
+  test('sourcePathToHref helper — content/<...>/<slug>.md → /<...>/<slug>', () => {
+    assert.equal(
+      sourcePathToHref('content/policies/p.md', 'policies', 'p'),
+      '/policies/p',
+    )
+    assert.equal(
+      sourcePathToHref('content/resources/law/o.md', 'resources', 'o'),
+      '/resources/law/o',
+    )
+    assert.equal(
+      sourcePathToHref('', 'fallback-axis', 'fallback-slug'),
+      '/fallback-axis/fallback-slug',
+    )
+    assert.equal(
+      sourcePathToHref('something/weird', 'a', 's'),
+      '/a/s',
+    )
   })
 
   test('runtime guard: 예상 외 documentStatus 시 throw (0009 화이트리스트 우회 차단)', async () => {
