@@ -80,7 +80,7 @@ const SENTENCE_BOUNDARY = /(?<=[\.!\?。！？\n])\s+/
 /**
  * 800자 초과 단일 문단을 sentence boundary 단위로 split.
  * sentence가 여전히 800자 초과면 hard char-slice fallback.
- * 모든 글자 보존 (정보 손실 없음).
+ * hard slice path는 모든 글자 보존. sentence split path는 경계 공백이 단일 공백으로 정규화된다.
  */
 export function splitLongParagraph(p: string): string[] {
   if (p.length === 0) return []
