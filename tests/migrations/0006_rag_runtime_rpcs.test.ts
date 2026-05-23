@@ -130,4 +130,75 @@ describe('0006_rag_runtime_rpcs', { skip: skipReason }, () => {
     })
     assert.ok(error, 'anon 호출은 차단되어야 함')
   })
+
+  test('match_chunks — status 화이트리스트: archived/deprecated/in_review 제외 (0009 critical fix)', async () => {
+    // codex-rescue critical finding의 fix verify.
+    // 임시 doc 1건을 'archived' status로 set + match_chunks가 includeDrafts=true에서도
+    // 제외하는지 확인. 0001 status 화이트리스트는 5개지만 RAG는 published/draft만.
+    //
+    // 안전: 기존 doc의 status를 잠깐 archived로 set → 검증 → 원복.
+    // service_role 트리거(guard_documents_status_transition)는 service_role을 통과시킴.
+
+    // 청크 ≥ 1건 보유 doc 선택 (검색 결과에 잡힐 가능성 위해)
+    const { data: docRow } = await admin
+      .from('documents')
+      .select('id, slug, status')
+      .limit(1)
+      .single()
+    assert.ok(docRow?.id)
+    const origStatus = docRow.status
+
+    try {
+      // 1단계: status를 'archived'로 set
+      const { error: updErr } = await admin
+        .from('documents')
+        .update({ status: 'archived' })
+        .eq('id', docRow.id)
+      assert.equal(updErr, null, updErr?.message)
+
+      // 2단계: match_chunks 호출 (includeDrafts=true). 결과에 archived doc은 포함 안 됨.
+      const zeroVec = new Array(1536).fill(0)
+      const { data, error } = await admin.rpc('match_chunks', {
+        p_query_embedding: zeroVec,
+        p_top_k: 50,
+        p_min_similarity: -1,
+        p_include_drafts: true,
+      })
+      assert.equal(error, null, error?.message)
+      const rows = (data ?? []) as Array<{ document_id: string; document_status: string }>
+      const archivedHit = rows.find((r) => r.document_id === docRow.id)
+      assert.equal(archivedHit, undefined, 'archived doc은 RAG 결과에 포함 안 됨')
+
+      // 3단계: 모든 반환 row의 status는 'published' 또는 'draft'만
+      for (const r of rows) {
+        assert.ok(
+          r.document_status === 'published' || r.document_status === 'draft',
+          `예상 외 status: ${r.document_status}`,
+        )
+      }
+    } finally {
+      // 무조건 status 원복
+      await admin
+        .from('documents')
+        .update({ status: origStatus })
+        .eq('id', docRow.id)
+    }
+  })
+
+  test('match_chunks — includeDrafts=false 시 draft 제외', async () => {
+    const zeroVec = new Array(1536).fill(0)
+    const { data, error } = await admin.rpc('match_chunks', {
+      p_query_embedding: zeroVec,
+      p_top_k: 50,
+      p_min_similarity: -1,
+      p_include_drafts: false,
+    })
+    assert.equal(error, null, error?.message)
+    const rows = (data ?? []) as Array<{ document_status: string }>
+    // includeDrafts=false면 published 만 반환
+    for (const r of rows) {
+      assert.equal(r.document_status, 'published',
+        `includeDrafts=false에서 published 외 status 반환: ${r.document_status}`)
+    }
+  })
 })

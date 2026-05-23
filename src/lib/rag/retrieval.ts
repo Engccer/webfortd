@@ -93,22 +93,30 @@ export async function retrieveChunksWith(
   }
 
   const rows = (data ?? []) as MatchChunksRow[]
-  const chunks: RetrievedChunk[] = rows.map((r) => ({
-    chunkId: r.chunk_id,
-    documentId: r.document_id,
-    chunkText: r.chunk_text,
-    section: r.section,
-    chunkIndex: r.chunk_index,
-    metadata: r.metadata ?? {},
-    similarity: r.similarity,
-    documentSlug: r.document_slug,
-    documentTitle: r.document_title,
-    documentAxis: r.document_axis,
-    documentType: r.document_type,
-    // DB 필터: (p_include_drafts OR status='published') → 이 두 값만 반환 (0006 match_chunks).
-    // 필터 정책이 변경되면 types.ts RetrievedChunk.documentStatus 유니온도 갱신 필요.
-    documentStatus: (r.document_status as 'draft' | 'published'),
-  }))
+  const chunks: RetrievedChunk[] = rows.map((r) => {
+    // Runtime guard: 0009 match_chunks 화이트리스트가 'draft' | 'published' 보장.
+    // RPC 정책 변경(예: archived 포함)이 silent lie가 되지 않게 fail-fast.
+    if (r.document_status !== 'draft' && r.document_status !== 'published') {
+      throw new Error(
+        `retrieveChunks: unexpected document_status '${r.document_status}' for chunk ${r.chunk_id}. ` +
+          `match_chunks RPC가 화이트리스트를 우회한 가능성 — 0009 마이그레이션 정합 확인 필요.`,
+      )
+    }
+    return {
+      chunkId: r.chunk_id,
+      documentId: r.document_id,
+      chunkText: r.chunk_text,
+      section: r.section,
+      chunkIndex: r.chunk_index,
+      metadata: r.metadata ?? {},
+      similarity: r.similarity,
+      documentSlug: r.document_slug,
+      documentTitle: r.document_title,
+      documentAxis: r.document_axis,
+      documentType: r.document_type,
+      documentStatus: r.document_status,
+    }
+  })
 
   // slug 기반 dedup — 같은 doc의 청크가 top-k에 여러 개 들어와도 인용 카드 1개
   const seen = new Set<string>()

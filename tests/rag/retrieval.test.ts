@@ -118,4 +118,22 @@ describe('rag/retrieval', () => {
     const result = await retrieveChunksWith('q', {}, deps)
     assert.deepEqual(result, { chunks: [], sources: [] })
   })
+
+  test('runtime guard: 예상 외 documentStatus 시 throw (0009 화이트리스트 우회 차단)', async () => {
+    // codex-rescue critical fix — match_chunks가 'in_review'/'archived'/'deprecated'
+    // 같은 비화이트리스트 status를 반환하면 즉시 throw (silent lie 차단).
+    const badRows = [
+      {
+        chunk_id: 'cx', document_id: 'dx', chunk_text: 't', section: null,
+        chunk_index: 0, metadata: {}, similarity: 0.5,
+        document_slug: 'slug-x', document_title: 'X', document_axis: 'policies',
+        document_type: '안내서', document_status: 'archived',
+      },
+    ]
+    const deps = buildMockDeps({ rows: badRows as never })
+    await assert.rejects(
+      () => retrieveChunksWith('q', {}, deps),
+      /unexpected document_status.*archived/,
+    )
+  })
 })
