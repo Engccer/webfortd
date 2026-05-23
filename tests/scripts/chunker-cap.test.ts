@@ -4,6 +4,7 @@ import {
   splitLongParagraph,
   applyCharLimits,
   MAX_CHUNK_CHARS,
+  MIN_CHUNK_CHARS,
 } from '../../scripts/lib/chunker.ts'
 
 describe('splitLongParagraph (M1 carry #1)', () => {
@@ -56,5 +57,20 @@ describe('applyCharLimits + splitLongParagraph 통합', () => {
         `cap 위반: ${r.text.length}자 in ${r.section}`,
       )
     }
+  })
+
+  test('Task 4 carry: 800자 단일 문단 + 짧은 꼬리 문단 → MIN 미만 청크 검출 가능', () => {
+    // 사용자 보고된 케이스: '가'.repeat(800) + '\n\n끝.' → [800자, 3자]
+    const section = {
+      section: '## 테스트',
+      text: '가'.repeat(800) + '\n\n끝.',
+    }
+    const result = applyCharLimits([section])
+    // MIN 가드는 embed-content.ts에서 filter — 여기서는 chunker 자체 동작 문서화
+    const hasUnderMin = result.some((r) => r.text.length < MIN_CHUNK_CHARS)
+    assert.ok(
+      hasUnderMin,
+      `MIN 미만 청크 발생을 chunker 단에서 확인. embed-content.ts가 이를 filter한다.`,
+    )
   })
 })
