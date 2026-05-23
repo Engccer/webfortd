@@ -16,6 +16,11 @@ describe('embed-content 보고서 헤더 (M1 carry #3)', () => {
     )
     // dry-run은 DB·SDK 호출 없이 안전. fixture 없이도 fail 안 함.
     const out = result.stdout + result.stderr
+    assert.equal(
+      result.status,
+      0,
+      `embed-content --dry-run이 비정상 종료 (status=${result.status}). stderr=${result.stderr.slice(0, 300)}`,
+    )
     assert.match(
       out,
       /모델:\s*gemini-embedding-2-preview\s*\/\s*dim:\s*1536/,

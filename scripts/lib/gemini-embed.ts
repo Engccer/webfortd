@@ -27,8 +27,8 @@ export function getEmbedModel(): string {
 export function getEmbedDim(): number {
   const raw = process.env.EMBED_DIM
   if (raw === undefined) return DEFAULT_DIM
-  const n = parseInt(raw, 10)
-  if (!Number.isFinite(n) || n < 1 || n > 8192) {
+  const n = Number(raw)
+  if (!Number.isFinite(n) || !Number.isInteger(n) || n < 1 || n > 8192) {
     throw new Error(`Invalid EMBED_DIM env: "${raw}" — must be integer 1..8192`)
   }
   return n
@@ -36,7 +36,9 @@ export function getEmbedDim(): number {
 
 export const BATCH_SIZE = 100
 
-// backward compat re-exports — load-time evaluated, stale if env changes after import
+// backward compat re-exports — load-time evaluated, stale if env changes after import.
+// 주의: OUTPUT_DIMENSIONALITY는 모듈 로드 시점에 getEmbedDim()을 호출하므로,
+// 잘못된 EMBED_DIM 값이 설정되어 있으면 이 파일을 import하는 모든 모듈이 로드 실패함.
 export const MODEL_NAME = getEmbedModel()
 export const OUTPUT_DIMENSIONALITY = getEmbedDim()
 
