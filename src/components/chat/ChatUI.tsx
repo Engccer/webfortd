@@ -38,6 +38,7 @@ import {
 import { Suggestion, Suggestions } from '@/components/ai-elements/suggestion'
 import { Spinner } from '@/components/ui/spinner'
 import { CopyButton } from '@/components/chat/CopyButton'
+import { ErrorBanner } from '@/components/chat/ErrorBanner'
 import { SourceCard } from '@/components/chat/SourceCard'
 import { ThreadDrawer } from '@/components/chat/ThreadDrawer'
 import { useAuth } from '@/contexts/AuthContext'
@@ -63,6 +64,9 @@ export function ChatUI({ initialThreadId }: ChatUIProps = {}) {
   const { user } = useAuth()
   const [input, setInput] = useState('')
   const [threadId, setThreadId] = useState<string | undefined>(initialThreadId)
+  // M6.2 — 마지막 전송 실패 메시지 + 에러 객체 (재시도용)
+  const [lastFailedMessage, setLastFailedMessage] = useState<string | null>(null)
+  const [chatError, setChatError] = useState<Error | null>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
   // threadId를 ref로 보관 — useChat transport는 1회 instantiate되지만
@@ -91,6 +95,14 @@ export function ChatUI({ initialThreadId }: ChatUIProps = {}) {
         // SWR 사이드바 즉시 갱신 (revalidateOnFocus 기다리지 않음)
         void mutate('/api/chat/threads')
       }
+      // M6.2 — 성공 시 에러 상태 클리어
+      setLastFailedMessage(null)
+      setChatError(null)
+    },
+    onError: (error) => {
+      // M6.2 — useChat이 status='error'일 때 호출. lastFailedMessage는 send()에서
+      // 미리 저장해두므로 여기서는 Error 객체만 추가 저장.
+      setChatError(error instanceof Error ? error : new Error(String(error)))
     },
   })
 
@@ -99,8 +111,20 @@ export function ChatUI({ initialThreadId }: ChatUIProps = {}) {
   function send(text: string) {
     const trimmed = text.trim()
     if (!trimmed) return
+    // M6.2 — 전송 시점에 저장. onError 발화 시 retry 가능
+    setLastFailedMessage(trimmed)
+    setChatError(null)
     sendMessage({ text: trimmed })
     setInput('')
+    inputRef.current?.focus()
+  }
+
+  // M6.2 — 마지막 실패 메시지를 동일 threadId로 재전송
+  function retryLast() {
+    if (!lastFailedMessage) return
+    const text = lastFailedMessage
+    setChatError(null)
+    sendMessage({ text })
     inputRef.current?.focus()
   }
 
@@ -207,6 +231,11 @@ export function ChatUI({ initialThreadId }: ChatUIProps = {}) {
           )}
         </ConversationContent>
       </Conversation>
+
+      {/* M6.2 — 에러 발생 시 한국어 분기 + 재시도 버튼 */}
+      {chatError && lastFailedMessage && (
+        <ErrorBanner error={chatError} onRetry={retryLast} />
+      )}
 
       {/* 비로그인 사용자에게만 휘발 안내 — 로그인 후엔 DB 저장이라 안내 불요 */}
       {!user && (
