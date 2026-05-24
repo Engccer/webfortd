@@ -120,17 +120,61 @@ export async function retrieveChunksWith(
 
   // slug 기반 dedup — 같은 doc의 청크가 top-k에 여러 개 들어와도 인용 카드 1개
   const seen = new Set<string>()
-  const sources: SourceRef[] = []
+  const dedupedDocs: RetrievedChunk[] = []
   for (const c of chunks) {
     if (seen.has(c.documentSlug)) continue
     seen.add(c.documentSlug)
-    sources.push({
-      slug: c.documentSlug,
-      title: c.documentTitle,
-      axis: c.documentAxis,
-      type: c.documentType,
-    })
+    dedupedDocs.push(c)
   }
 
+  // 보조 select: dedup된 document_id → source_path 매핑.
+  // codex-rescue PR #31 P1: `/${axis}/${slug}` 단순 합성은 nested resource
+  // (예: content/resources/law/ordinance-comparison.md → /resources/law/ordinance-comparison)를
+  // 잘못 해소(404 발생). source_path를 retrieval 단계에서 canonical href로 박아 client에 전달한다.
+  const documentIds = dedupedDocs.map((c) => c.documentId)
+  const pathMap = new Map<string, string>()
+  if (documentIds.length > 0) {
+    const { data: docRows, error: docErr } = await supabase
+      .from('documents')
+      .select('id, source_path')
+      .in('id', documentIds)
+    if (docErr) {
+      throw new Error(
+        `documents source_path 조회 실패: ${formatSupabaseError(docErr)}`,
+      )
+    }
+    for (const d of (docRows ?? []) as Array<{ id: string; source_path: string }>) {
+      pathMap.set(d.id, d.source_path)
+    }
+  }
+
+  const sources: SourceRef[] = dedupedDocs.map((c) => ({
+    slug: c.documentSlug,
+    title: c.documentTitle,
+    axis: c.documentAxis,
+    type: c.documentType,
+    href: sourcePathToHref(pathMap.get(c.documentId) ?? '', c.documentAxis, c.documentSlug),
+  }))
+
   return { chunks, sources }
+}
+
+/**
+ * documents.source_path → canonical route 변환.
+ *
+ *   content/policies/2023-hr-1.md → /policies/2023-hr-1
+ *   content/resources/law/ordinance-comparison.md → /resources/law/ordinance-comparison
+ *
+ * source_path 누락·비정형 시 `/${axis}/${slug}` fallback (Phase 3 M4 codex-rescue 권고).
+ * export로 두어 client 측 helper 재사용 가능 (값만 — types 의존, 런타임 import 안전).
+ */
+export function sourcePathToHref(
+  sourcePath: string,
+  axis: string,
+  slug: string,
+): string {
+  if (sourcePath && sourcePath.startsWith('content/') && sourcePath.endsWith('.md')) {
+    return '/' + sourcePath.slice('content/'.length, -'.md'.length)
+  }
+  return `/${axis}/${slug}`
 }

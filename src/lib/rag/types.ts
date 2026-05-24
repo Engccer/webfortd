@@ -32,6 +32,13 @@ export interface SourceRef {
   title: string
   axis: string
   type: string
+  /**
+   * Canonical 라우트(`/<axis>/<...>/<slug>`).
+   * documents.source_path(`content/<axis>/<...>/<slug>.md`)에서 합성.
+   * nested resource(`/resources/law/[slug]`)도 정확히 해소되도록 retrieval 단계에서 박는다.
+   * UI(SourceCard)는 axis/slug 합성 로직을 갖지 않고 이 값을 그대로 사용한다.
+   */
+  href: string
 }
 
 /** retrieveChunks() 호출 옵션 — 모두 optional, 기본값은 retrieval.ts에서 정의 */
