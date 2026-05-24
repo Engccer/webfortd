@@ -97,6 +97,7 @@ export function ChatUI() {
                     key={s}
                     suggestion={s}
                     onClick={() => send(s)}
+                    className="min-h-11"
                   />
                 ))}
               </Suggestions>
