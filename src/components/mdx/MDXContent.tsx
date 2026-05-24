@@ -107,12 +107,15 @@ const components = {
       </div>
     )
   },
-  // 이미지 placeholder 처리
+  // 이미지 placeholder 처리.
+  // next/image 미사용 사유: MDX 본문 이미지는 동적 src(로컬 경로·외부 URL 혼재)라 next/image의
+  // 도메인 화이트리스트·정적 분석과 정합 어려움. <img> 의도된 선택. alt는 MDX 마크다운에서 전달.
   img: (props: React.ImgHTMLAttributes<HTMLImageElement>) => {
     if (typeof props.src === "string" && props.src.includes("placeholder")) {
       return null // placeholder 이미지는 표시하지 않음
     }
-    return <img className="max-w-full h-auto my-4 rounded-lg" {...props} />
+    // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text -- alt는 {...props}로 전달됨 (MDX 마크다운 alt). 정적 분석이 못 잡음.
+    return <img className="max-w-full h-auto my-4 rounded-lg" alt={props.alt ?? ""} {...props} />
   },
 }
 

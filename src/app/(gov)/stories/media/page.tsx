@@ -2,7 +2,7 @@ import { Metadata } from "next"
 import { Breadcrumb } from "@/components/layout/Breadcrumb"
 import { Sidebar } from "@/components/layout/Sidebar"
 import { mainNavigation } from "@/lib/navigation"
-import { Video, FileText, Image, Download } from "lucide-react"
+import { Video, FileText, Image as ImageIcon, Download } from "lucide-react"
 
 export const metadata: Metadata = {
   title: "미디어 자료",
@@ -161,7 +161,7 @@ export default function MediaPage() {
 
           <section>
             <h2 className="mb-4 flex items-center gap-2 text-xl font-semibold text-gray-900">
-              <Image className="h-5 w-5" />
+              <ImageIcon className="h-5 w-5" aria-hidden="true" />
               인포그래픽
             </h2>
             <div className="grid gap-4 md:grid-cols-3">
@@ -171,7 +171,7 @@ export default function MediaPage() {
                   className="rounded-lg border border-gray-200 p-4"
                 >
                   <div className="mb-3 aspect-[4/3] rounded bg-gray-100 flex items-center justify-center">
-                    <Image className="h-12 w-12 text-gray-300" />
+                    <ImageIcon className="h-12 w-12 text-gray-300" aria-hidden="true" />
                   </div>
                   <h3 className="mb-1 font-medium text-gray-900">{info.title}</h3>
                   <p className="text-sm text-gray-600">{info.description}</p>
