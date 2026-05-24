@@ -1115,9 +1115,27 @@ EOF
 - [ ] **Step 1: 위원장에게 CRON_SECRET 환경변수 등록 요청**
 
 위원장에게 명시 요청:
-1. 32자 랜덤 secret 생성: `node -e "console.log(require('node:crypto').randomBytes(32).toString('base64url'))"`
-2. Vercel 환경변수 `CRON_SECRET` 추가 (production + preview + development)
-3. `vercel env pull .env.local --yes`로 로컬 동기화
+1. 32자 랜덤 secret 생성:
+   ```bash
+   node -e "console.log(require('node:crypto').randomBytes(32).toString('base64url'))"
+   ```
+2. Vercel 환경변수 `CRON_SECRET` 추가 — 3개 환경(production + preview + development) 권장:
+   ```bash
+   # interactive (안전 — value는 prompt에서 paste, terminal 로그 X)
+   vercel env add CRON_SECRET production
+   vercel env add CRON_SECRET preview
+   vercel env add CRON_SECRET development
+   # 또는 stdin pipe (위 secret을 stdin으로 전달, NAME=value 위치 인자 사용 금지)
+   ```
+3. **`vercel env pull .env.local --yes` 주의** — 이 명령은 `.env.local` 파일을 **전체 덮어쓰기** 한다. 기존 custom 변수가 있으면 사전에 백업:
+   ```bash
+   # 백업 후 pull
+   cp .env.local .env.local.bak 2>/dev/null || true
+   vercel env pull .env.local --yes
+   # 만약 custom 변수가 있었다면 .env.local.bak에서 수동 merge
+   diff .env.local.bak .env.local
+   ```
+   webfortd `.env.local`은 현재 Vercel envs만 import해 사용 중이라 custom 변수 0건일 가능성 높지만, 안전을 위해 위 절차 권장.
 
 위원장이 OK 신호 후 Step 2 진입.
 
