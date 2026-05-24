@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { stripFrontmatter, stripPageHeaders, splitByH2, applyCharLimits, MAX_CHUNK_CHARS, MIN_CHUNK_CHARS, chunkDocument, type ChunkMetadata } from '../../scripts/lib/chunker.ts'
+import { stripFrontmatter, stripPageHeaders, splitByH2, applyCharLimits, MAX_CHUNK_CHARS, MIN_CHUNK_CHARS, chunkDocument } from '../../scripts/lib/chunker.ts'
 
 test('stripFrontmatter — frontmatter 블록 제거', () => {
   const input = '---\nslug: foo\ntitle: bar\n---\n\n본문 내용입니다.'

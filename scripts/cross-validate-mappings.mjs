@@ -27,7 +27,6 @@
  */
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { execFile } from "node:child_process";
-import path from "node:path";
 import Anthropic from "@anthropic-ai/sdk";
 
 const REPO = "/Users/hunyongkim/Mac-Projects/webfortd";

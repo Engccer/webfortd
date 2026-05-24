@@ -30,9 +30,6 @@ import { fileURLToPath } from 'node:url'
 import matter from 'gray-matter'
 import {
   CONTENT_AXES,
-  DISABILITY_TYPES,
-  DOMAINS,
-  REGIONS,
   type ContentAxis,
   type Frontmatter,
 } from '../src/types/kb'
@@ -450,7 +447,7 @@ function buildSections(
 // 짧은 메타 헤딩(본문 100자 미만) 병합 정책.
 // 청사진 §13: 단체협약 등에서 #### 제N조 본문이 너무 짧으면 상위 절·장에 병합.
 // M3에서는 너무 공격적인 병합을 피하고, 본문이 빈 경우만 skip.
-function shouldSkipSection(section: RawSection, _splitLevel: number): boolean {
+function shouldSkipSection(section: RawSection): boolean {
   const stripped = section.body.replace(/\s+/g, '')
   // 완전히 비어있고 부모도 없으면 skip (예: 단체협약의 ## 2023. 6. 2. 같은 날짜 헤딩)
   if (stripped.length === 0) return true
@@ -487,7 +484,7 @@ export function decomposeFile(args: {
 
   let fallbackIndex = 0
   for (const section of sections) {
-    if (shouldSkipSection(section, meta.splitLevel)) continue
+    if (shouldSkipSection(section)) continue
     fallbackIndex += 1
 
     // 슬러그 생성 + 충돌 해소 (같은 source 내, final 단위)

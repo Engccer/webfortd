@@ -16,7 +16,7 @@
  *   - sources.length <= chunks.length (slug dedup 작동)
  *   - 모든 chunks의 documentAxis 가 6 axes 중 하나
  */
-import { test, describe, before } from 'node:test'
+import { test, describe } from 'node:test'
 import assert from 'node:assert/strict'
 import { loadDotEnvLocalOverrides } from '../../scripts/lib/env-loader.ts'
 import { retrieveChunks } from '../../src/lib/rag/retrieval.ts'

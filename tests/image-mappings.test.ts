@@ -11,7 +11,7 @@
  * IMG_MAPPINGS_ROOT 환경변수로 fixture 디렉터리 주입.
  */
 
-import { describe, it, before, after } from 'node:test'
+import { describe, it, after } from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -116,7 +116,7 @@ const TODO_MARKER = (source: string, alt: string) =>
 
 const FM = `title: Test\nslug: test\naxis: domains\nstatus: published\nflow:\n  - 전체\n`
 
-let fixturesToCleanup: string[] = []
+const fixturesToCleanup: string[] = []
 
 after(() => {
   for (const dir of fixturesToCleanup) {

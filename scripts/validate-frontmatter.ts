@@ -20,7 +20,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import matter from 'gray-matter'
-import { CONTENT_AXES, FrontmatterSchema, type ContentAxis } from '../src/types/kb'
+import { CONTENT_AXES, FrontmatterSchema } from '../src/types/kb'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -71,15 +71,6 @@ function walkMarkdown(dir: string): string[] {
 
 function relativeTo(p: string, root: string): string {
   return path.relative(root, p)
-}
-
-function findFrontmatterStartLine(content: string): number {
-  // gray-matter의 delimiter는 기본 '---'. 첫 '---' 라인 다음 줄을 frontmatter 본체 시작으로 본다.
-  const lines = content.split(/\r?\n/)
-  for (let i = 0; i < lines.length; i++) {
-    if (lines[i].trim() === '---') return i + 2 // 1-indexed line of first frontmatter key (approx)
-  }
-  return 1
 }
 
 /**

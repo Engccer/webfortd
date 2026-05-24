@@ -74,20 +74,20 @@ export function SiteSearch() {
   const [query, setQuery] = React.useState("")
   const [open, setOpen] = React.useState(false)
   const [activeIndex, setActiveIndex] = React.useState(-1)
-  const [docs, setDocs] = React.useState<SearchDoc[]>([])
-  const indexRef = React.useRef<DocumentIndex | null>(null)
+  // React 19 react-hooks/refs 정합 — index를 ref가 아닌 state로 보관.
+  // useMemo 안에서 ref.current 직접 접근 시 cascading render 위험으로 잡힘.
+  // state 전환으로 deps 추적이 자연스럽고 useMemo 재계산이 정확.
+  const [index, setIndex] = React.useState<DocumentIndex | null>(null)
 
   // 클라이언트에서만 인덱스 빌드 (SSR mismatch 회피)
   React.useEffect(() => {
-    const loaded = getSearchDocs()
-    setDocs(loaded)
-    indexRef.current = buildIndex(loaded)
+    setIndex(buildIndex(getSearchDocs()))
   }, [])
 
   const results = React.useMemo<ResultHit[]>(() => {
-    if (!indexRef.current || !query.trim()) return []
-    return runQuery(indexRef.current, query)
-  }, [query, docs])
+    if (!index || !query.trim()) return []
+    return runQuery(index, query)
+  }, [query, index])
 
   React.useEffect(() => {
     setActiveIndex(results.length > 0 ? 0 : -1)

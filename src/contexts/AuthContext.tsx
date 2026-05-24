@@ -33,8 +33,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const supabase = tryGetClient()
     if (!supabase) {
-      // env 미설정 — silent no-op (빌드 통과용 defensive)
-      setLoading(false)
+      // env 미설정 — silent no-op (빌드 통과용 defensive).
+      // microtask로 미뤄 set-state-in-effect cascading render 룰 정합 — early return path.
+      queueMicrotask(() => setLoading(false))
       return
     }
     supabase.auth.getUser().then(({ data: { user } }) => {

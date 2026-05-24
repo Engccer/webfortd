@@ -2,8 +2,7 @@
 
 import * as React from "react"
 import { useTheme } from "next-themes"
-import { Settings, X, Type, AlignJustify, Contrast, Link2, Pause, Moon, Sun, Monitor, Volume2 } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { Settings, Type, AlignJustify, Contrast, Link2, Pause, Moon, Sun, Monitor, Volume2 } from "lucide-react"
 import {
   type AccessibilitySettings,
   defaultSettings,

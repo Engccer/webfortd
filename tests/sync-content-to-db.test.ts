@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Supabase JS client mock 17건은 의도된 any.
+   PostgrestQueryBuilder<...> 등 정밀 타입 모사는 mock 단위 테스트 의도에 비해 비용 과다.
+   test 파일이라 production 런타임 영향 0. */
+
 import { test, describe } from 'node:test'
 import assert from 'node:assert/strict'
 import {
