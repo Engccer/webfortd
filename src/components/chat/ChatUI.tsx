@@ -19,6 +19,7 @@
 
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
+import { ArrowDown } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { mutate } from 'swr'
 import {
@@ -68,6 +69,10 @@ export function ChatUI({ initialThreadId }: ChatUIProps = {}) {
   const [lastFailedMessage, setLastFailedMessage] = useState<string | null>(null)
   const [chatError, setChatError] = useState<Error | null>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+  // M6.3 — 자동 스크롤 + 사용자 위로 스크롤 감지
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const [isAtBottom, setIsAtBottom] = useState(true)
+  const [showJumpButton, setShowJumpButton] = useState(false)
 
   // threadId를 ref로 보관 — useChat transport는 1회 instantiate되지만
   // prepareSendMessagesRequest 콜백에서 매 send마다 최신 ref 값을 읽어 stale 회피.
@@ -75,6 +80,21 @@ export function ChatUI({ initialThreadId }: ChatUIProps = {}) {
   useEffect(() => {
     threadIdRef.current = threadId
   }, [threadId])
+
+  // M6.3 — messagesEndRef 가시성 추적 (사용자가 위로 스크롤하면 false)
+  useEffect(() => {
+    const target = messagesEndRef.current
+    if (!target) return
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsAtBottom(entry.isIntersecting)
+        if (entry.isIntersecting) setShowJumpButton(false)
+      },
+      { threshold: 0.1 },
+    )
+    observer.observe(target)
+    return () => observer.disconnect()
+  }, [])
 
   // useChat v6 — DefaultChatTransport. body는 정적 객체가 아닌 동적 콜백으로.
   const { messages, sendMessage, status } = useChat({
@@ -105,6 +125,16 @@ export function ChatUI({ initialThreadId }: ChatUIProps = {}) {
       setChatError(error instanceof Error ? error : new Error(String(error)))
     },
   })
+
+  // M6.3 — 새 메시지마다 (a) 바닥에 있으면 자동 스크롤, (b) 위로 올라가있으면 jump button
+  useEffect(() => {
+    if (messages.length === 0) return
+    if (isAtBottom) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    } else {
+      setShowJumpButton(true)
+    }
+  }, [messages, isAtBottom])
 
   const isLoading = status === 'submitted' || status === 'streaming'
 
@@ -229,8 +259,26 @@ export function ChatUI({ initialThreadId }: ChatUIProps = {}) {
               <span>응답을 작성하고 있어요…</span>
             </div>
           )}
+          {/* M6.3 — IntersectionObserver target */}
+          <div ref={messagesEndRef} aria-hidden="true" className="h-px" />
         </ConversationContent>
       </Conversation>
+
+      {/* M6.3 — 사용자가 위로 스크롤한 상태에서 새 응답 도착 시 floating 버튼 */}
+      {showJumpButton && (
+        <button
+          type="button"
+          onClick={() => {
+            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+            setShowJumpButton(false)
+          }}
+          aria-label="최신 응답으로 이동"
+          className="fixed bottom-24 right-6 z-30 inline-flex h-11 min-w-11 items-center gap-1.5 rounded-full bg-primary px-3 text-sm font-medium text-primary-foreground shadow-lg hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring"
+        >
+          <ArrowDown className="h-4 w-4" aria-hidden="true" />
+          새 응답
+        </button>
+      )}
 
       {/* M6.2 — 에러 발생 시 한국어 분기 + 재시도 버튼 */}
       {chatError && lastFailedMessage && (
