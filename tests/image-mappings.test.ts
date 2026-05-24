@@ -11,7 +11,7 @@
  * IMG_MAPPINGS_ROOT 환경변수로 fixture 디렉터리 주입.
  */
 
-import { describe, it, before, after } from 'node:test'
+import { describe, it, after } from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import path from 'node:path'

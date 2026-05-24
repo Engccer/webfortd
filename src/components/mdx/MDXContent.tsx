@@ -114,7 +114,7 @@ const components = {
     if (typeof props.src === "string" && props.src.includes("placeholder")) {
       return null // placeholder 이미지는 표시하지 않음
     }
-    // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text -- alt는 {...props}로 전달됨 (MDX 마크다운 alt). 정적 분석이 못 잡음.
+    // eslint-disable-next-line @next/next/no-img-element -- MDX 본문 dynamic src로 next/image 불가. 의도된 <img>.
     return <img className="max-w-full h-auto my-4 rounded-lg" alt={props.alt ?? ""} {...props} />
   },
 }

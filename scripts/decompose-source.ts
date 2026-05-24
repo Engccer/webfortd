@@ -30,9 +30,6 @@ import { fileURLToPath } from 'node:url'
 import matter from 'gray-matter'
 import {
   CONTENT_AXES,
-  DISABILITY_TYPES,
-  DOMAINS,
-  REGIONS,
   type ContentAxis,
   type Frontmatter,
 } from '../src/types/kb'
