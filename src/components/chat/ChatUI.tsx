@@ -20,7 +20,7 @@
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
 import { ArrowDown } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { mutate } from 'swr'
 import {
   Conversation,
@@ -44,13 +44,8 @@ import { SourceCard } from '@/components/chat/SourceCard'
 import { ThreadDrawer } from '@/components/chat/ThreadDrawer'
 import { useAuth } from '@/contexts/AuthContext'
 import { isStaleThread } from '@/lib/chat/session-timeout'
+import { getSuggestions } from '@/lib/chat/suggestions'
 import type { SourceRef } from '@/lib/rag/types'
-
-const SUGGESTIONS = [
-  '특수 마우스에는 어떤 종류가 있나요?',
-  '편의지원 조례를 제정한 시도교육청은 어디인가요?',
-  '학교생활기록부 비교과 활동 입력 지원은 어떻게 받나요?',
-] as const
 
 interface AssistantMetadata {
   sourceRefs?: SourceRef[]
@@ -167,6 +162,28 @@ export function ChatUI({ initialThreadId }: ChatUIProps = {}) {
 
   const isLoading = status === 'submitted' || status === 'streaming'
 
+  // M6.5 — 마지막 assistant 응답의 첫 sourceRef axis로 분기.
+  const lastAssistantAxis = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const m = messages[i]
+      if (m.role !== 'assistant') continue
+      const meta = m.metadata as AssistantMetadata | undefined
+      const first = meta?.sourceRefs?.[0]
+      if (first?.axis) return first.axis
+    }
+    return undefined
+  }, [messages])
+
+  const suggestions = useMemo(
+    () =>
+      getSuggestions({
+        isAuthenticated: !!user,
+        hasThread: !!threadId,
+        lastAssistantAxis,
+      }),
+    [user, threadId, lastAssistantAxis],
+  )
+
   function send(text: string) {
     const trimmed = text.trim()
     if (!trimmed) return
@@ -226,7 +243,7 @@ export function ChatUI({ initialThreadId }: ChatUIProps = {}) {
                 대한민국 장애인교원 제도와 정책에 대해 자연어로 질문할 수 있어요.
               </p>
               <Suggestions aria-label="추천 질문" className="mt-6">
-                {SUGGESTIONS.map((s) => (
+                {suggestions.map((s) => (
                   <Suggestion
                     key={s}
                     suggestion={s}
