@@ -43,6 +43,7 @@ import { ErrorBanner } from '@/components/chat/ErrorBanner'
 import { SourceCard } from '@/components/chat/SourceCard'
 import { ThreadDrawer } from '@/components/chat/ThreadDrawer'
 import { useAuth } from '@/contexts/AuthContext'
+import { isStaleThread } from '@/lib/chat/session-timeout'
 import type { SourceRef } from '@/lib/rag/types'
 
 const SUGGESTIONS = [
@@ -73,6 +74,8 @@ export function ChatUI({ initialThreadId }: ChatUIProps = {}) {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const [isAtBottom, setIsAtBottom] = useState(true)
   const [showJumpButton, setShowJumpButton] = useState(false)
+  // M6.4 — 세션 타임아웃 안내 (aria-live)
+  const [staleAnnouncement, setStaleAnnouncement] = useState<string | null>(null)
 
   // threadId를 ref로 보관 — useChat transport는 1회 instantiate되지만
   // prepareSendMessagesRequest 콜백에서 매 send마다 최신 ref 값을 읽어 stale 회피.
@@ -94,6 +97,32 @@ export function ChatUI({ initialThreadId }: ChatUIProps = {}) {
     )
     observer.observe(target)
     return () => observer.disconnect()
+  }, [])
+
+  // M6.4 — initialThreadId mount 시 4시간 초과 검사. stale이면 신규 thread로 분기.
+  // 이전 thread는 ThreadDrawer에 그대로 유지 (사용자가 명시 선택해야 재진입).
+  useEffect(() => {
+    if (!initialThreadId || !user) return
+    let cancelled = false
+    fetch('/api/chat/threads')
+      .then((r) => r.json())
+      .then((data: { threads?: Array<{ id: string; updated_at: string }> }) => {
+        if (cancelled) return
+        const current = data.threads?.find((t) => t.id === initialThreadId)
+        if (current && isStaleThread(current.updated_at)) {
+          setThreadId(undefined)
+          setStaleAnnouncement(
+            '새 대화를 시작해요. 이전 대화는 사이드바에 그대로 남아 있어요.',
+          )
+          setTimeout(() => setStaleAnnouncement(null), 4000)
+        }
+      })
+      .catch((err) => console.error('[ChatUI] M6.4 stale check failed:', err))
+    return () => {
+      cancelled = true
+    }
+    // initialThreadId/user는 mount 1회 검사 — 이후 사용자 thread 전환은 page reload(handleThreadSelect)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // useChat v6 — DefaultChatTransport. body는 정적 객체가 아닌 동적 콜백으로.
@@ -278,6 +307,17 @@ export function ChatUI({ initialThreadId }: ChatUIProps = {}) {
           <ArrowDown className="h-4 w-4" aria-hidden="true" />
           새 응답
         </button>
+      )}
+
+      {/* M6.4 — 세션 타임아웃 안내 (aria-live polite) */}
+      {staleAnnouncement && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="mb-2 rounded-md border border-blue-300 bg-blue-50 px-3 py-2 text-xs text-blue-900 dark:border-blue-700 dark:bg-blue-950 dark:text-blue-100"
+        >
+          {staleAnnouncement}
+        </div>
       )}
 
       {/* M6.2 — 에러 발생 시 한국어 분기 + 재시도 버튼 */}
