@@ -37,6 +37,7 @@ import {
 } from '@/components/ai-elements/prompt-input'
 import { Suggestion, Suggestions } from '@/components/ai-elements/suggestion'
 import { Spinner } from '@/components/ui/spinner'
+import { CopyButton } from '@/components/chat/CopyButton'
 import { SourceCard } from '@/components/chat/SourceCard'
 import { ThreadDrawer } from '@/components/chat/ThreadDrawer'
 import { useAuth } from '@/contexts/AuthContext'
@@ -156,24 +157,40 @@ export function ChatUI({ initialThreadId }: ChatUIProps = {}) {
             messages.map((m) => {
               const metadata = m.metadata as AssistantMetadata | undefined
               const sourceRefs = metadata?.sourceRefs ?? []
+              // M6.1 — assistant 메시지 본문(text part만 join)을 CopyButton에 전달.
+              const assistantText =
+                m.role === 'assistant'
+                  ? m.parts
+                      ?.filter((p): p is { type: 'text'; text: string } => p.type === 'text')
+                      .map((p) => p.text)
+                      .join('') ?? ''
+                  : ''
               return (
                 <Message key={m.id} from={m.role}>
                   <MessageContent>
-                    {m.parts?.map((part, i) => {
-                      if (part.type === 'text') {
-                        return m.role === 'assistant' ? (
-                          <MessageResponse key={i}>{part.text}</MessageResponse>
-                        ) : (
-                          <span
-                            key={i}
-                            className="whitespace-pre-line"
-                          >
-                            {part.text}
-                          </span>
-                        )
-                      }
-                      return null
-                    })}
+                    <div className="group relative">
+                      {m.parts?.map((part, i) => {
+                        if (part.type === 'text') {
+                          return m.role === 'assistant' ? (
+                            <MessageResponse key={i}>{part.text}</MessageResponse>
+                          ) : (
+                            <span
+                              key={i}
+                              className="whitespace-pre-line"
+                            >
+                              {part.text}
+                            </span>
+                          )
+                        }
+                        return null
+                      })}
+                      {/* M6.1 — 데스크탑 hover/focus 노출, 모바일 항상 노출 */}
+                      {m.role === 'assistant' && assistantText && (
+                        <div className="absolute right-0 top-0 opacity-100 transition-opacity sm:opacity-0 sm:group-focus-within:opacity-100 sm:group-hover:opacity-100">
+                          <CopyButton content={assistantText} />
+                        </div>
+                      )}
+                    </div>
                     {m.role === 'assistant' && sourceRefs.length > 0 && (
                       <SourceCard sources={sourceRefs} />
                     )}
