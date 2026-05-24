@@ -18,7 +18,6 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import path from 'node:path'
 import { execFileSync } from 'node:child_process'
-import crypto from 'node:crypto'
 import os from 'node:os'
 
 const REPO_ROOT = path.resolve(import.meta.dirname, '..')

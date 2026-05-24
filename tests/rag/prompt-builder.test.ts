@@ -1,7 +1,6 @@
 import { test, describe } from 'node:test'
 import assert from 'node:assert/strict'
 import {
-  SYSTEM_PROMPT_TEMPLATE,
   formatRetrievedChunks,
   buildSystemPrompt,
   clampHistory,

@@ -116,7 +116,7 @@ const TODO_MARKER = (source: string, alt: string) =>
 
 const FM = `title: Test\nslug: test\naxis: domains\nstatus: published\nflow:\n  - 전체\n`
 
-let fixturesToCleanup: string[] = []
+const fixturesToCleanup: string[] = []
 
 after(() => {
   for (const dir of fixturesToCleanup) {
