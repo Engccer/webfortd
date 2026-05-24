@@ -24,7 +24,7 @@ export default function WikiLayout({
                 className="flex items-center gap-2 text-base font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
               >
                 <BookOpenText className="h-5 w-5 text-primary" aria-hidden="true" />
-                <span>장교조 위키</span>
+                <span>장애인교원 위키</span>
                 <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800">
                   베타
                 </span>
@@ -63,7 +63,7 @@ export default function WikiLayout({
           {children}
         </main>
         <footer className="border-t border-border bg-muted/30 py-6 text-center text-xs text-muted-foreground">
-          <p>장교조 위키는 베타 단계입니다 · 정식 운영 콘텐츠는{" "}
+          <p>장애인교원 위키는 베타 단계입니다 · 정식 운영 콘텐츠는{" "}
             <Link href="/" className="underline hover:text-foreground">
               기관용 사이트
             </Link>
