@@ -1,26 +1,26 @@
 'use client'
 
 /**
- * Phase 3 M4 — RAG 채팅 UI.
+ * Phase 3 M4 + M5 — RAG 채팅 UI.
  *
- * M3 /api/chat Route Handler와 연결:
- *   - 스트리밍 응답 (toUIMessageStreamResponse)
- *   - messageMetadata.sourceRefs로 출처 5개 전달
+ * M4: ChatMockUI → useChat v6 + AI Elements MessageResponse markdown.
+ * M5: 로그인 사용자의 대화를 DB(chat_threads/chat_messages)에 저장.
+ *   - useChat body로 threadId 동봉 (prepareSendMessagesRequest로 동적 — stale 회피)
+ *   - onFinish에서 message.metadata.threadId 받아 state 동기화 + SWR mutate
+ *   - 로그인 시 좌측 ThreadDrawer 렌더 (비로그인은 안내 배너만)
+ *   - drawer thread 선택 → window.location 새로고침 (page.tsx searchParams 경유)
  *
- * M5 carry-over (별도 PR):
- *   - threadId/userId body, onFinish DB 저장, ThreadDrawer
- *   - 본 PR은 비로그인 useState 휘발 모드만 + 안내 배너 1줄
- *
- * 접근성 (위원장 톤 검수 게이트):
- *   - <Conversation> 컨테이너 aria-label
+ * 접근성:
+ *   - <Conversation> aria-live="polite" + aria-relevant="additions text" (codex P2)
  *   - 추천 클릭 후 inputRef focus handoff 보존
  *   - 비로그인 안내 배너 role="status"
- *   - <Spinner>는 자체 role="status" + aria-label
+ *   - <Spinner> role="status" + aria-label
  */
 
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { mutate } from 'swr'
 import {
   Conversation,
   ConversationContent,
@@ -38,6 +38,8 @@ import {
 import { Suggestion, Suggestions } from '@/components/ai-elements/suggestion'
 import { Spinner } from '@/components/ui/spinner'
 import { SourceCard } from '@/components/chat/SourceCard'
+import { ThreadDrawer } from '@/components/chat/ThreadDrawer'
+import { useAuth } from '@/contexts/AuthContext'
 import type { SourceRef } from '@/lib/rag/types'
 
 const SUGGESTIONS = [
@@ -48,16 +50,47 @@ const SUGGESTIONS = [
 
 interface AssistantMetadata {
   sourceRefs?: SourceRef[]
+  threadId?: string
 }
 
-export function ChatUI() {
+interface ChatUIProps {
+  /** drawer 선택 시 page.tsx searchParams.thread → 새 thread로 mount */
+  initialThreadId?: string
+}
+
+export function ChatUI({ initialThreadId }: ChatUIProps = {}) {
+  const { user } = useAuth()
   const [input, setInput] = useState('')
+  const [threadId, setThreadId] = useState<string | undefined>(initialThreadId)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
-  // useChat() — DefaultChatTransport는 v6 명시 transport.
-  // M5에서 body로 threadId/userId 동봉 예정 (PR B).
+  // threadId를 ref로 보관 — useChat transport는 1회 instantiate되지만
+  // prepareSendMessagesRequest 콜백에서 매 send마다 최신 ref 값을 읽어 stale 회피.
+  const threadIdRef = useRef(threadId)
+  useEffect(() => {
+    threadIdRef.current = threadId
+  }, [threadId])
+
+  // useChat v6 — DefaultChatTransport. body는 정적 객체가 아닌 동적 콜백으로.
   const { messages, sendMessage, status } = useChat({
-    transport: new DefaultChatTransport({ api: '/api/chat' }),
+    transport: new DefaultChatTransport({
+      api: '/api/chat',
+      prepareSendMessagesRequest: ({ messages: msgs }) => ({
+        body: {
+          messages: msgs,
+          ...(threadIdRef.current ? { threadId: threadIdRef.current } : {}),
+        },
+      }),
+    }),
+    onFinish: ({ message }) => {
+      // M5: 신규 thread 생성 시 server가 messageMetadata.threadId를 보낸다.
+      const meta = message.metadata as AssistantMetadata | undefined
+      if (meta?.threadId && !threadIdRef.current) {
+        setThreadId(meta.threadId)
+        // SWR 사이드바 즉시 갱신 (revalidateOnFocus 기다리지 않음)
+        void mutate('/api/chat/threads')
+      }
+    },
   })
 
   const isLoading = status === 'submitted' || status === 'streaming'
@@ -67,15 +100,32 @@ export function ChatUI() {
     if (!trimmed) return
     sendMessage({ text: trimmed })
     setInput('')
-    // 추천 버튼 클릭 후 키보드 사용자 focus 잃지 않도록 input 복귀
     inputRef.current?.focus()
+  }
+
+  function handleThreadSelect(id: string) {
+    // 가장 단순한 thread 전환 — page reload로 새 useChat instance.
+    // 더 정교한 router.replace + key remount는 M6 carry.
+    if (typeof window !== 'undefined') {
+      window.location.href = `/chat?thread=${encodeURIComponent(id)}`
+    }
   }
 
   return (
     <div className="mx-auto flex h-[calc(100vh-8rem)] max-w-3xl flex-col px-4 sm:px-6">
+      {/* 로그인 사용자만 ThreadDrawer 렌더 (비로그인은 drawer 자체 없음) */}
+      {user && (
+        <div className="mb-2 flex items-center justify-between">
+          <ThreadDrawer
+            currentThreadId={threadId}
+            onSelect={handleThreadSelect}
+          />
+        </div>
+      )}
+
       {/* aria-live="polite" — codex-rescue PR #31 P2 권고.
           AI Elements Conversation은 role="log"만 갖는다(implicit polite).
-          VoiceOver 스트리밍 낭독을 확실히 보장하기 위해 명시. spec §6.1 정합. */}
+          VoiceOver 스트리밍 낭독을 확실히 보장하기 위해 명시. */}
       <Conversation
         aria-label="대화 내역"
         aria-live="polite"
@@ -111,8 +161,6 @@ export function ChatUI() {
                   <MessageContent>
                     {m.parts?.map((part, i) => {
                       if (part.type === 'text') {
-                        // assistant는 MessageResponse(markdown 의무 — AI SDK v6),
-                        // user는 평문 <span>
                         return m.role === 'assistant' ? (
                           <MessageResponse key={i}>{part.text}</MessageResponse>
                         ) : (
@@ -143,12 +191,15 @@ export function ChatUI() {
         </ConversationContent>
       </Conversation>
 
-      <p
-        role="status"
-        className="mt-2 mb-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100"
-      >
-        로그인하면 대화가 저장돼요. 지금은 새로고침하면 사라져요.
-      </p>
+      {/* 비로그인 사용자에게만 휘발 안내 — 로그인 후엔 DB 저장이라 안내 불요 */}
+      {!user && (
+        <p
+          role="status"
+          className="mt-2 mb-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100"
+        >
+          로그인하면 대화가 저장돼요. 지금은 새로고침하면 사라져요.
+        </p>
+      )}
 
       <PromptInput
         onSubmit={(message) => send(message.text)}

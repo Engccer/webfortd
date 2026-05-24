@@ -24,15 +24,20 @@ import {
 } from 'ai'
 import { retrieveChunks } from '@/lib/rag/retrieval.ts'
 import { buildSystemPrompt, clampHistory } from '@/lib/rag/prompt-builder.ts'
+import { getServerClient } from '@/lib/supabase/server'
+import { getAdminClient } from '@/lib/supabase/admin'
 
 export const runtime = 'nodejs' // service_role + retrieval RPC (Edge 비호환)
 export const maxDuration = 60 // streamText 60초 timeout
 
 const HISTORY_MAX_TURNS = 5 // D5
 const RETRIEVAL_TOP_K = 5 // RAG design §7.2
+const TITLE_MAX_CHARS = 30 // M5 D1 — thread title은 첫 user 메시지 첫 30자 truncate
 
 interface ChatRequestBody {
   messages?: unknown
+  /** M5 — 클라이언트가 기존 thread 이어가기. 신규 thread는 undefined. */
+  threadId?: string
 }
 
 export async function POST(req: Request): Promise<Response> {
@@ -97,27 +102,85 @@ export async function POST(req: Request): Promise<Response> {
   // AI SDK v6 권장: system은 별도 파라미터로 분리 (UIMessage system role prepend는 비표준).
   const modelMessages = await convertToModelMessages(clamped)
 
+  // M5: 서버측 user 검증 (cookies 기반 SSR auth, 클라이언트 hint 신뢰 X).
+  // 비로그인 사용자는 user=null → onFinish DB 저장 분기 skip.
+  const supabaseSSR = await getServerClient()
+  const {
+    data: { user },
+  } = await supabaseSSR.auth.getUser()
+
+  // newThreadId 클로저 변수 — route handler stateless. onFinish set → messageMetadata read.
+  let newThreadId: string | null = null
+
   // 8. streaming 응답
   const result = streamText({
     model: gateway('google/gemini-3.5-flash'),
     system: systemPrompt,
     messages: modelMessages,
-    onFinish: ({ usage }) => {
+    onFinish: async ({ usage, text }) => {
       // 비용·토큰 로그 (PIPA — user query 본문은 로그 X)
       console.log('[chat] finish', {
         promptTokens: usage?.inputTokens,
         completionTokens: usage?.outputTokens,
         chunksUsed: retrieval.chunks.length,
         sourcesCount: retrieval.sources.length,
+        loggedIn: !!user,
       })
+
+      // M5: 로그인 사용자만 DB 저장. 비로그인은 클라이언트 useState 휘발 모드.
+      if (!user) return
+
+      const admin = getAdminClient()
+      const sourceRefsJson = JSON.stringify(retrieval.sources)
+      const tokenUsageJson = JSON.stringify({
+        inputTokens: usage?.inputTokens ?? null,
+        outputTokens: usage?.outputTokens ?? null,
+      })
+
+      try {
+        if (!body.threadId) {
+          // M5 D2: 신규 thread (assistant 응답 성공 후 INSERT — partial state 회피)
+          // M5 D3: 단일 RPC atomic (thread + 2 메시지)
+          const title = queryText.slice(0, TITLE_MAX_CHARS)
+          const { data, error } = await admin.rpc('create_thread_with_messages', {
+            p_user_id: user.id,
+            p_title: title,
+            p_user_content: queryText,
+            p_assistant_content: text,
+            p_source_refs: sourceRefsJson,
+            p_token_usage: tokenUsageJson,
+          })
+          if (error) throw error
+          newThreadId = data as string
+        } else {
+          // M5 D4: 기존 thread append (DB가 user_id 소유권 검증)
+          const { error } = await admin.rpc('append_messages', {
+            p_thread_id: body.threadId,
+            p_user_id: user.id,
+            p_user_content: queryText,
+            p_assistant_content: text,
+            p_source_refs: sourceRefsJson,
+            p_token_usage: tokenUsageJson,
+          })
+          if (error) throw error
+        }
+      } catch (err) {
+        // PIPA: error.message는 retrieval.ts 패턴대로 마스킹된 형태로만 노출.
+        // 사용자 응답은 이미 streaming 완료 — silent (M6 retry UI 검토).
+        const masked = err instanceof Error ? err.message : String(err)
+        console.error('[chat] history save failed:', masked)
+      }
     },
   })
 
-  // 9. UI message stream + source_refs를 message metadata로 전달
+  // 9. UI message stream + source_refs + (신규) threadId를 message metadata로 전달
   return result.toUIMessageStreamResponse({
     messageMetadata: ({ part }) => {
       if (part.type === 'finish') {
-        return { sourceRefs: retrieval.sources }
+        return {
+          sourceRefs: retrieval.sources,
+          ...(newThreadId ? { threadId: newThreadId } : {}),
+        }
       }
       return undefined
     },
