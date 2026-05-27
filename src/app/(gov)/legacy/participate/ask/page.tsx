@@ -88,7 +88,7 @@ export default function AskPage() {
             <CardContent>
               <ul className="list-inside list-disc text-sm text-muted-foreground">
                 <li>
-                  <Link href="/participate/faq" className="text-primary underline">
+                  <Link href="/legacy/participate/faq" className="text-primary underline">
                     자주 묻는 질문
                   </Link>
                   에서 비슷한 질문을 먼저 찾아보세요.

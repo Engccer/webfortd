@@ -78,7 +78,7 @@ export default function SupportPage() {
               지원제도에 대한 자세한 문의는 소속 시도교육청 담당부서로 연락해 주세요.
             </p>
             <Link
-              href="/support/region"
+              href="/legacy/support/region"
               className="mt-2 inline-flex items-center gap-1 text-blue-600 hover:underline"
             >
               시도별 담당부서 확인 <ArrowRight className="h-4 w-4" />

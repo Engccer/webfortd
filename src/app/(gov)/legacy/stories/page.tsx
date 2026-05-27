@@ -90,7 +90,7 @@ export default function StoriesPage() {
           귀하의 이야기가 다른 교원에게 힘이 됩니다.
         </p>
         <Link
-          href="/participate/ask"
+          href="/legacy/participate/ask"
           className="inline-block rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-700"
         >
           이야기 공유하기

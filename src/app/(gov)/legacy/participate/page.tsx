@@ -68,13 +68,13 @@ export default function ParticipatePage() {
         </p>
         <div className="flex flex-wrap gap-4">
           <Link
-            href="/participate/ask"
+            href="/legacy/participate/ask"
             className="inline-block rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-700"
           >
             의견 보내기
           </Link>
           <Link
-            href="/stories/best-practices"
+            href="/legacy/stories/best-practices"
             className="inline-block rounded-lg border border-blue-600 bg-white px-4 py-2 font-medium text-blue-600 transition-colors hover:bg-blue-50"
           >
             경험 공유하기

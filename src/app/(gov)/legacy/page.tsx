@@ -67,13 +67,13 @@ export default function HomePage() {
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-4">
               <Button asChild size="lg">
-                <Link href="/support">
+                <Link href="/legacy/support">
                   지원제도 안내
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
               <Button variant="outline" asChild size="lg">
-                <Link href="/about">플랫폼 소개</Link>
+                <Link href="/legacy/about">플랫폼 소개</Link>
               </Button>
             </div>
           </div>
@@ -125,7 +125,7 @@ export default function HomePage() {
                   연계 정보를 제공합니다.
                 </p>
                 <Button variant="link" asChild className="p-0">
-                  <Link href="/about/purpose">
+                  <Link href="/legacy/about/purpose">
                     자세히 보기
                     <ArrowRight className="ml-1 h-4 w-4" />
                   </Link>
@@ -144,7 +144,7 @@ export default function HomePage() {
                   지원합니다.
                 </p>
                 <Button variant="link" asChild className="p-0">
-                  <Link href="/about/partners">
+                  <Link href="/legacy/about/partners">
                     협력기관 보기
                     <ArrowRight className="ml-1 h-4 w-4" />
                   </Link>

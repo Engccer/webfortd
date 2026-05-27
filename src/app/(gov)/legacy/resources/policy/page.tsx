@@ -115,7 +115,7 @@ export default function PolicyPage() {
               장애인교원 지원 정책에 대한 아이디어가 있으시면 제안해 주세요.
             </p>
             <a
-              href="/participate/ask"
+              href="/legacy/participate/ask"
               className="inline-block rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-700"
             >
               제안하기
