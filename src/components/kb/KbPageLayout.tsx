@@ -22,6 +22,7 @@ import type { ContentAxis } from "@/types/kb"
 import { SkipLink } from "@/components/accessibility/SkipLink"
 import { FocusManager } from "@/components/accessibility/FocusManager"
 import { AccessibilityToolbar } from "@/components/accessibility/AccessibilityToolbar"
+import { KbSourceFooter } from "./KbSourceFooter"
 
 const AXIS_LABEL: Record<ContentAxis, string> = {
   'disability-types': '장애유형별',
@@ -169,6 +170,7 @@ export async function KbPageLayout({ axis, slug }: KbPageLayoutProps) {
           </header>
 
           <MDXClientWrapper source={mdxSource} headings={doc.headings} />
+          <KbSourceFooter sourceOrigin={fm.source_origin} />
         </article>
       </main>
       </div>
