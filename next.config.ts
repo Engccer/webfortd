@@ -9,6 +9,12 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
+  // public/library/ PDF 4건(41MB)이 Serverless Function bundle에 trace되어
+  // 250MB 한계 초과(function_size_exceeded). static asset 서빙은 유지하면서
+  // function bundle에서 제외. M3에서 외부 storage(Supabase Storage)로 마이그레이션 예정.
+  outputFileTracingExcludes: {
+    "*": ["public/library/**"],
+  },
   async redirects() {
     return [
       // 위키 entry — /wiki → / 영구 redirect
