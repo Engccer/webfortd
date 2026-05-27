@@ -29,6 +29,8 @@
     "test:integration": "node --env-file=.env.local --import tsx --test 'tests/migrations/**/*.test.ts'",
     "test:components": "vitest --run",
     "test:components:watch": "vitest",
+    "test:a11y": "playwright test",
+    "test:a11y:ui": "playwright test --ui",
     "test:all": "npm test && npm run test:components && npm run test:integration"
   },
   "dependencies": {
@@ -81,6 +83,8 @@
   },
   "devDependencies": {
     "@anthropic-ai/sdk": "^0.96.0",
+    "@axe-core/playwright": "^4.11.3",
+    "@playwright/test": "^1.60.0",
     "@supabase/supabase-js": "^2.106.1",
     "@tailwindcss/postcss": "^4",
     "@testing-library/dom": "^10.4.1",
