@@ -362,6 +362,7 @@ export function ChatUI({ initialThreadId }: ChatUIProps = {}) {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="질문을 입력하세요…"
+          aria-label="질문 입력"
           disabled={isLoading}
         />
         <PromptInputSubmit
