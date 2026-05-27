@@ -1,15 +1,41 @@
-// axe-core 공통 헬퍼 — critical violation 0건 검증.
-// PR B 도입 시점 baseline:
-//   serious — color-contrast (6 routes, 디자인 시스템 색 대비) + link-name (1건 /legacy/about)
-// 이 baseline은 별도 fix PR로 격리 (디자인 시스템 손질 필요). 본 helper는 *추가 회귀 차단*에 집중.
-// 후속 PR로 serious까지 blocking 확장 예정 — `serious_baseline_fix` 큐 참조.
+// axe-core 공통 헬퍼 — critical 0건 + serious baseline lock.
+//
+// PR D (codex-rescue follow-up) 구조:
+//   1. critical 위반 → 즉시 fail (회귀 차단 hard gate)
+//   2. serious 위반 → route별 baseline 비교
+//      - actual[rule] > baseline[rule] → fail (신규 회귀)
+//      - actual에 baseline 없는 신규 rule → fail
+//      - actual[rule] < baseline[rule] → console.log (개선 — baseline update 권고)
+//      - 동일 → pass
+//
+// Baseline: tests/a11y/axe-serious-baseline.json
+// 갱신: npm run test:a11y:update-baseline (baseline 감소 시점 자동 반영)
+// Fix trigger: Phase 5 진입 전 + 에스앤씨랩 평가 전 모든 baseline 0건
 
 import AxeBuilder from '@axe-core/playwright'
 import type { Page, TestInfo } from '@playwright/test'
 import { expect } from '@playwright/test'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 
 const BLOCKING_IMPACTS = new Set(['critical'])
-const WARNING_IMPACTS = new Set(['serious'])
+const SERIOUS_IMPACTS = new Set(['serious'])
+
+type RouteBaseline = Record<string, number>
+type BaselineFile = {
+  routes: Record<string, RouteBaseline>
+}
+
+const baselinePath = join(process.cwd(), 'tests/a11y/axe-serious-baseline.json')
+const baselineFile: BaselineFile = JSON.parse(readFileSync(baselinePath, 'utf8'))
+
+function countByRule(violations: Array<{ id: string }>): RouteBaseline {
+  const counts: RouteBaseline = {}
+  for (const v of violations) {
+    counts[v.id] = (counts[v.id] ?? 0) + 1
+  }
+  return counts
+}
 
 export async function expectNoAxeViolations(page: Page, info: TestInfo, route: string) {
   await page.goto(route, { waitUntil: 'domcontentloaded' })
@@ -19,19 +45,54 @@ export async function expectNoAxeViolations(page: Page, info: TestInfo, route: s
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
     .analyze()
 
-  const blocking = results.violations.filter((v) => BLOCKING_IMPACTS.has(v.impact ?? ''))
-  const warnings = results.violations.filter((v) => WARNING_IMPACTS.has(v.impact ?? ''))
+  const critical = results.violations.filter((v) => BLOCKING_IMPACTS.has(v.impact ?? ''))
+  const serious = results.violations.filter((v) => SERIOUS_IMPACTS.has(v.impact ?? ''))
 
-  if (blocking.length > 0 || warnings.length > 0) {
+  if (critical.length > 0 || serious.length > 0) {
     const fmt = (v: (typeof results.violations)[number]) =>
       `[${v.impact}] ${v.id}: ${v.help}\n  ${v.helpUrl}\n  affected: ${v.nodes.length} node(s)`
-    const report = [...blocking, ...warnings].map(fmt).join('\n\n')
+    const report = [...critical, ...serious].map(fmt).join('\n\n')
     await info.attach('axe-violations', { body: report, contentType: 'text/plain' })
   }
 
-  if (warnings.length > 0) {
-    console.warn(`[a11y warning] ${route} — serious ${warnings.length}건 (별도 fix PR 큐)`)
-  }
+  // critical hard gate
+  expect(critical, `${route} — critical 0건 기대, ${critical.length}건 발견`).toEqual([])
 
-  expect(blocking, `${route} — critical 0건 기대, ${blocking.length}건 발견`).toEqual([])
+  // serious baseline lock
+  const baseline = baselineFile.routes[route] ?? {}
+  const actual = countByRule(serious)
+
+  // 1) 신규 rule (baseline에 없음) → fail
+  const newRules = Object.keys(actual).filter((rule) => !(rule in baseline))
+  expect(
+    newRules,
+    `${route} — serious 신규 rule 회귀: ${newRules.join(', ')} (axe-serious-baseline.json 갱신 또는 fix 필요)`,
+  ).toEqual([])
+
+  // 2) baseline 초과 → fail
+  const regressions: string[] = []
+  for (const rule of Object.keys(actual)) {
+    if (actual[rule] > (baseline[rule] ?? 0)) {
+      regressions.push(`${rule}: actual=${actual[rule]} > baseline=${baseline[rule] ?? 0}`)
+    }
+  }
+  expect(
+    regressions,
+    `${route} — serious 회귀:\n  ${regressions.join('\n  ')}`,
+  ).toEqual([])
+
+  // 3) 개선 권고 (baseline > actual)
+  const improvements: string[] = []
+  for (const rule of Object.keys(baseline)) {
+    const expectedCount = baseline[rule]
+    const actualCount = actual[rule] ?? 0
+    if (actualCount < expectedCount) {
+      improvements.push(`${rule}: actual=${actualCount} < baseline=${expectedCount}`)
+    }
+  }
+  if (improvements.length > 0) {
+    console.log(
+      `[a11y improvement] ${route} — baseline 갱신 권고: ${improvements.join(', ')} (npm run test:a11y:update-baseline)`,
+    )
+  }
 }
