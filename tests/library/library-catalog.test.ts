@@ -11,9 +11,17 @@ test('LIBRARY_ITEMS — 모든 slug unique', () => {
   assert.equal(new Set(slugs).size, slugs.length)
 })
 
-test('LIBRARY_ITEMS — 모든 downloadUrl이 /library/ prefix', () => {
+test('LIBRARY_ITEMS — 모든 downloadUrl이 Supabase Storage public URL', () => {
+  const expectedPrefix = `${process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''}/storage/v1/object/public/library/`
   for (const item of LIBRARY_ITEMS) {
-    assert.ok(item.downloadUrl.startsWith('/library/'), `${item.slug}: downloadUrl prefix 위반`)
+    assert.ok(
+      item.downloadUrl.startsWith(expectedPrefix),
+      `${item.slug}: downloadUrl prefix 위반 (expected ${expectedPrefix}, got ${item.downloadUrl})`,
+    )
+    assert.ok(
+      item.downloadUrl.endsWith('.pdf'),
+      `${item.slug}: .pdf 확장자 누락`,
+    )
   }
 })
 

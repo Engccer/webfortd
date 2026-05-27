@@ -13,7 +13,9 @@ test('SOURCE_MAP — 모든 libraryItemSlug가 LIBRARY_ITEMS에 존재', () => {
 test('getSourceDownload — 매핑된 origin 정상 반환', () => {
   const result = getSourceDownload('2024-jbu-work-support-guide')
   assert.ok(result)
-  assert.equal(result?.url, '/library/2024-jbu-work-support-guide.pdf')
+  const expectedPrefix = `${process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''}/storage/v1/object/public/library/`
+  assert.ok(result?.url.startsWith(expectedPrefix), `expected Storage URL, got ${result?.url}`)
+  assert.ok(result?.url.endsWith('2024-jbu-work-support-guide.pdf'))
   assert.ok(result?.title.includes('중부대'))
 })
 

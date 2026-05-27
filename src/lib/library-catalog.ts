@@ -1,11 +1,13 @@
 /**
  * 자료실(/library) 자산 카탈로그.
  *
- * data/source-pdf/의 PDF 4건을 시드로 노출. D6 협업 영역 placeholder — 위원장-허유진 교수
- * 협업 결과 추가 자산은 M2 머지 후 별도 PR.
+ * downloadUrl = Supabase Storage public URL. PDF는 `library` 버킷에 보관 (PR A M3).
+ * 빌드 시 NEXT_PUBLIC_SUPABASE_URL 환경변수 필수 — 미설정 시 prefix가 깨져 LibraryCard 다운로드 링크 무효.
  *
- * downloadUrl은 public/library/ 정적 서빙 경로. Task 2.5에서 PDF 복사·심링크.
+ * D6 협업 영역 placeholder — 위원장-허유진 교수 협업 결과 추가 자산은 별도 PR.
  */
+
+const STORAGE_BASE = `${process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''}/storage/v1/object/public/library`
 
 export type LibraryCategory = "guide" | "policy" | "manual" | "agreement"
 
@@ -34,7 +36,7 @@ export const LIBRARY_ITEMS: LibraryItem[] = [
       "장애유형별 근무 지원 방안을 종합 분석한 정책 보고서. 9개 시도 사례 + 외국 사례 + 정책 제언.",
     fileSize: "12.3 MB",
     mimeType: "application/pdf",
-    downloadUrl: "/library/2023-disability-work-support-research.pdf",
+    downloadUrl: `${STORAGE_BASE}/2023-disability-work-support-research.pdf`,
   },
   {
     slug: "2023-hr-guide",
@@ -46,7 +48,7 @@ export const LIBRARY_ITEMS: LibraryItem[] = [
       "장애인교원 채용·배치·근무·복무 전 과정 인사 안내. 188개 atomic 페이지로 분해됨.",
     fileSize: "15.3 MB",
     mimeType: "application/pdf",
-    downloadUrl: "/library/2023-hr-guide.pdf",
+    downloadUrl: `${STORAGE_BASE}/2023-hr-guide.pdf`,
     relatedAtomicAxis: "disability-types",
     relatedAtomicPrefix: "2023-hr",
   },
@@ -60,7 +62,7 @@ export const LIBRARY_ITEMS: LibraryItem[] = [
       "중부대학교 사업으로 제작된 장애인교원 근무지원 안내자료. 시범 사이트 콘텐츠 원본.",
     fileSize: "8.1 MB",
     mimeType: "application/pdf",
-    downloadUrl: "/library/2024-jbu-work-support-guide.pdf",
+    downloadUrl: `${STORAGE_BASE}/2024-jbu-work-support-guide.pdf`,
     relatedAtomicAxis: "disability-types",
     relatedAtomicPrefix: "2024-jbu",
   },
@@ -74,7 +76,7 @@ export const LIBRARY_ITEMS: LibraryItem[] = [
       "지원인력(근로지원인 등) 직무 수행 안내 156쪽 자료. atomic 페이지 분해됨.",
     fileSize: "5.4 MB",
     mimeType: "application/pdf",
-    downloadUrl: "/library/2024-support-staff-duty-guide.pdf",
+    downloadUrl: `${STORAGE_BASE}/2024-support-staff-duty-guide.pdf`,
     relatedAtomicAxis: "disability-types",
     relatedAtomicPrefix: "2024-staff",
   },
