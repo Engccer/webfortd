@@ -23,7 +23,7 @@
     "image:apply": "tsx scripts/image-mappings.ts apply",
     "check:alt-text": "tsx scripts/check-alt-text-labels.ts",
     "check:mdx-escape": "tsx scripts/check-mdx-escape.ts",
-    "test": "node --conditions react-server --import tsx --test 'tests/*.test.ts' 'tests/auth/**/*.test.ts' 'tests/lib/**/*.test.ts' 'tests/rag/**/*.test.ts' 'tests/routing/**/*.test.ts' 'tests/scripts/**/*.test.ts'",
+    "test": "node --conditions react-server --import tsx --test 'tests/*.test.ts' 'tests/auth/**/*.test.ts' 'tests/lib/**/*.test.ts' 'tests/library/**/*.test.ts' 'tests/media/**/*.test.ts' 'tests/rag/**/*.test.ts' 'tests/routing/**/*.test.ts' 'tests/scripts/**/*.test.ts'",
     "test:integration": "node --env-file=.env.local --import tsx --test 'tests/migrations/**/*.test.ts'",
     "test:components": "vitest --run",
     "test:components:watch": "vitest",
