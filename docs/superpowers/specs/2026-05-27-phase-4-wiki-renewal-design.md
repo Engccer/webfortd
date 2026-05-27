@@ -65,6 +65,7 @@ Phase 4는 webfortd를 **게시판·랜딩 흔적이 남은 hybrid 사이트**�
 | D5 | 마일스톤 분해 = 3개 큰 마일스톤. M1 라우팅·IA 기반 · M2 콘텐츠 기능 · M3 정리·접근성 | 2026-05-27 | 각 PR 단위 = 마일스톤 단위. codex-rescue 3회 + coderabbit 3회 |
 | D6 | 큐레이션 콘텐츠 = 허유진 교수 협업 영역 placeholder, M2 머지 후 별도 PR | 2026-05-27 | M2 시드 데이터로 임시 큐레이션 노출. spec 검토 시 위원장이 임시 시드 5건 지정 |
 | D7 | 호환성 = 기존 URL(`/about`, `/support`, `/rights`, `/stories`, `/participate`, `/resources/*`) 영구 redirect via `next.config.ts redirects()`. atomic resources도 axis 경로 변경 시 redirect | spec default | M1 호환성 게이트 |
+| D8 | 구현 단계는 **Agent Teams로 병렬 실행** (writing-plans는 단독, executing-plans부터 발동). M1 시범 발동 → M2·M3 동일 패턴. 팀 리더 + 팀원 A/B/C + 내부 Reviewer 미배치 (over-fix 회피). 상세 §7.5 | 2026-05-27 | M1·M2·M3 구현 단계 |
 
 ---
 
@@ -309,6 +310,8 @@ Phase 4는 webfortd를 **게시판·랜딩 흔적이 남은 hybrid 사이트**�
 | R8 | EntryToggle 정책 (유지 vs 제거)이 M1에 박힘 → M3에서 재검토 | 낮 | 낮 | M1은 라벨·링크 갱신만, 제거 결정은 M3 정리 단계 |
 | R9 | sitemap·OG·robots에서 `/legacy/*` 노출 정책 미결 | 중 | 중 | M3 task 4에서 결정. 시안: legacy는 noindex (검색 노출 X) + sitemap 미포함 + robots disallow |
 | R10 | 콘텐츠 경로 재구성을 *미루는* 위원장 원칙 위반 가능성 (D4가 *유지* 결정) | 낮 | 낮 | D4 §3.2 정합 — 라우트 mv만 했고 콘텐츠 경로·URL 보존. *재구성*은 본 spec 범위 밖. Phase 5+에서 별도 검토 |
+| R11 | Agent Teams 베타 제약 — `/resume` 미지원·작업 상태 지연·동작 변경 가능 | 중 | 중 | 처음 호출 전 https://code.claude.com/docs/en/agent-teams 확인. 세션 끊기면 *팀 리더가 단독 fallback*으로 잔여 task 처리. 마일스톤 안 task별 commit 자주(체크포인트 효과). 디스플레이 모드는 tmux(터미널 가시성) 우선 |
+| R12 | Agent Teams 팀원 file lock — 동일 파일 편집 시 직렬화 | 중 | 중 | M1·M2·M3 spec의 §5 파일 인벤토리에서 *팀원별 file scope를 사전 분리*. 팀 리더가 dispatch 시 각 팀원 prompt에 *내 scope 외 파일 편집 금지* 박음. M2의 wiki entry는 *팀 리더 단독* 또는 *마지막 통합 task*로 격리 |
 
 ### Carry-over (Phase 5+ 후보)
 
@@ -338,14 +341,64 @@ Phase 4는 webfortd를 **게시판·랜딩 흔적이 남은 hybrid 사이트**�
 
 ---
 
+## 7.5 Agent Teams 운영 (D8)
+
+CLAUDE.md §Agent Teams 자동 호출 판단 행동 규칙 정합. Phase 4는 *경계선 케이스*(DB·외부 API 변경 없음, 단 다중 신규 기능 동시 도입)지만 작업 단위 트리거 (a)(b) 충족으로 발동.
+
+### 7.5.1 발동 시점
+
+- **writing-plans 단계 = 단독** (팀 리더 1명, plan 1개 문서)
+- **executing-plans 단계 = Agent Teams 발동** (task별 독립 구현)
+- **마일스톤 마무리 검수 = 단독** (codex-rescue + coderabbit + 위원장 직접 검증)
+
+### 7.5.2 팀 구성 (M1·M2·M3 공통 패턴)
+
+| 역할 | 책임 | scope (file 단위로 사전 분리) |
+|------|------|---------------------------|
+| **팀 리더** (위원장 sponsor + 인터페이스 verifier 겸임) | (a) baseline initial commit 단독 수행 (예: M1 디렉터리 mv) (b) 팀원 dispatch + scope 명시 (c) 팀원 결과 통합·인터페이스 정합성 verify (d) 마일스톤 마무리 codex-rescue+coderabbit 직접 진행 | baseline file + 통합 file (마지막) |
+| 팀원 A | 라우팅·라우트 그룹 핵심 (예: M1 atomic axis 통합 + (wiki) root entry 신설) | `src/app/(wiki)/**`, `src/app/[axis]/**` |
+| 팀원 B | UI 카피·내부 링크·layout (예: M1 navigation·Header·EntryToggle·11개 페이지 내부 링크) | `src/components/**`, `src/lib/navigation.ts`, `(gov)/legacy/**/page.tsx` |
+| 팀원 C | 인프라·검증·문서 (예: M1 next.config.ts redirects + 빌드·smoke 검증 + 통합 테스트 + CLAUDE.md 변경 이력) | `next.config.ts`, `tests/**`, `CLAUDE.md`, `docs/**` |
+| (내부 Reviewer **미배치**) | over-fix 회피 (CLAUDE.md §Agent Teams 3중 리뷰 over-fix 방지). 팀 리더가 인터페이스 verifier 겸임 | — |
+
+### 7.5.3 file scope 사전 분리 — 동일 파일 편집 회피
+
+각 마일스톤 plan(writing-plans 산출물)에 *팀원별 file scope 표*를 박는다. 팀 리더 dispatch 시 각 팀원 prompt에 *내 scope 외 파일 편집 금지* 명시. *통합 file*(예: M2 위키 entry 페이지가 RoleEntries·ChatLibraryMediaEntries·PopularPages 등 다 import)은 *팀 리더가 마지막 task로 단독 작성*하여 file lock 충돌 차단.
+
+### 7.5.4 팀 리더 prompt 원칙
+
+- *scope 한정 명시*: "팀원 A scope = src/app/(wiki)/**. 다른 파일 편집 금지. 결과는 commit으로 push 후 리포트."
+- *내부 Reviewer 금지 명시*: "라인 스타일·도메인 invariant·보안 코멘트 하지 말 것. 인터페이스 정합성만."
+- *베타 제약 대비*: 각 팀원 task는 *체크포인트 commit 단위* 짧게. 세션 끊기면 팀 리더가 fallback 가능.
+
+### 7.5.5 마일스톤 마무리
+
+- 팀원 작업 통합 후 *팀 리더 단독*으로 codex-rescue 호출 (background `codex:codex-rescue` subagent)
+- codex-rescue critical fix 처리 후 PR 생성
+- PR에 coderabbit 자동 review
+- coderabbit critical fix 처리
+- 위원장 직접 검증 (M1: production preview / M2: VoiceOver entry·자료실·미디어 / M3: 최종 접근성)
+
+### 7.5.6 활성화 전 확인사항
+
+처음 호출 전 다음 확인:
+
+- 환경변수 `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` 설정
+- 디스플레이 모드 = `tmux` (터미널 가시성 우선)
+- https://code.claude.com/docs/en/agent-teams 최신 문서 확인 (베타 단계 동작 변경 가능)
+- 위원장에게 알려진 제약 고지 (`/resume` 미지원·작업 상태 지연)
+
+---
+
 ## 8. 다음 단계
 
 1. **위원장 spec 검토** — 본 문서 검토 + (a) D1~D7 결정 잠금 ack (b) 임시 시드 5건 지정 (역할별 진입점 카드) (c) EntryToggle 정책 (M3에서 재검토) 의견
 2. **spec PR 생성** — `docs/phase-4-wiki-renewal-spec` 브랜치 → master 머지
 3. **writing-plans 스킬 invoke** — M1 plan 작성 (첫 마일스톤만)
 4. **M1 plan 위원장 검토 + 머지**
-5. **subagent-driven-development 또는 executing-plans 스킬로 M1 구현 진입**
-6. M1 머지 후 M2 plan → 구현. M2 머지 후 M3 plan → 구현. 각 마일스톤마다 codex-rescue + coderabbit.
+5. **Agent Teams 사전 확인** — 환경변수·디스플레이 모드·최신 docs 점검 (§7.5.6)
+6. **executing-plans + Agent Teams 발동**으로 M1 구현 진입 (팀 리더 + 팀원 A/B/C, 내부 Reviewer 미배치)
+7. M1 머지 후 M2 plan → 구현. M2 머지 후 M3 plan → 구현. 각 마일스톤마다 codex-rescue + coderabbit + 위원장 직접 검증
 7. Phase 4 전체 완료 후 위원장 자문 의견서 재발행 (시나리오 A 본격 진입 자료)
 
 ---
@@ -355,3 +408,4 @@ Phase 4는 webfortd를 **게시판·랜딩 흔적이 남은 hybrid 사이트**�
 | 일자 | 내용 |
 |------|------|
 | 2026-05-27 | 초안 — 위원장 brainstorming 결과 (D1~D7) 결정 잠금 + 마일스톤 분해 + 라우트 트리 + 위험 매핑 |
+| 2026-05-27 | Agent Teams 운영 섹션 추가 — D8 결정 잠금, §7.5 신설(팀 구성·file scope 분리·팀 리더 prompt 원칙·활성화 전 확인), R11·R12 위험 추가, §8 다음 단계 갱신 |
