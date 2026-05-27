@@ -51,7 +51,7 @@ export function Header() {
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link
-            href="/"
+            href="/legacy"
             className="flex items-center gap-2 text-lg font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
           >
             <span className="text-primary">장애인교원</span>
