@@ -18,6 +18,8 @@
     "kb:publish:dry-run": "node --env-file=.env.local --import tsx scripts/publish-content.ts --dry-run",
     "kb:embed": "node --env-file=.env.local --import tsx scripts/embed-content.ts",
     "kb:embed:dry-run": "node --env-file=.env.local --import tsx scripts/embed-content.ts --dry-run",
+    "library:upload": "node --env-file=.env.local --import tsx scripts/upload-library.ts",
+    "library:upload:dry-run": "node --env-file=.env.local --import tsx scripts/upload-library.ts --dry-run",
     "image:report": "tsx scripts/image-mappings.ts report",
     "image:template": "tsx scripts/image-mappings.ts template",
     "image:apply": "tsx scripts/image-mappings.ts apply",
