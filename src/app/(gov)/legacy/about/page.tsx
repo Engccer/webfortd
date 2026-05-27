@@ -22,7 +22,7 @@ export default function AboutPage() {
 
       <div className="grid gap-6 md:grid-cols-2">
         <Link
-          href="/about/purpose"
+          href="/legacy/about/purpose"
           className="group rounded-xl border border-gray-200 bg-white p-6 transition-all hover:border-blue-300 hover:shadow-lg"
         >
           <h2 className="mb-2 text-xl font-semibold text-gray-900 group-hover:text-blue-600">
@@ -37,7 +37,7 @@ export default function AboutPage() {
         </Link>
 
         <Link
-          href="/about/partners"
+          href="/legacy/about/partners"
           className="group rounded-xl border border-gray-200 bg-white p-6 transition-all hover:border-blue-300 hover:shadow-lg"
         >
           <h2 className="mb-2 text-xl font-semibold text-gray-900 group-hover:text-blue-600">

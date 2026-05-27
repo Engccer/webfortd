@@ -127,7 +127,7 @@ export default function FaqPage() {
               직접 질문을 남겨주시면 전문가가 답변해 드립니다.
             </p>
             <Link
-              href="/participate/ask"
+              href="/legacy/participate/ask"
               className="inline-flex items-center gap-1 font-medium text-blue-600 hover:underline"
             >
               질문하기 <ArrowRight className="h-4 w-4" />

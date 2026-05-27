@@ -231,7 +231,7 @@ export default function CheckPage() {
                   다시 체크하기
                 </button>
                 <Link
-                  href="/participate/ask"
+                  href="/legacy/participate/ask"
                   className="rounded-lg border border-blue-600 px-6 py-3 font-medium text-blue-600 transition-colors hover:bg-blue-50"
                 >
                   상담 요청하기

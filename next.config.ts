@@ -9,6 +9,33 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
+  async redirects() {
+    return [
+      // 위키 entry — /wiki → / 영구 redirect
+      { source: "/wiki", destination: "/", permanent: true },
+
+      // (gov) 정적 안내 → /legacy/* (Phase 4 M1, D7 호환성)
+      { source: "/about", destination: "/legacy/about", permanent: true },
+      { source: "/about/:path*", destination: "/legacy/about/:path*", permanent: true },
+      { source: "/support", destination: "/legacy/support", permanent: true },
+      { source: "/support/:path*", destination: "/legacy/support/:path*", permanent: true },
+      { source: "/rights", destination: "/legacy/rights", permanent: true },
+      { source: "/rights/:path*", destination: "/legacy/rights/:path*", permanent: true },
+      { source: "/stories", destination: "/legacy/stories", permanent: true },
+      { source: "/stories/:path*", destination: "/legacy/stories/:path*", permanent: true },
+      { source: "/participate", destination: "/legacy/participate", permanent: true },
+      { source: "/participate/:path*", destination: "/legacy/participate/:path*", permanent: true },
+
+      // /resources 인덱스 + policy + statistics → /legacy/resources/* (D7)
+      // 주의: /resources/law/[slug], /resources/research/[slug]는 atomic 콘텐츠 라우트라
+      // (wiki) 그룹 그대로 유지. URL 보존 정합 (spec D4 §3.2, sourcePathToHref 변경 0).
+      { source: "/resources", destination: "/legacy/resources", permanent: true },
+      { source: "/resources/policy", destination: "/legacy/resources/policy", permanent: true },
+      { source: "/resources/policy/:path*", destination: "/legacy/resources/policy/:path*", permanent: true },
+      { source: "/resources/statistics", destination: "/legacy/resources/statistics", permanent: true },
+      { source: "/resources/statistics/:path*", destination: "/legacy/resources/statistics/:path*", permanent: true },
+    ];
+  },
 };
 
 export default nextConfig;

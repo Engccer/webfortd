@@ -16,7 +16,7 @@ export function PopularPages() {
         <h2 className="text-xl font-semibold text-foreground sm:text-2xl">
           자주 찾는 문서
         </h2>
-        <p className="text-xs text-muted-foreground">큐레이션 · 베타</p>
+        <p className="text-xs text-muted-foreground">큐레이션</p>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         {POPULAR_PAGES.map((page) => (
