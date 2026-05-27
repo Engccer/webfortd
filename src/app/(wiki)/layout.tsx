@@ -20,20 +20,17 @@ export default function WikiLayout({
           <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-4 px-4 sm:px-6">
             <div className="flex items-center gap-3">
               <Link
-                href="/wiki"
+                href="/"
                 className="flex items-center gap-2 text-base font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
               >
                 <BookOpenText className="h-5 w-5 text-primary" aria-hidden="true" />
                 <span>장애인교원 위키</span>
-                <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800">
-                  베타
-                </span>
               </Link>
               <nav aria-label="위키 메뉴" className="hidden md:block">
                 <ul className="flex items-center gap-1 text-sm">
                   <li>
                     <Link
-                      href="/wiki"
+                      href="/"
                       className="rounded-md px-2 py-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                     >
                       위키
@@ -63,11 +60,11 @@ export default function WikiLayout({
           {children}
         </main>
         <footer className="border-t border-border bg-muted/30 py-6 text-center text-xs text-muted-foreground">
-          <p>장애인교원 위키는 베타 단계입니다 · 정식 운영 콘텐츠는{" "}
-            <Link href="/" className="underline hover:text-foreground">
-              기관용 사이트
+          <p>
+            장애인교원 위키 · 정책·법령·사례 통합 안내 ·{" "}
+            <Link href="/legacy" className="underline hover:text-foreground">
+              이전 버전 보기
             </Link>
-            에서 확인하세요.
           </p>
         </footer>
       </div>
