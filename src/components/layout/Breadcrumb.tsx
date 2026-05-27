@@ -64,12 +64,26 @@ export function Breadcrumb() {
             {index > 0 && <BreadcrumbSeparator />}
             {index === items.length - 1 ? (
               <BreadcrumbPage>
-                {item.title === "홈" ? <Home className="h-4 w-4" /> : item.title}
+                {item.title === "홈" ? (
+                  <>
+                    <Home className="h-4 w-4" aria-hidden="true" />
+                    <span className="sr-only">홈</span>
+                  </>
+                ) : (
+                  item.title
+                )}
               </BreadcrumbPage>
             ) : (
               <BreadcrumbLink asChild>
                 <Link href={item.href}>
-                  {item.title === "홈" ? <Home className="h-4 w-4" /> : item.title}
+                  {item.title === "홈" ? (
+                    <>
+                      <Home className="h-4 w-4" aria-hidden="true" />
+                      <span className="sr-only">홈</span>
+                    </>
+                  ) : (
+                    item.title
+                  )}
                 </Link>
               </BreadcrumbLink>
             )}
