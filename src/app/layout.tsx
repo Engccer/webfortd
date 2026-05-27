@@ -22,6 +22,14 @@ export const metadata: Metadata = {
     type: "website",
     locale: "ko_KR",
     siteName: "장애인교원 교육전념 여건 지원",
+    images: [
+      {
+        url: "/opengraph-image.png",
+        width: 1200,
+        height: 630,
+        alt: "장애인교원 교육전념 여건 지원 — 위키와 채팅으로 정책·제도 안내",
+      },
+    ],
   },
 }
 
