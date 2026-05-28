@@ -1,22 +1,9 @@
-import { Header } from "@/components/layout/Header"
-import { Footer } from "@/components/layout/Footer"
-import { SkipLink } from "@/components/accessibility/SkipLink"
-import { FocusManager } from "@/components/accessibility/FocusManager"
+import { AppShell } from "@/components/layout/AppShell"
+import { readSidebarCookieServer } from "@/lib/sidebar-cookie"
 
-export default function GovLayout({
+export default async function GovLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  return (
-    <>
-      <SkipLink />
-      <FocusManager />
-      <div className="flex min-h-screen flex-col">
-        <Header />
-        <main id="main-content" tabIndex={-1} className="flex-1">
-          {children}
-        </main>
-        <Footer />
-      </div>
-    </>
-  )
+  const initialExpanded = await readSidebarCookieServer()
+  return <AppShell initialExpanded={initialExpanded}>{children}</AppShell>
 }
