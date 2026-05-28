@@ -112,6 +112,14 @@ export function AppSidebar() {
         aria-modal={isMobile ? "true" : undefined}
         aria-label="주 메뉴"
         aria-hidden={!isOpen}
+        // tabIndex={-1}: SkipLink "메뉴 바로가기" href="#app-sidebar"가
+        // 포커스를 이 요소로 옮길 수 있도록 프로그래매틱 포커스를 허용.
+        // 탭 순서에 추가하지 않음(음수 값).
+        tabIndex={-1}
+        // React 19 native `inert` prop: 닫힌 사이드바 내부 포커스 제거.
+        // aria-hidden만으로는 focusable elements가 Tab 순서에 남아 axe
+        // aria-hidden-focus 위반 발생 — inert로 완전히 차단.
+        inert={!isOpen}
         className={containerCls}
       >
         {/* 헤더: 메뉴 제목 + 모바일 닫기 버튼 */}
