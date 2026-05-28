@@ -4,7 +4,7 @@ import { MessageCircle, FolderArchive, Image as ImageIcon } from "lucide-react"
 const ENTRIES = [
   {
     href: "/chat",
-    title: "AI 채팅",
+    title: "채팅",
     description: "정책·법령·사례에 대해 자연어로 질문하세요.",
     icon: MessageCircle,
   },
