@@ -181,6 +181,38 @@ test("SkipLink: Enter on 메뉴 바로가기 moves focus to #app-sidebar", async
   expect(focusedId).toBe("app-sidebar")
 })
 
+// ─── 위키/레거시 모드 분기 + 신규 페이지 (T10) ───────────────────────────────────
+
+test.describe("위키/레거시 모드 분기 + 신규 페이지", () => {
+  test("위키 모드(/) → 사이드바에 위키 메뉴 nav + 5 진입", async ({ page }) => {
+    await page.goto("/")
+    const wikiNav = page.getByRole("navigation", { name: "위키 메뉴" })
+    await expect(wikiNav).toBeVisible()
+    const links = await wikiNav.getByRole("link").all()
+    expect(links).toHaveLength(5)
+  })
+
+  test("레거시 모드(/legacy) → 사이드바에 주 메뉴 nav", async ({ page }) => {
+    await page.goto("/legacy")
+    const legacyNav = page.getByRole("navigation", { name: "주 메뉴" })
+    await expect(legacyNav).toBeVisible()
+  })
+
+  test("EntryToggle 클릭으로 모드 전환 — 위키 → 레거시", async ({ page }) => {
+    await page.goto("/")
+    await page.getByRole("link", { name: /레거시 사이트/ }).click()
+    await page.waitForURL(/\/legacy/)
+    await expect(page.getByRole("navigation", { name: "주 메뉴" })).toBeVisible()
+  })
+
+  test("Footer 정책 + about 4 페이지 200 응답", async ({ page }) => {
+    for (const path of ["/about", "/privacy", "/terms", "/sitemap"]) {
+      const response = await page.goto(path)
+      expect(response?.status(), `${path} 200 기대`).toBe(200)
+    }
+  })
+})
+
 // ─── D5 포커스 트랩 (T12 codex-rescue F1) ─────────────────────────────────────
 // inert가 <main>에만 걸려 있을 때 Header/Footer로 Tab 탈출 가능하던 문제 회귀 가드.
 // 래퍼 div(Header + main + Footer)로 inert 이동 후 완전 차단 검증.
