@@ -15,8 +15,9 @@ const nextConfig: NextConfig = {
       { source: "/wiki", destination: "/", permanent: true },
 
       // (gov) 정적 안내 → /legacy/* (Phase 4 M1, D7 호환성)
-      { source: "/about", destination: "/legacy/about", permanent: true },
-      { source: "/about/:path*", destination: "/legacy/about/:path*", permanent: true },
+      // NOTE: /about 및 /about/:path*는 2026-05-29 PR #61에서 위키 그룹 안 신규
+      // About 페이지(/about)를 도입하면서 제거됨. 레거시 사이트의 about은
+      // /legacy/about에서 직접 접근.
       { source: "/support", destination: "/legacy/support", permanent: true },
       { source: "/support/:path*", destination: "/legacy/support/:path*", permanent: true },
       { source: "/rights", destination: "/legacy/rights", permanent: true },
