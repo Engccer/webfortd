@@ -2,7 +2,6 @@ import type { Metadata } from "next"
 import { WikiHero } from "@/components/wiki/WikiHero"
 import { RoleEntries } from "@/components/wiki/RoleEntries"
 import { PopularPages } from "@/components/wiki/PopularPages"
-import { ChatLibraryMediaEntries } from "@/components/wiki/ChatLibraryMediaEntries"
 
 export const metadata: Metadata = {
   title: "장애인교원 위키",
@@ -16,7 +15,6 @@ export default function WikiHomePage() {
       <WikiHero />
       <RoleEntries />
       <PopularPages />
-      <ChatLibraryMediaEntries />
     </>
   )
 }
