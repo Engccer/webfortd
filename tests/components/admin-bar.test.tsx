@@ -45,7 +45,7 @@ describe("AdminBarView", () => {
     expect(screen.getByText(/이메일 없음/)).toBeDefined()
   })
 
-  it("preview toggle is disabled with Phase B tooltip", () => {
+  it("preview toggle uses aria-disabled (focusable + screen-reader accessible)", () => {
     render(
       <AdminBarView
         status={{
@@ -56,7 +56,26 @@ describe("AdminBarView", () => {
       />,
     )
     const toggle = screen.getByRole("button", { name: /미리보기/ })
-    expect(toggle.hasAttribute("disabled")).toBe(true)
-    expect(toggle.getAttribute("title")).toMatch(/Phase B/)
+    // codex-rescue P1 #2: disabled HTML 속성은 키보드 포커스 차단 + 스크린리더 무시.
+    // aria-disabled로 시각/시맨틱 disabled를 유지하면서 포커스/스크린리더 접근 보장.
+    expect(toggle.hasAttribute("disabled")).toBe(false)
+    expect(toggle.getAttribute("aria-disabled")).toBe("true")
+    expect(toggle.getAttribute("aria-describedby")).toBe("admin-preview-help")
+  })
+
+  it("preview toggle has sr-only description for screen readers", () => {
+    render(
+      <AdminBarView
+        status={{
+          isAdmin: true,
+          userId: "admin-1",
+          email: "engccer@gmail.com",
+        }}
+      />,
+    )
+    const help = document.getElementById("admin-preview-help")
+    expect(help).not.toBeNull()
+    expect(help?.textContent).toMatch(/Phase B/)
+    expect(help?.className).toContain("sr-only")
   })
 })

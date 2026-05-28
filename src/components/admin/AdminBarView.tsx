@@ -31,12 +31,16 @@ export function AdminBarView({ status }: { status: AdminStatus }) {
           </Link>
           <button
             type="button"
-            disabled
-            title="미리보기 모드는 Phase B에서 활성화됩니다"
-            className="rounded border border-amber-300 px-3 py-1 text-amber-700 opacity-60"
+            aria-disabled="true"
+            aria-describedby="admin-preview-help"
+            className="cursor-not-allowed rounded border border-amber-300 px-3 py-1 text-amber-700 opacity-60 focus:outline-none focus:ring-2 focus:ring-amber-600"
+            onClick={(e) => e.preventDefault()}
           >
             미리보기 OFF
           </button>
+          <span id="admin-preview-help" className="sr-only">
+            미리보기 모드는 Phase B에서 활성화됩니다. 현재 비활성 상태입니다.
+          </span>
         </div>
       </div>
     </div>
