@@ -53,7 +53,7 @@ export function EntryToggle({ variant = "default" }: EntryToggleProps) {
         )}
       >
         <Archive className={isSidebar ? "h-4 w-4" : "h-3 w-3"} aria-hidden="true" />
-        이전 버전
+        레거시 사이트
       </Link>
     </div>
   )

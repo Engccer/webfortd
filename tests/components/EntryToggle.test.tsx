@@ -27,4 +27,10 @@ describe("EntryToggle", () => {
     rerender(<EntryToggle variant="sidebar" />)
     expect(screen.getByRole("group", { name: "사이트 모드 전환" })).toBeInTheDocument()
   })
+
+  it("legacy button label is '레거시 사이트' (not '이전 버전')", () => {
+    render(<EntryToggle />)
+    expect(screen.getByRole("link", { name: /레거시 사이트/ })).toBeInTheDocument()
+    expect(screen.queryByRole("link", { name: /이전 버전/ })).not.toBeInTheDocument()
+  })
 })

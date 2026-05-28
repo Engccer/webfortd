@@ -1,12 +1,13 @@
-import { describe, it, expect, vi } from "vitest"
+import { describe, it, expect, vi, beforeEach } from "vitest"
 import { render, screen } from "@testing-library/react"
 import { AppSidebar } from "@/components/layout/AppSidebar"
 import { SidebarProvider } from "@/contexts/SidebarContext"
 import { ThemeProvider } from "next-themes"
 import { AuthProvider } from "@/contexts/AuthContext"
 
+const mockedPathname = vi.hoisted(() => vi.fn(() => "/"))
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/",
+  usePathname: mockedPathname,
   useRouter: () => ({ push: vi.fn(), prefetch: vi.fn(), replace: vi.fn() }),
 }))
 
@@ -50,6 +51,10 @@ function wrap(
 function makeAppSidebar(onOpenAccessibility = () => {}) {
   return <AppSidebar onOpenAccessibility={onOpenAccessibility} />
 }
+
+beforeEach(() => {
+  mockedPathname.mockReturnValue("/")
+})
 
 describe("AppSidebar", () => {
   it("desktop expanded: aria-hidden=false, accessible by name 주 메뉴", () => {
@@ -112,6 +117,8 @@ describe("AppSidebar", () => {
   })
 
   it("renders SidebarNav with the project's mainNavigation", () => {
+    // mainNavigation은 레거시 모드(/legacy/*)에서만 렌더링된다
+    mockedPathname.mockReturnValue("/legacy/support")
     render(wrap(makeAppSidebar()))
     // Confirm a known mainNavigation item is rendered
     expect(screen.getByRole("link", { name: "플랫폼 소개" })).toBeInTheDocument()
@@ -134,5 +141,25 @@ describe("AppSidebar", () => {
   it("mobile open: close button is reachable without hidden flag", () => {
     render(wrap(makeAppSidebar(), { isMobile: true, isMobileOpen: true }))
     expect(screen.getByRole("button", { name: "메뉴 닫기" })).toBeInTheDocument()
+  })
+
+  it("wiki mode (pathname='/') renders WikiEntriesNav with 위키 메뉴 label", () => {
+    mockedPathname.mockReturnValue("/")
+    render(wrap(makeAppSidebar()))
+    expect(screen.getByRole("navigation", { name: "위키 메뉴" })).toBeInTheDocument()
+    expect(screen.queryByRole("navigation", { name: "주 메뉴" })).not.toBeInTheDocument()
+  })
+
+  it("legacy mode (pathname='/legacy/support') renders SidebarNav with 주 메뉴 label", () => {
+    mockedPathname.mockReturnValue("/legacy/support")
+    render(wrap(makeAppSidebar()))
+    expect(screen.getByRole("navigation", { name: "주 메뉴" })).toBeInTheDocument()
+    expect(screen.queryByRole("navigation", { name: "위키 메뉴" })).not.toBeInTheDocument()
+  })
+
+  it("legacy mode for exact '/legacy' path renders SidebarNav", () => {
+    mockedPathname.mockReturnValue("/legacy")
+    render(wrap(makeAppSidebar()))
+    expect(screen.getByRole("navigation", { name: "주 메뉴" })).toBeInTheDocument()
   })
 })
