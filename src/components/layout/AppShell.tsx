@@ -7,6 +7,7 @@ import { useKeyboardShortcut } from "@/hooks/useKeyboardShortcut"
 import { writeSidebarCookieClient } from "@/lib/sidebar-cookie"
 import { SkipLink } from "@/components/accessibility/SkipLink"
 import { FocusManager } from "@/components/accessibility/FocusManager"
+import { AccessibilityToolbar } from "@/components/accessibility/AccessibilityToolbar"
 import { Header } from "./Header"
 import { AppSidebar } from "./AppSidebar"
 import { Footer } from "./Footer"
@@ -47,8 +48,33 @@ function SidebarSync({ isMobile }: { isMobile: boolean }) {
 }
 
 function AppShellInner({ children }: { children: ReactNode }) {
-  const { isExpanded, isMobile, isMobileOpen, toggle } = useSidebar()
+  const { isExpanded, isMobile, isMobileOpen, toggle, openSidebar } = useSidebar()
   const [liveMessage, setLiveMessage] = useState("")
+
+  // 접근성 설정 모달 상태 — AppSidebar에서 위로 올림.
+  // 사이드바가 inert 상태(닫힘/모바일 오버레이 밖)일 때도 Alt+0으로 열 수 있도록
+  // 모달을 사이드바 inert 영역 바깥(AppShell 레벨)에서 렌더링.
+  const [a11yOpen, setA11yOpen] = useState(false)
+
+  // Alt+0: 접근성 설정 모달 열기 (DOM click 대신 커스텀 이벤트 — inert 영역 무관하게 동작)
+  // Alt+2: 사이드바 포커스 이동 + 필요 시 열기 (main-nav → app-sidebar id 변경 대응)
+  useEffect(() => {
+    const handler = () => setA11yOpen(true)
+    const sidebarHandler = () => {
+      openSidebar()
+      // 포커스 이동은 다음 렌더 후 사이드바가 visible 상태가 된 뒤 수행
+      requestAnimationFrame(() => {
+        const sidebar = document.getElementById("app-sidebar")
+        if (sidebar instanceof HTMLElement) sidebar.focus()
+      })
+    }
+    window.addEventListener("webfortd:open-accessibility", handler)
+    window.addEventListener("webfortd:open-sidebar", sidebarHandler)
+    return () => {
+      window.removeEventListener("webfortd:open-accessibility", handler)
+      window.removeEventListener("webfortd:open-sidebar", sidebarHandler)
+    }
+  }, [openSidebar])
 
   // Cmd+B: toggle sidebar
   useKeyboardShortcut({ key: "b", mod: true }, () => {
@@ -76,26 +102,29 @@ function AppShellInner({ children }: { children: ReactNode }) {
     }
   }, [isExpanded, isMobile])
 
-  // Spec D5 focus trap: when mobile overlay is open, mark main inert so Tab
-  // cannot escape into background content. Uses React 19's native `inert` prop
-  // (HTML attribute) on the <main> element.
-  const mainInert = isMobile && isMobileOpen
+  // Spec D5 focus trap: when mobile overlay is open, mark the content wrapper
+  // (Header + main + Footer) inert so Tab cannot escape into background content.
+  // Uses React 19's native `inert` prop (HTML attribute).
+  // NOTE: moved from <main> to the wrapping div to also trap Header and Footer.
+  const contentInert = isMobile && isMobileOpen
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <AppSidebar />
+      <AppSidebar onOpenAccessibility={() => setA11yOpen(true)} />
+      {/* AccessibilityToolbar는 사이드바 inert 영역 바깥에 위치 — Alt+0 이벤트 수신 시에도 동작 */}
+      <AccessibilityToolbar open={a11yOpen} onOpenChange={setA11yOpen} hideTrigger />
       <div
         className={cn(
           "flex flex-col min-h-screen transition-[padding-left] duration-200 ease-out motion-reduce:transition-none",
           !isMobile && isExpanded ? "xl:pl-72" : "pl-0",
         )}
+        inert={contentInert}
       >
         <Header />
         <main
           id="main-content"
           tabIndex={-1}
           className="flex-1"
-          inert={mainInert}
         >
           {children}
         </main>

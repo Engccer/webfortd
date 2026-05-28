@@ -128,10 +128,11 @@ describe("AppShell", () => {
   it("desktop: main is NOT inert (no aria-modal blocking)", () => {
     render(wrap(<AppShell initialExpanded={true}>x</AppShell>))
     const main = screen.getByRole("main")
+    // inert이 <main> 자체가 아닌 Header+main+Footer 래퍼 div로 이동했으므로 false.
     expect(main.hasAttribute("inert")).toBe(false)
   })
 
-  // Note: Testing 'main inert when mobile overlay open' requires viewport simulation
-  // — Playwright (T11) covers this end-to-end. The unit test verifies that
+  // Note: Testing 'content wrapper inert when mobile overlay open' requires viewport simulation
+  // — Playwright (T11/T12) covers this end-to-end. The unit test verifies that
   // the inert prop is wired correctly via the AppShellInner contract.
 })

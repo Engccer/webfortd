@@ -10,6 +10,8 @@ export interface SidebarState {
   openMobile: () => void
   closeMobile: () => void
   setIsMobile: (mobile: boolean) => void
+  /** 현재 모드에 관계없이 사이드바를 연다. 데스크탑: isExpanded=true, 모바일: isMobileOpen=true */
+  openSidebar: () => void
 }
 
 const SidebarContext = createContext<SidebarState | null>(null)
@@ -48,6 +50,14 @@ export function SidebarProvider({
   const openMobile = useCallback(() => setIsMobileOpen(true), [])
   const closeMobile = useCallback(() => setIsMobileOpen(false), [])
 
+  const openSidebar = useCallback(() => {
+    if (isMobile) {
+      setIsMobileOpen(true)
+    } else {
+      setIsExpanded(true)
+    }
+  }, [isMobile])
+
   const value = useMemo<SidebarState>(
     () => ({
       isExpanded,
@@ -57,8 +67,9 @@ export function SidebarProvider({
       openMobile,
       closeMobile,
       setIsMobile,
+      openSidebar,
     }),
-    [isExpanded, isMobileOpen, isMobile, toggle, openMobile, closeMobile, setIsMobile],
+    [isExpanded, isMobileOpen, isMobile, toggle, openMobile, closeMobile, setIsMobile, openSidebar],
   )
 
   return <SidebarContext.Provider value={value}>{children}</SidebarContext.Provider>

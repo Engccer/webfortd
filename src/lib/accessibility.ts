@@ -79,8 +79,10 @@ export function setupKeyboardShortcuts(): () => void {
 
     switch (e.key) {
       case "0":
-        // Open accessibility toolbar
-        document.getElementById("accessibility-toolbar-toggle")?.click()
+        // 접근성 설정 모달 열기 — DOM click 대신 커스텀 이벤트 dispatch.
+        // AppShell이 이벤트를 수신해 모달 상태를 토글함으로써
+        // 사이드바 inert 영역 여부와 관계없이 동작.
+        window.dispatchEvent(new Event("webfortd:open-accessibility"))
         e.preventDefault()
         break
       case "1":
@@ -89,8 +91,11 @@ export function setupKeyboardShortcuts(): () => void {
         e.preventDefault()
         break
       case "2":
-        // Skip to navigation
-        document.getElementById("main-nav")?.focus()
+        // 사이드바로 포커스 이동 + 필요 시 열기.
+        // #main-nav(구 id) → #app-sidebar(신 id) 변경 대응.
+        // 사이드바가 닫혀 있으면 webfortd:open-sidebar 이벤트로 열고
+        // AppShell이 requestAnimationFrame으로 포커스를 이동.
+        window.dispatchEvent(new Event("webfortd:open-sidebar"))
         e.preventDefault()
         break
       case "3":

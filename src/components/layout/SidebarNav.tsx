@@ -70,6 +70,7 @@ export function SidebarNav({ items, pathname, onNavigate }: SidebarNavProps) {
     // pathname 변경 시 사용자 강제 접기 초기화 — 활성 페이지가 hidden ul에 묻히는 a11y 회귀 차단.
     // 루프 없음: 다음 실행 시 ref 가드(pathname === lastPathnameRef.current)가 early-return.
     // setForcedClosed는 useState의 안정적 참조이므로 deps 포함 시에도 무한 루프 없음.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- pathname 변경 시 강제 접기 초기화는 외부 상태(URL) 동기화 목적이므로 허용
     setForcedClosed(new Set())
   }, [pathname, setForcedClosed])
 

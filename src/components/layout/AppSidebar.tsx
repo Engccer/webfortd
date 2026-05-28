@@ -11,7 +11,7 @@
  * and AppShell.
  */
 
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef } from "react"
 import { usePathname } from "next/navigation"
 import { Settings, X } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -19,13 +19,16 @@ import { mainNavigation } from "@/lib/navigation"
 import { useSidebar } from "@/contexts/SidebarContext"
 import { SidebarNav } from "./SidebarNav"
 import { EntryToggle } from "@/components/wiki/EntryToggle"
-import { AccessibilityToolbar } from "@/components/accessibility/AccessibilityToolbar"
 import { SignInButton } from "@/components/auth/SignInButton"
 
-export function AppSidebar() {
+export interface AppSidebarProps {
+  /** 접근성 설정 모달 열기 콜백. AppShell에서 주입 — 사이드바 inert 바깥에서 모달 제어. */
+  onOpenAccessibility: () => void
+}
+
+export function AppSidebar({ onOpenAccessibility }: AppSidebarProps) {
   const pathname = usePathname()
   const { isExpanded, isMobileOpen, isMobile, closeMobile } = useSidebar()
-  const [a11yOpen, setA11yOpen] = useState(false)
   const closeButtonRef = useRef<HTMLButtonElement>(null)
 
   const isOpen = isMobile ? isMobileOpen : isExpanded
@@ -153,18 +156,18 @@ export function AppSidebar() {
 
           <div className="border-t border-border" />
 
-          {/* 접근성 설정 */}
+          {/* 접근성 설정 — onClick은 AppShell이 주입한 onOpenAccessibility.
+               AccessibilityToolbar는 AppShell 레벨에서 렌더링되어 사이드바 inert 영향을 받지 않음. */}
           <div className="p-3">
             <button
               type="button"
-              onClick={() => setA11yOpen(true)}
+              onClick={onOpenAccessibility}
               className="flex w-full items-center gap-2 min-h-11 px-3 py-2.5 rounded-md text-sm text-foreground hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring"
               aria-label="접근성 설정 열기"
             >
               <Settings className="h-4 w-4" aria-hidden="true" />
               접근성 설정
             </button>
-            <AccessibilityToolbar open={a11yOpen} onOpenChange={setA11yOpen} hideTrigger />
           </div>
         </div>
 
