@@ -60,6 +60,15 @@ describe("SidebarContext", () => {
     expect(() => render(<Probe />)).toThrow(/SidebarProvider/)
   })
 
+  it("respects initialMobileOpen prop", () => {
+    render(
+      <SidebarProvider initialExpanded={true} initialIsMobile={true} initialMobileOpen={true}>
+        <Probe />
+      </SidebarProvider>,
+    )
+    expect(screen.getByTestId("mobile-open").textContent).toBe("true")
+  })
+
   it("toggle adapts when setIsMobile flips mid-session", async () => {
     const user = userEvent.setup()
     function Probe2() {

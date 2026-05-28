@@ -24,8 +24,20 @@ import { Slider } from "@/components/ui/slider"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 
-export function AccessibilityToolbar() {
-  const [open, setOpen] = React.useState(false)
+/**
+ * Pass both `open` and `onOpenChange` together for controlled mode. Pass
+ * `hideTrigger` to hide the built-in trigger button when controlling externally.
+ */
+export interface AccessibilityToolbarProps {
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+  hideTrigger?: boolean
+}
+
+export function AccessibilityToolbar({ open: controlledOpen, onOpenChange: controlledOnOpenChange, hideTrigger }: AccessibilityToolbarProps = {}) {
+  const [internalOpen, setInternalOpen] = React.useState(false)
+  const open = controlledOpen ?? internalOpen
+  const setOpen = controlledOnOpenChange ?? setInternalOpen
   const [settings, setSettings] = React.useState<AccessibilitySettings>(defaultSettings)
   const [mounted, setMounted] = React.useState(false)
   const { theme, setTheme } = useTheme()
@@ -61,18 +73,20 @@ export function AccessibilityToolbar() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button
-          variant="outline"
-          size="sm"
-          id="accessibility-toolbar-toggle"
-          className="gap-2"
-          aria-label="접근성 설정"
-        >
-          <Settings className="h-4 w-4" />
-          <span className="hidden sm:inline">접근성</span>
-        </Button>
-      </DialogTrigger>
+      {!hideTrigger && (
+        <DialogTrigger asChild>
+          <Button
+            variant="outline"
+            size="sm"
+            id="accessibility-toolbar-toggle"
+            className="gap-2"
+            aria-label="접근성 설정"
+          >
+            <Settings className="h-4 w-4" />
+            <span className="hidden sm:inline">접근성</span>
+          </Button>
+        </DialogTrigger>
+      )}
 
       <DialogContent className="max-w-sm">
         <DialogHeader>

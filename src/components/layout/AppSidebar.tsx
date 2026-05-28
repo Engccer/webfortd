@@ -1,0 +1,170 @@
+/**
+ * NOTE — Focus trap dependency (spec D5):
+ *
+ * The mobile overlay uses `role="dialog"` + `aria-modal="true"`, which signals
+ * assistive technologies but does NOT enforce keyboard focus containment by
+ * itself. AppShell (T9) is responsible for applying `inert` to the
+ * `#main-content` region whenever `isMobile && isMobileOpen` is true. Without
+ * that, Tab from inside the sidebar can escape to background DOM.
+ *
+ * Do NOT remove or alter the spec D5 contract without updating both this file
+ * and AppShell.
+ */
+
+import { useCallback, useEffect, useRef, useState } from "react"
+import { usePathname } from "next/navigation"
+import { Settings, X } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { mainNavigation } from "@/lib/navigation"
+import { useSidebar } from "@/contexts/SidebarContext"
+import { SidebarNav } from "./SidebarNav"
+import { EntryToggle } from "@/components/wiki/EntryToggle"
+import { AccessibilityToolbar } from "@/components/accessibility/AccessibilityToolbar"
+import { SignInButton } from "@/components/auth/SignInButton"
+
+export function AppSidebar() {
+  const pathname = usePathname()
+  const { isExpanded, isMobileOpen, isMobile, closeMobile } = useSidebar()
+  const [a11yOpen, setA11yOpen] = useState(false)
+  const closeButtonRef = useRef<HTMLButtonElement>(null)
+
+  const isOpen = isMobile ? isMobileOpen : isExpanded
+
+  // 모바일 overlay: 트랜지션 완료 후 닫기 버튼에 포커스.
+  useEffect(() => {
+    if (!isMobile || !isMobileOpen) return
+    // 100ms: 사이드바 slide-in transition 300ms 시작 후 포커스 이동
+    // (전체 트랜지션 완료를 기다리지 않고, 시각적 시작 직후로 SR 사용자 응답성 확보)
+    const t = setTimeout(() => closeButtonRef.current?.focus(), 100)
+    return () => clearTimeout(t)
+  }, [isMobile, isMobileOpen])
+
+  // 모바일 overlay: 열려 있는 동안 body 스크롤 잠금.
+  useEffect(() => {
+    if (!isMobile || !isMobileOpen) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+    return () => {
+      document.body.style.overflow = prev
+    }
+  }, [isMobile, isMobileOpen])
+
+  // 모바일 overlay: ESC 키로 닫기.
+  useEffect(() => {
+    if (!isMobile || !isMobileOpen) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault()
+        closeMobile()
+      }
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [isMobile, isMobileOpen, closeMobile])
+
+  // 모바일: pathname 변경 시 자동 닫기.
+  // useRef를 effect 안에서 읽고 쓰면 react-hooks/refs 룰을 통과한다(render 중이 아니라 commit 후).
+  // 초기 mount는 lastPathnameRef.current === pathname이라 guard가 short-circuit →
+  // initialMobileOpen=true 테스트에서 즉시 닫히지 않는다.
+  const lastPathnameRef = useRef(pathname)
+  useEffect(() => {
+    if (pathname === lastPathnameRef.current) return
+    lastPathnameRef.current = pathname
+    if (isMobile && isMobileOpen) closeMobile()
+  }, [pathname, isMobile, isMobileOpen, closeMobile])
+
+  const handleNavigate = useCallback(() => {
+    if (isMobile) closeMobile()
+  }, [isMobile, closeMobile])
+
+  const containerCls = cn(
+    "flex flex-col bg-background border-r border-border",
+    isMobile
+      ? cn(
+          "fixed top-0 left-0 z-50 h-[100dvh] w-72 shadow-xl transition-transform duration-300 ease-out motion-reduce:transition-none",
+          isOpen ? "translate-x-0" : "-translate-x-full",
+        )
+      : cn(
+          "fixed top-0 left-0 z-30 h-[100dvh] transition-[width] duration-200 ease-out motion-reduce:transition-none",
+          isOpen ? "w-72" : "w-0 overflow-hidden",
+        ),
+  )
+
+  return (
+    <>
+      {isMobile && (
+        // Backdrop z-40. T9 AppShell must render the sidebar AFTER the page header
+        // so the backdrop visually covers the sticky header. If header z exceeds 40,
+        // raise backdrop to z-[41].
+        <div
+          aria-hidden="true"
+          onClick={closeMobile}
+          className={cn(
+            "fixed inset-0 z-40 bg-black/50 transition-opacity duration-300 motion-reduce:transition-none",
+            isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none",
+          )}
+        />
+      )}
+
+      <aside
+        id="app-sidebar"
+        role={isMobile ? "dialog" : "complementary"}
+        aria-modal={isMobile ? "true" : undefined}
+        aria-label="주 메뉴"
+        aria-hidden={!isOpen}
+        className={containerCls}
+      >
+        {/* 헤더: 메뉴 제목 + 모바일 닫기 버튼 */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+          <span className="text-base font-semibold text-foreground">메뉴</span>
+          {isMobile && (
+            <button
+              ref={closeButtonRef}
+              type="button"
+              onClick={closeMobile}
+              aria-label="메뉴 닫기"
+              className="min-h-11 min-w-11 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              <X className="h-5 w-5" aria-hidden="true" />
+            </button>
+          )}
+        </div>
+
+        {/* 스크롤 가능한 내비게이션 영역 */}
+        <div className="flex-1 overflow-y-auto overflow-x-hidden">
+          <div className="p-3">
+            <SidebarNav items={mainNavigation} pathname={pathname} onNavigate={handleNavigate} />
+          </div>
+
+          <div className="border-t border-border" />
+
+          {/* 사이트 모드 전환 */}
+          <div className="p-3">
+            <EntryToggle variant="sidebar" />
+          </div>
+
+          <div className="border-t border-border" />
+
+          {/* 접근성 설정 */}
+          <div className="p-3">
+            <button
+              type="button"
+              onClick={() => setA11yOpen(true)}
+              className="flex w-full items-center gap-2 min-h-11 px-3 py-2.5 rounded-md text-sm text-foreground hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring"
+              aria-label="접근성 설정 열기"
+            >
+              <Settings className="h-4 w-4" aria-hidden="true" />
+              접근성 설정
+            </button>
+            <AccessibilityToolbar open={a11yOpen} onOpenChange={setA11yOpen} hideTrigger />
+          </div>
+        </div>
+
+        {/* 푸터: 로그인/로그아웃 */}
+        <div className="border-t border-border p-3">
+          <SignInButton />
+        </div>
+      </aside>
+    </>
+  )
+}
