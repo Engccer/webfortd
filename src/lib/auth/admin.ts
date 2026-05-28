@@ -1,12 +1,9 @@
 import 'server-only'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { getServerClient } from '../supabase/server.ts'
+import type { AdminStatus } from './admin-types.ts'
 
-export interface AdminStatus {
-  isAdmin: boolean
-  userId: string | null
-  email: string | null
-}
+export type { AdminStatus } from './admin-types.ts'
 
 /**
  * Production helper — getServerClient를 통해 현재 요청의 admin 권한을 server-side에서 조회.
