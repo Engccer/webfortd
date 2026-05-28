@@ -9,8 +9,9 @@
 
 import { test, expect } from "@playwright/test"
 import { expectNoAxeViolations } from "./axe-helper"
+import { SIDEBAR_COOKIE_NAME } from "../../src/lib/sidebar-cookie"
 
-const COOKIE_NAME = "sidebar-expanded"
+const COOKIE_NAME = SIDEBAR_COOKIE_NAME
 const BASE_URL = "http://localhost:3000"
 
 // ─── Axe 검증 ────────────────────────────────────────────────────────────────
