@@ -19,8 +19,10 @@ import { usePathname } from "next/navigation"
 import { Settings, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { mainNavigation } from "@/lib/navigation"
+import { wikiEntries } from "@/lib/wiki-entries"
 import { useSidebar } from "@/contexts/SidebarContext"
 import { SidebarNav } from "./SidebarNav"
+import { WikiEntriesNav } from "./WikiEntriesNav"
 import { EntryToggle } from "@/components/wiki/EntryToggle"
 import { SignInButton } from "@/components/auth/SignInButton"
 
@@ -78,6 +80,8 @@ export function AppSidebar({ onOpenAccessibility }: AppSidebarProps) {
     lastPathnameRef.current = pathname
     if (isMobile && isMobileOpen) closeMobile()
   }, [pathname, isMobile, isMobileOpen, closeMobile])
+
+  const isLegacyMode = pathname === "/legacy" || pathname.startsWith("/legacy/")
 
   const handleNavigate = useCallback(() => {
     if (isMobile) closeMobile()
@@ -147,7 +151,11 @@ export function AppSidebar({ onOpenAccessibility }: AppSidebarProps) {
         {/* 스크롤 가능한 내비게이션 영역 */}
         <div className="flex-1 overflow-y-auto overflow-x-hidden">
           <div className="p-3">
-            <SidebarNav items={mainNavigation} pathname={pathname} onNavigate={handleNavigate} />
+            {isLegacyMode ? (
+              <SidebarNav items={mainNavigation} pathname={pathname} onNavigate={handleNavigate} />
+            ) : (
+              <WikiEntriesNav items={wikiEntries} pathname={pathname} onNavigate={handleNavigate} />
+            )}
           </div>
 
           <div className="border-t border-border" />
