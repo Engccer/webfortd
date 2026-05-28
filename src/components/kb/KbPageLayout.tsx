@@ -23,6 +23,7 @@ import { SkipLink } from "@/components/accessibility/SkipLink"
 import { FocusManager } from "@/components/accessibility/FocusManager"
 import { AccessibilityToolbar } from "@/components/accessibility/AccessibilityToolbar"
 import { KbSourceFooter } from "./KbSourceFooter"
+import { StatusBadge } from "./StatusBadge"
 
 const AXIS_LABEL: Record<ContentAxis, string> = {
   'disability-types': '장애유형별',
@@ -102,15 +103,7 @@ export async function KbPageLayout({ axis, slug }: KbPageLayoutProps) {
               {axisLabel} 목록
             </Link>
             <div className="flex items-center gap-2">
-              {fm.status === 'draft' && (
-                <span
-                  role="status"
-                  className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800"
-                  aria-label="검수 진행 중인 초안입니다"
-                >
-                  초안
-                </span>
-              )}
+              <StatusBadge status={fm.status} />
               <AccessibilityToolbar />
             </div>
           </div>
