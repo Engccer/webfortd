@@ -3,9 +3,12 @@
  *
  * The mobile overlay uses `role="dialog"` + `aria-modal="true"`, which signals
  * assistive technologies but does NOT enforce keyboard focus containment by
- * itself. AppShell (T9) is responsible for applying `inert` to the
- * `#main-content` region whenever `isMobile && isMobileOpen` is true. Without
- * that, Tab from inside the sidebar can escape to background DOM.
+ * itself. AppShell (T12) is responsible for applying `inert` to the
+ * Header + main + Footer wrapper div whenever `isMobile && isMobileOpen` is true.
+ * Without that, Tab from inside the sidebar can escape to Header/Footer DOM.
+ *
+ * T12 codex-rescue F1: inert이 <main>에만 걸려 있었을 때 Header/Footer로 탈출 가능하던
+ * 문제를 래퍼 div로 이동해 완전 차단. Playwright 회귀 가드 추가 (sidebar.spec.ts).
  *
  * Do NOT remove or alter the spec D5 contract without updating both this file
  * and AppShell.

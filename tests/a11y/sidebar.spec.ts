@@ -180,3 +180,31 @@ test("SkipLink: Enter on 메뉴 바로가기 moves focus to #app-sidebar", async
   )
   expect(focusedId).toBe("app-sidebar")
 })
+
+// ─── D5 포커스 트랩 (T12 codex-rescue F1) ─────────────────────────────────────
+// inert가 <main>에만 걸려 있을 때 Header/Footer로 Tab 탈출 가능하던 문제 회귀 가드.
+// 래퍼 div(Header + main + Footer)로 inert 이동 후 완전 차단 검증.
+
+test.describe("D5 focus trap: mobile overlay — Tab stays within sidebar", () => {
+  test.use({ viewport: { width: 768, height: 1024 } })
+
+  test("mobile overlay open: Tab 12회 연속 all focus stays within #app-sidebar", async ({ page }) => {
+    await page.goto("/")
+    const sidebar = page.locator("#app-sidebar")
+
+    // 햄버거 클릭으로 overlay 열기
+    const hamburger = page.locator('[aria-controls="app-sidebar"]')
+    await hamburger.click()
+    await expect(sidebar).toHaveAttribute("aria-hidden", "false")
+
+    // Tab을 12번 눌러 사이드바 내부 포커스 순환 — 모든 포커스가 #app-sidebar 트리 안에 있어야 함
+    for (let i = 0; i < 12; i++) {
+      await page.keyboard.press("Tab")
+      const insideSidebar = await page.evaluate(() => {
+        const s = document.getElementById("app-sidebar")
+        return s?.contains(document.activeElement) ?? false
+      })
+      expect(insideSidebar, `Tab #${i + 1}: 포커스가 사이드바 밖으로 탈출`).toBe(true)
+    }
+  })
+})
