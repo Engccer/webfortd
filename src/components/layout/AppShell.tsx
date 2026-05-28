@@ -28,7 +28,6 @@ export function AppShell({ children, initialExpanded }: AppShellProps) {
   return (
     <SidebarProvider initialExpanded={initialExpanded} initialIsMobile={isMobile}>
       <SidebarSync isMobile={isMobile} />
-      <SkipLink />
       <FocusManager />
       <AppShellInner>{children}</AppShellInner>
     </SidebarProvider>
@@ -110,6 +109,12 @@ function AppShellInner({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
+      {/* SkipLink는 DOM의 가장 첫 위치 — 페이지 진입 첫 Tab으로 도달 가능해야 함.
+          모바일 overlay 활성 시는 inert 처리: '본문 바로가기'는 inert main을 가리켜
+          무의미하고, '메뉴 바로가기'는 이미 overlay 안에 있는 사이드바를 가리켜 redundant. */}
+      <div inert={contentInert}>
+        <SkipLink />
+      </div>
       <AppSidebar onOpenAccessibility={() => setA11yOpen(true)} />
       {/* AccessibilityToolbar는 사이드바 inert 영역 바깥에 위치 — Alt+0 이벤트 수신 시에도 동작 */}
       <AccessibilityToolbar open={a11yOpen} onOpenChange={setA11yOpen} hideTrigger />

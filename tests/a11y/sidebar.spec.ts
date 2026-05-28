@@ -197,6 +197,16 @@ test.describe("D5 focus trap: mobile overlay — Tab stays within sidebar", () =
     await hamburger.click()
     await expect(sidebar).toHaveAttribute("aria-hidden", "false")
 
+    // T6: AppSidebar는 overlay 열린 후 100ms 뒤 X 닫기 버튼에 자동 포커스.
+    // Tab 검증 전에 자동 포커스가 사이드바 안으로 들어왔는지 확인.
+    await page.waitForFunction(
+      () => {
+        const s = document.getElementById("app-sidebar")
+        return s?.contains(document.activeElement) ?? false
+      },
+      { timeout: 1000 },
+    )
+
     // Tab을 12번 눌러 사이드바 내부 포커스 순환 — 모든 포커스가 #app-sidebar 트리 안에 있어야 함
     for (let i = 0; i < 12; i++) {
       await page.keyboard.press("Tab")
