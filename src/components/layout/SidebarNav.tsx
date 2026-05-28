@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useMemo, useState, type KeyboardEvent } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react"
 import Link from "next/link"
 import { ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -54,21 +54,24 @@ export function SidebarNav({ items, pathname, onNavigate }: SidebarNavProps) {
   const [forcedClosed, setForcedClosed] = useState<Set<string>>(() => new Set<string>())
 
   /**
-   * pathname 변경을 감지해 forcedClosed를 클리어한다 (render-body 상태 조정 패턴).
+   * pathname 변경을 감지해 forcedClosed를 클리어한다.
    * 이렇게 해야 사용자가 서브트리를 떠났다가 다시 들어왔을 때 forced-close가
    * 캐리오버되지 않아 활성 페이지가 `hidden` ul 안에 묻히는 BLOCKER 회귀 차단.
    * WCAG 2.4.3 / 2.4.1: 활성 페이지는 항상 Tab/스크린리더로 도달 가능해야 함.
    *
-   * 이전 pathname을 별도 useState로 추적하고 render-body에서 setState 호출 —
-   * React 공식 권장 "props로부터 state 동기화" 패턴 (refs/useEffect 둘 다 회피).
+   * AppSidebar T6 패턴과 동일: useRef로 이전 pathname 추적 + useEffect로 변경 감지.
+   * render-body setState 패턴 회피 — commit 후 한 번만 실행되어 cascading render 없음.
+   * setForcedClosed는 항상 안정적인 참조이므로 deps에 포함해도 무한 루프 없음.
    */
-  const [lastPathname, setLastPathname] = useState(pathname)
-  if (lastPathname !== pathname) {
-    setLastPathname(pathname)
-    if (forcedClosed.size > 0) {
-      setForcedClosed(new Set())
-    }
-  }
+  const lastPathnameRef = useRef(pathname)
+  useEffect(() => {
+    if (pathname === lastPathnameRef.current) return
+    lastPathnameRef.current = pathname
+    // pathname 변경 시 사용자 강제 접기 초기화 — 활성 페이지가 hidden ul에 묻히는 a11y 회귀 차단.
+    // 루프 없음: 다음 실행 시 ref 가드(pathname === lastPathnameRef.current)가 early-return.
+    // setForcedClosed는 useState의 안정적 참조이므로 deps 포함 시에도 무한 루프 없음.
+    setForcedClosed(new Set())
+  }, [pathname, setForcedClosed])
 
   const expandedHrefs = useMemo(() => {
     const result = new Set(autoExpanded)
@@ -145,6 +148,8 @@ function SidebarNavItem({
     .replace(/\//g, "_")
     .replace(/[^a-zA-Z0-9_-]/g, "-")}`
 
+  // TODO(post-T12): ↑↓ 형제 간 이동 (spec D8). Tab/Shift+Tab으로 동일 동작 가능
+  // 하므로 deferred — VoiceOver 사용자는 VO 키를 사용하므로 우선순위 낮음.
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLAnchorElement>) => {
       if (!hasChildren) return
