@@ -5,13 +5,13 @@ disability_types: ["전체"]
 domains: ["정책법령"]
 regions: ["전국"]
 year: 2023
-status: draft
+status: published
 source:
   organization: "교육부"
   citation: "2023 장애유형별 장애인교원 근무 지원 방안 최종보고서"
 source_origin: "2023-disability-types-work-support-report"
 parent_headings: ["목 차"]
-reviewed_by: []
+reviewed_by: ["1차 검토(김헌용)"]
 references: []
 accessibility:
   alt_text_complete: true
