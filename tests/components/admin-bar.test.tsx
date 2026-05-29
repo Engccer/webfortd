@@ -9,7 +9,7 @@ vi.mock("next/navigation", () => ({
 
 import { AdminBarView } from "@/components/admin/AdminBarView"
 
-const admin = { isAdmin: true, userId: "admin-1", email: "engccer@gmail.com" }
+const admin = { isAdmin: true, userId: "admin-1", email: "admin@example.com" }
 
 beforeEach(() => {
   refreshMock.mockClear()
@@ -33,7 +33,7 @@ describe("AdminBarView", () => {
     render(<AdminBarView status={admin} previewEnabled={false} />)
     expect(screen.getByRole("region", { name: /관리자 도구/ })).toBeDefined()
     expect(screen.getByText("관리자 모드")).toBeDefined()
-    expect(screen.getByText("engccer@gmail.com")).toBeDefined()
+    expect(screen.getByText("admin@example.com")).toBeDefined()
     expect(
       screen.getByRole("link", { name: "대시보드" }).getAttribute("href"),
     ).toBe("/admin/dashboard")

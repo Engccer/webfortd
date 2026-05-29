@@ -63,13 +63,13 @@ describe('getCurrentUserAdminStatusWith', () => {
 
   test('authenticated user with admin role → isAdmin=true', async () => {
     const client = makeClientStub({
-      user: { id: 'admin-1', email: 'engccer@gmail.com' },
+      user: { id: 'admin-1', email: 'admin@example.com' },
       roles: [{ role: 'admin' }],
     })
     const status = await getCurrentUserAdminStatusWith(client as never)
     assert.strictEqual(status.isAdmin, true)
     assert.strictEqual(status.userId, 'admin-1')
-    assert.strictEqual(status.email, 'engccer@gmail.com')
+    assert.strictEqual(status.email, 'admin@example.com')
   })
 
   test('roles query error → isAdmin=false (fail-safe)', async () => {
