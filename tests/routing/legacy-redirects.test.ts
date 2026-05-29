@@ -2,10 +2,9 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import nextConfig from '../../next.config'
 
+// PR #62 hot fix (2026-05-29) — /about, /about/:path* redirect 제거 (위키 About 페이지 우선)
 const redirectsExpected = [
   { source: '/wiki', destination: '/', permanent: true },
-  { source: '/about', destination: '/legacy/about', permanent: true },
-  { source: '/about/:path*', destination: '/legacy/about/:path*', permanent: true },
   { source: '/support', destination: '/legacy/support', permanent: true },
   { source: '/support/:path*', destination: '/legacy/support/:path*', permanent: true },
   { source: '/rights', destination: '/legacy/rights', permanent: true },

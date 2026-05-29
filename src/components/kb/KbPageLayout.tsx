@@ -23,6 +23,7 @@ import { SkipLink } from "@/components/accessibility/SkipLink"
 import { FocusManager } from "@/components/accessibility/FocusManager"
 import { AccessibilityToolbar } from "@/components/accessibility/AccessibilityToolbar"
 import { KbSourceFooter } from "./KbSourceFooter"
+import { StatusBadge } from "./StatusBadge"
 
 const AXIS_LABEL: Record<ContentAxis, string> = {
   'disability-types': '장애유형별',
@@ -91,7 +92,10 @@ export async function KbPageLayout({ axis, slug }: KbPageLayoutProps) {
     <>
       <SkipLink />
       <FocusManager />
-      <div className="fixed inset-0 z-50 overflow-auto bg-background">
+      <div
+        className="fixed inset-x-0 bottom-0 z-50 overflow-auto bg-background"
+        style={{ top: "var(--admin-bar-h, 0px)" }}
+      >
         <div className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur">
           <div className="mx-auto flex h-14 max-w-4xl items-center justify-between gap-3 px-4 sm:px-6">
             <Link
@@ -102,15 +106,7 @@ export async function KbPageLayout({ axis, slug }: KbPageLayoutProps) {
               {axisLabel} 목록
             </Link>
             <div className="flex items-center gap-2">
-              {fm.status === 'draft' && (
-                <span
-                  role="status"
-                  className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800"
-                  aria-label="검수 진행 중인 초안입니다"
-                >
-                  초안
-                </span>
-              )}
+              <StatusBadge status={fm.status} />
               <AccessibilityToolbar />
             </div>
           </div>
