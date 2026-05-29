@@ -1,6 +1,15 @@
 /**
  * webfortd Phase 2 M5 — draft → published 검수 자동화 스크립트
  *
+ * ⚠️ DEPRECATED (Phase B M1, 2026-05-29): 본 스크립트는 DB documents.status를 직접
+ * UPDATE한다. 그러나 B2(sync가 frontmatter status 반영) 이후 DB만 바꾸면 다음 kb:sync에서
+ * 마크다운 frontmatter status로 복귀한다. published 전환은 *마크다운 정본 수정*으로 해야 한다:
+ *   - 일괄: `npm run kb:bootstrap` (scripts/bootstrap-publish.ts)
+ *   - 개별: .md frontmatter status 직접 편집
+ *   → 이후 `npm run build` + `npm run kb:sync`로 DB 반영.
+ * evaluateGuards/buildReport/formatReport(가드 평가 로직)는 향후 마크다운 기반 검수
+ * 워크플로에서 재사용 예정이라 보존한다.
+ *
  * documents.status가 'draft' 또는 'in_review'인 페이지 중에서 검수 게이트 3개를
  * 통과한 페이지를 service_role로 일괄 'published' 전환한다.
  *
@@ -202,6 +211,13 @@ export function formatReportWithVerify(
  *     UPDATE는 단일 .in(ids) 호출이라 transactional)
  */
 async function main(): Promise<void> {
+  // DEPRECATED 경고 (Phase B M1): DB UPDATE 방식은 sync에서 복귀됨.
+  console.error(
+    '⚠️  경고: kb:publish(DB UPDATE 방식)는 Phase B M1 이후 deprecated입니다.\n' +
+      '   DB status를 직접 바꿔도 다음 kb:sync에서 마크다운 frontmatter status로 복귀합니다.\n' +
+      '   published 전환은 마크다운 frontmatter 수정(kb:bootstrap 또는 직접 편집) → kb:sync를 사용하세요.\n',
+  )
+
   // 1. shadowing 차단: ~/.zshrc 등의 stale export보다 .env.local 우선
   loadDotEnvLocalOverrides()
 
