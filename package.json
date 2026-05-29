@@ -16,6 +16,8 @@
     "kb:sync:dry-run": "node --env-file=.env.local --import tsx scripts/sync-content-to-db.ts --dry-run",
     "kb:publish": "node --env-file=.env.local --import tsx scripts/publish-content.ts",
     "kb:publish:dry-run": "node --env-file=.env.local --import tsx scripts/publish-content.ts --dry-run",
+    "kb:bootstrap": "node --import tsx scripts/bootstrap-publish.ts --apply",
+    "kb:bootstrap:dry-run": "node --import tsx scripts/bootstrap-publish.ts",
     "kb:embed": "node --env-file=.env.local --import tsx scripts/embed-content.ts",
     "kb:embed:dry-run": "node --env-file=.env.local --import tsx scripts/embed-content.ts --dry-run",
     "library:upload": "node --env-file=.env.local --import tsx scripts/upload-library.ts",

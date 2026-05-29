@@ -60,7 +60,7 @@ export { assertIdRowsComplete } from './lib/assert-id-rows.ts'
  * Supabase `documents` 테이블 row 객체 형태.
  *
  * D2: frontmatter의 `references`는 SQL reserved word라 컬럼명 `references_data`로 rename.
- * D1: `status`는 sync 시점에 모두 'draft' 강제 (M5 검수 자동화에서 published 전환).
+ * B2 (Phase B M1): `status`는 frontmatter 값을 그대로 반영 (마크다운 정본). 기존 D1(draft 강제) 폐기.
  */
 export interface DocumentRow {
   slug: string
@@ -91,7 +91,7 @@ export interface DocumentRow {
 /**
  * frontmatter + 본문을 documents 테이블 row 객체로 변환한다.
  *
- * - D1: status는 입력 frontmatter 값을 무시하고 'draft'로 강제.
+ * - B2: status는 입력 frontmatter 값을 반영 (없으면 'draft' fallback). 마크다운 정본.
  * - D2: `references` → `references_data` 컬럼명 rename. row 객체에 `references` 키 *없음*.
  * - wiki_links는 kb-index의 `wikilink_adjacency`에서 받은 값을 그대로 사용 (sync-content.ts의
  *   code-block 마스킹된 추출 결과와 단일 source 보장). M2 codex-rescue carry-over 2 처리.
@@ -114,7 +114,10 @@ export function transformDocumentRow(
     effective_date: fm.effective_date ?? null,
     source: fm.source as Record<string, unknown>,
     references_data: (fm.references ?? []) as unknown[],
-    status: 'draft', // D1
+    // B2 (Phase B M1): frontmatter status 반영. 마크다운이 정본 — DB는 그 파생.
+    // 기존 D1(draft 강제)은 폐기. published 전환은 마크다운 frontmatter 수정(kb:bootstrap
+    // 또는 직접 편집) → sync로 일원화.
+    status: fm.status ?? 'draft',
     authors: fm.authors ?? [],
     reviewed_by: fm.reviewed_by ?? [],
     reviewer_notes: fm.reviewer_notes ?? null,
