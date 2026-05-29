@@ -427,7 +427,6 @@ export function ChatUI({ initialThreadId }: ChatUIProps = {}) {
 
       <PromptInput
         onSubmit={(message) => void send(message.text)}
-        aria-label="질문 입력"
         className="border-t border-border pt-3"
       >
         <PromptInputTextarea
