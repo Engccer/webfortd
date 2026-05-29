@@ -34,7 +34,6 @@ export function AdminBarView({ status }: { status: AdminStatus }) {
             aria-disabled="true"
             aria-describedby="admin-preview-help"
             className="cursor-not-allowed rounded border border-amber-300 px-3 py-1 text-amber-700 opacity-60 focus:outline-none focus:ring-2 focus:ring-amber-600"
-            onClick={(e) => e.preventDefault()}
           >
             미리보기 OFF
           </button>
