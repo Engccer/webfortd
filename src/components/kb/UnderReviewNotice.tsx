@@ -49,7 +49,7 @@ export function UnderReviewNotice({
               검수 중인 페이지입니다
             </h1>
             {title && (
-              <p className="mb-4 text-lg text-muted-foreground">"{title}"</p>
+              <p className="mb-4 text-lg text-muted-foreground">「{title}」</p>
             )}
             <p className="text-muted-foreground">
               이 페이지는 현재 검수 진행 중이라 아직 공개되지 않았어요. 검수가
