@@ -1,81 +1,77 @@
-import { describe, it, expect } from "vitest"
+import { describe, it, expect, vi, beforeEach } from "vitest"
 import { render, screen } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
+
+const refreshMock = vi.fn()
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ refresh: refreshMock }),
+}))
+
 import { AdminBarView } from "@/components/admin/AdminBarView"
 
+const admin = { isAdmin: true, userId: "admin-1", email: "engccer@gmail.com" }
+
+beforeEach(() => {
+  refreshMock.mockClear()
+  global.fetch = vi.fn(
+    async () => new Response(JSON.stringify({ enabled: true }), { status: 200 }),
+  ) as typeof fetch
+})
+
 describe("AdminBarView", () => {
-  it("isAdmin=false → renders nothing", () => {
-    const { container } = render(
-      <AdminBarView status={{ isAdmin: false, userId: null, email: null }} />,
-    )
-    expect(container.firstChild).toBeNull()
-  })
-
-  it("isAdmin=false (authenticated non-admin) → still renders nothing", () => {
+  it("isAdmin=false → null", () => {
     const { container } = render(
       <AdminBarView
-        status={{ isAdmin: false, userId: "u-1", email: "plain@example.com" }}
+        status={{ isAdmin: false, userId: null, email: null }}
+        previewEnabled={false}
       />,
     )
     expect(container.firstChild).toBeNull()
   })
 
-  it("isAdmin=true → renders region with admin label + dashboard link", () => {
-    render(
-      <AdminBarView
-        status={{
-          isAdmin: true,
-          userId: "admin-1",
-          email: "engccer@gmail.com",
-        }}
-      />,
-    )
+  it("isAdmin=true → region + 관리자 모드 + 대시보드 링크", () => {
+    render(<AdminBarView status={admin} previewEnabled={false} />)
     expect(screen.getByRole("region", { name: /관리자 도구/ })).toBeDefined()
     expect(screen.getByText("관리자 모드")).toBeDefined()
     expect(screen.getByText("engccer@gmail.com")).toBeDefined()
-    const dashboardLink = screen.getByRole("link", { name: "대시보드" })
-    expect(dashboardLink.getAttribute("href")).toBe("/admin/dashboard")
+    expect(
+      screen.getByRole("link", { name: "대시보드" }).getAttribute("href"),
+    ).toBe("/admin/dashboard")
   })
 
-  it("isAdmin=true with null email → renders placeholder", () => {
-    render(
-      <AdminBarView
-        status={{ isAdmin: true, userId: "admin-1", email: null }}
-      />,
-    )
-    expect(screen.getByText(/이메일 없음/)).toBeDefined()
+  it("previewEnabled=false → '미리보기 켜기' + aria-pressed=false", () => {
+    render(<AdminBarView status={admin} previewEnabled={false} />)
+    const btn = screen.getByRole("button", { name: /미리보기 켜기/ })
+    expect(btn.getAttribute("aria-pressed")).toBe("false")
   })
 
-  it("preview toggle uses aria-disabled (focusable + screen-reader accessible)", () => {
-    render(
-      <AdminBarView
-        status={{
-          isAdmin: true,
-          userId: "admin-1",
-          email: "engccer@gmail.com",
-        }}
-      />,
-    )
-    const toggle = screen.getByRole("button", { name: /미리보기/ })
-    // codex-rescue P1 #2: disabled HTML 속성은 키보드 포커스 차단 + 스크린리더 무시.
-    // aria-disabled로 시각/시맨틱 disabled를 유지하면서 포커스/스크린리더 접근 보장.
-    expect(toggle.hasAttribute("disabled")).toBe(false)
-    expect(toggle.getAttribute("aria-disabled")).toBe("true")
-    expect(toggle.getAttribute("aria-describedby")).toBe("admin-preview-help")
+  it("previewEnabled=true → '미리보기 끄기' + aria-pressed=true", () => {
+    render(<AdminBarView status={admin} previewEnabled={true} />)
+    const btn = screen.getByRole("button", { name: /미리보기 끄기/ })
+    expect(btn.getAttribute("aria-pressed")).toBe("true")
   })
 
-  it("preview toggle has sr-only description for screen readers", () => {
-    render(
-      <AdminBarView
-        status={{
-          isAdmin: true,
-          userId: "admin-1",
-          email: "engccer@gmail.com",
-        }}
-      />,
+  it("토글 클릭(off→on) → enable POST + router.refresh + aria-live 알림", async () => {
+    const user = userEvent.setup()
+    render(<AdminBarView status={admin} previewEnabled={false} />)
+    await user.click(screen.getByRole("button", { name: /미리보기 켜기/ }))
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/admin/preview/enable",
+      expect.objectContaining({ method: "POST" }),
     )
-    const help = document.getElementById("admin-preview-help")
-    expect(help).not.toBeNull()
-    expect(help?.textContent).toMatch(/Phase B/)
-    expect(help?.className).toContain("sr-only")
+    expect(refreshMock).toHaveBeenCalled()
+    const status = screen.getByRole("status")
+    expect(status.getAttribute("aria-live")).toBe("polite")
+    expect(status.textContent).toMatch(/켰습니다/)
+  })
+
+  it("토글 클릭(on→off) → disable POST", async () => {
+    const user = userEvent.setup()
+    render(<AdminBarView status={admin} previewEnabled={true} />)
+    await user.click(screen.getByRole("button", { name: /미리보기 끄기/ }))
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/admin/preview/disable",
+      expect.objectContaining({ method: "POST" }),
+    )
   })
 })

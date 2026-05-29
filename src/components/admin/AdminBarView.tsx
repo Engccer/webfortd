@@ -1,13 +1,52 @@
+"use client"
+
 import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { useState } from "react"
 import type { AdminStatus } from "@/lib/auth/admin-types"
 
 /**
- * Presentational view — server fetch와 분리되어 테스트 가능.
- * Phase A: dashboard 진입점 + Preview Toggle placeholder(disabled).
- * Phase B: Preview Toggle 활성화 예정.
+ * Phase B M2 — Preview Toggle 활성화.
+ * feedback_rsc_event_handler_gap 교훈: onClick은 client 컴포넌트에서만.
+ * 토글 상태(previewEnabled)는 server(draftMode().isEnabled)에서 prop으로 주입.
+ * 클릭 → enable/disable POST → router.refresh()로 server 재렌더 → 상태 갱신.
  */
-export function AdminBarView({ status }: { status: AdminStatus }) {
+export function AdminBarView({
+  status,
+  previewEnabled,
+}: {
+  status: AdminStatus
+  previewEnabled: boolean
+}) {
+  const router = useRouter()
+  const [pending, setPending] = useState(false)
+  const [announcement, setAnnouncement] = useState("")
+
   if (!status.isAdmin) return null
+
+  async function togglePreview() {
+    if (pending) return
+    setPending(true)
+    const next = !previewEnabled
+    try {
+      const res = await fetch(
+        next ? "/api/admin/preview/enable" : "/api/admin/preview/disable",
+        { method: "POST" },
+      )
+      if (!res.ok) {
+        setAnnouncement("미리보기 전환에 실패했어요. 다시 시도해 주세요.")
+        return
+      }
+      setAnnouncement(
+        next ? "관리자 미리보기를 켰습니다." : "관리자 미리보기를 껐습니다.",
+      )
+      router.refresh()
+    } catch {
+      setAnnouncement("미리보기 전환 중 오류가 발생했어요.")
+    } finally {
+      setPending(false)
+    }
+  }
 
   return (
     <div
@@ -31,16 +70,17 @@ export function AdminBarView({ status }: { status: AdminStatus }) {
           </Link>
           <button
             type="button"
-            aria-disabled="true"
-            aria-describedby="admin-preview-help"
-            className="cursor-not-allowed rounded border border-amber-300 px-3 py-1 text-amber-700 opacity-60 focus:outline-none focus:ring-2 focus:ring-amber-600"
+            onClick={togglePreview}
+            disabled={pending}
+            aria-pressed={previewEnabled}
+            className="rounded border border-amber-300 px-3 py-1 text-amber-900 hover:bg-amber-100 focus:outline-none focus:ring-2 focus:ring-amber-600 disabled:opacity-60"
           >
-            미리보기 OFF
+            {previewEnabled ? "미리보기 끄기" : "미리보기 켜기"}
           </button>
-          <span id="admin-preview-help" className="sr-only">
-            미리보기 모드는 Phase B에서 활성화됩니다. 현재 비활성 상태입니다.
-          </span>
         </div>
+      </div>
+      <div role="status" aria-live="polite" className="sr-only">
+        {announcement}
       </div>
     </div>
   )
