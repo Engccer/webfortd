@@ -26,6 +26,55 @@ import { retrieveChunks } from '@/lib/rag/retrieval.ts'
 import { buildSystemPrompt, clampHistory } from '@/lib/rag/prompt-builder.ts'
 import { getServerClient } from '@/lib/supabase/server'
 import { getAdminClient } from '@/lib/supabase/admin'
+import { parseHwpToMarkdown } from '@/lib/chat/upstage-parse.ts'
+import { ALLOWED_MIMES, MAX_FILE_SIZE } from '@/lib/chat/file-validation.ts'
+
+// M7.2 — HWP/HWPX MIME 집합. 서버에서 Upstage Document Parse로 markdown 추출.
+// PDF/이미지는 messages.parts에 그대로 두어 Gemini multimodal로 직접 전달.
+const HWP_MIMES = new Set([
+  'application/x-hwp',
+  'application/vnd.hancom.hwp',
+  'application/vnd.hancom.hwpx',
+  'application/zip', // HWPX 구버전 흡수 (file-validation.ts 정합)
+])
+
+// M7.2 patch — 서버 invariant. 클라이언트 검증(file-validation.ts) 우회 시 server reject.
+// codex-rescue P1 #3: 직접 POST로 여러 HWP 연속 호출 또는 대용량 PDF 우회 차단.
+const SERVER_ALLOWED_MIMES = new Set<string>([...ALLOWED_MIMES, 'application/zip'])
+
+interface FilePartLike {
+  mediaType: string
+  url: string
+  filename?: string
+}
+
+/**
+ * data URL 또는 base64 string의 decoded byte 길이를 계산.
+ * `data:${mime};base64,${b64}` → b64 길이 * 3 / 4 - padding.
+ */
+function decodedByteLength(url: string): number {
+  const base64 = url.startsWith('data:') ? url.split(',')[1] ?? '' : url
+  const padding = (base64.match(/=+$/)?.[0] ?? '').length
+  return Math.floor((base64.length * 3) / 4) - padding
+}
+
+function validateFileParts(parts: FilePartLike[]): { ok: true } | { ok: false; reason: string } {
+  if (parts.length > 1) {
+    return { ok: false, reason: '한 번에 한 개 파일만 첨부할 수 있어요.' }
+  }
+  for (const fp of parts) {
+    if (!SERVER_ALLOWED_MIMES.has(fp.mediaType)) {
+      return { ok: false, reason: `지원하지 않는 파일 형식이에요. (${fp.mediaType})` }
+    }
+    if (!fp.url.startsWith('data:')) {
+      return { ok: false, reason: '첨부 파일 형식이 올바르지 않아요.' }
+    }
+    if (decodedByteLength(fp.url) > MAX_FILE_SIZE) {
+      return { ok: false, reason: '파일이 너무 커요. 10MB 이하만 가능해요.' }
+    }
+  }
+  return { ok: true }
+}
 
 export const runtime = 'nodejs' // service_role + retrieval RPC (Edge 비호환)
 export const maxDuration = 60 // streamText 60초 timeout
@@ -69,14 +118,47 @@ export async function POST(req: Request): Promise<Response> {
     return json400((err as Error).message)
   }
 
-  // 4. 마지막 user 메시지의 텍스트 추출
+  // 4. 마지막 user 메시지의 텍스트 + 파일 추출
   const lastUser = clamped[clamped.length - 1]
   const queryText = extractUserText(lastUser)
-  if (!queryText.trim()) {
-    return json400('질의 텍스트가 비어 있어요.')
+  const fileParts = extractFileParts(lastUser)
+  if (!queryText.trim() && fileParts.length === 0) {
+    return json400('질의 텍스트나 첨부 파일이 필요해요.')
   }
 
-  // 5. RAG retrieval (M2)
+  // M7.2 patch — 서버 invariant 검증 (codex-rescue P1 #3).
+  // 직접 POST 우회로 다중 파일·비허용 MIME·>10MB가 들어오면 reject.
+  const validation = validateFileParts(fileParts)
+  if (!validation.ok) {
+    return json400(validation.reason)
+  }
+
+  // M7.2: HWP/HWPX는 Upstage Document Parse로 markdown 추출 → systemPrompt 추가 컨텍스트로.
+  // PDF/이미지는 messages.parts에 남겨 Gemini multimodal로 직접 전달.
+  let attachmentMarkdown: string | undefined
+  const hwpParts = fileParts.filter((fp) => HWP_MIMES.has(fp.mediaType))
+  if (hwpParts.length > 0) {
+    try {
+      const markdowns: string[] = []
+      for (const fp of hwpParts) {
+        const buffer = dataUrlToArrayBuffer(fp.url)
+        const md = await parseHwpToMarkdown(buffer, fp.mediaType)
+        markdowns.push(md)
+      }
+      attachmentMarkdown = markdowns.join('\n\n---\n\n')
+    } catch (err) {
+      // parseHwpToMarkdown은 이미 한국어 에러로 throw
+      const msg = err instanceof Error ? err.message : '문서 파싱 중 오류가 발생했어요.'
+      return json400(msg)
+    }
+    // HWP/HWPX part는 messages.parts에서 제거 — 이미 system prompt에 흡수됨
+    lastUser.parts = (lastUser.parts ?? []).filter(
+      (p) => p.type !== 'file' || !HWP_MIMES.has((p as { mediaType?: string }).mediaType ?? ''),
+    )
+  }
+
+  // 5. RAG retrieval (M2). 첨부만 있고 텍스트 비면 첨부 markdown 첫 200자를 query로 fallback.
+  const retrievalQuery = queryText.trim() || (attachmentMarkdown ?? '').slice(0, 200) || '첨부 문서'
   let retrieval
   try {
     // D4 (plan §1): retrieveChunks default includeDrafts=true 그대로 사용.
@@ -85,7 +167,7 @@ export async function POST(req: Request): Promise<Response> {
     // draft는 자동 sync된 atomic 페이지의 *기본 상태*(승인 대기)이지 "오류 의심" 아님.
     // 0009 화이트리스트 + retrieval.ts:99 runtime guard로 archived/deprecated 누설 차단.
     // M5 검수 자동화로 published 비중 증가 시 default 재검토 (Phase 3 M5 carry-over).
-    retrieval = await retrieveChunks(queryText, { topK: RETRIEVAL_TOP_K })
+    retrieval = await retrieveChunks(retrievalQuery, { topK: RETRIEVAL_TOP_K })
   } catch (err) {
     // retrieval.ts:92가 이미 formatSupabaseError로 마스킹된 Error 객체를 throw
     // (`match_chunks RPC 실패: [code] 한국어 description` 형태).
@@ -95,8 +177,8 @@ export async function POST(req: Request): Promise<Response> {
     return json500('자료 검색 중 오류가 발생했어요. 잠시 후 다시 시도해 주세요.')
   }
 
-  // 6. 시스템 프롬프트 조립
-  const systemPrompt = buildSystemPrompt(retrieval.chunks)
+  // 6. 시스템 프롬프트 조립 (M7.2: attachmentMarkdown 있으면 추가 섹션)
+  const systemPrompt = buildSystemPrompt(retrieval.chunks, attachmentMarkdown)
 
   // 7. AI SDK v6 model messages 변환
   // AI SDK v6 권장: system은 별도 파라미터로 분리 (UIMessage system role prepend는 비표준).
@@ -200,6 +282,36 @@ export function extractUserText(message: UIMessage): string {
     .map((p) => p.text)
     .join('\n')
     .trim()
+}
+
+/**
+ * M7.2 — UIMessage.parts에서 file 파트 추출. AI SDK v6 FileUIPart shape:
+ * `{ type: 'file', mediaType: string, url: string, filename?: string }`
+ *
+ * 클라이언트가 url에 data URL(`data:${mime};base64,...`)로 인코딩해 전달.
+ * 서버는 mediaType 분기 후 HWP/HWPX만 Upstage 위임, PDF/이미지는 messages.parts에
+ * 남겨 Gemini multimodal로 직접 전달.
+ */
+export function extractFileParts(message: UIMessage): Array<{ mediaType: string; url: string; filename?: string }> {
+  return (message.parts ?? [])
+    .filter(
+      (p): p is { type: 'file'; mediaType: string; url: string; filename?: string } =>
+        p.type === 'file' &&
+        typeof (p as { mediaType?: unknown }).mediaType === 'string' &&
+        typeof (p as { url?: unknown }).url === 'string',
+    )
+    .map((p) => ({ mediaType: p.mediaType, url: p.url, filename: p.filename }))
+}
+
+/**
+ * M7.2 — data URL(`data:${mime};base64,...`)에서 base64 본문 추출 → ArrayBuffer.
+ * 일반 base64 string도 허용 (data URL prefix 없음).
+ */
+function dataUrlToArrayBuffer(url: string): ArrayBuffer {
+  const base64 = url.startsWith('data:') ? url.split(',')[1] ?? '' : url
+  const buf = Buffer.from(base64, 'base64')
+  // Buffer.buffer가 ArrayBufferLike라 slice로 ArrayBuffer 보장
+  return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer
 }
 
 export function json400(message: string): Response {

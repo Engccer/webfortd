@@ -38,10 +38,13 @@ import {
 } from '@/components/ai-elements/prompt-input'
 import { Suggestion, Suggestions } from '@/components/ai-elements/suggestion'
 import { Spinner } from '@/components/ui/spinner'
+import { AttachmentButton } from '@/components/chat/AttachmentButton'
+import { AttachmentChip, type AttachmentStatus } from '@/components/chat/AttachmentChip'
 import { CopyButton } from '@/components/chat/CopyButton'
 import { ErrorBanner } from '@/components/chat/ErrorBanner'
 import { SourceCard } from '@/components/chat/SourceCard'
 import { ThreadDrawer } from '@/components/chat/ThreadDrawer'
+import { VoiceRecordButton } from '@/components/chat/VoiceRecordButton'
 import { useAuth } from '@/contexts/AuthContext'
 import { isStaleThread } from '@/lib/chat/session-timeout'
 import { getSuggestions } from '@/lib/chat/suggestions'
@@ -71,6 +74,12 @@ export function ChatUI({ initialThreadId }: ChatUIProps = {}) {
   const [showJumpButton, setShowJumpButton] = useState(false)
   // M6.4 — 세션 타임아웃 안내 (aria-live)
   const [staleAnnouncement, setStaleAnnouncement] = useState<string | null>(null)
+  // M7.2 — 파일 첨부 (동시 1개, spec §D3)
+  const [attachment, setAttachment] = useState<File | null>(null)
+  const [attachmentStatus, setAttachmentStatus] = useState<AttachmentStatus>('idle')
+  const [attachmentError, setAttachmentError] = useState<string | undefined>(undefined)
+  // M7.1 patch — 음성 오류 별도 표시 (시각장애인 핵심: chatError와 분리해 항상 role="alert" 낭독)
+  const [voiceError, setVoiceError] = useState<string | null>(null)
 
   // threadId를 ref로 보관 — useChat transport는 1회 instantiate되지만
   // prepareSendMessagesRequest 콜백에서 매 send마다 최신 ref 값을 읽어 stale 회피.
@@ -184,13 +193,45 @@ export function ChatUI({ initialThreadId }: ChatUIProps = {}) {
     [user, threadId, lastAssistantAxis],
   )
 
-  function send(text: string) {
+  async function send(text: string) {
     const trimmed = text.trim()
-    if (!trimmed) return
-    // M6.2 — 전송 시점에 저장. onError 발화 시 retry 가능
+    if (!trimmed && !attachment) return
+    // M6.2 — 전송 시점에 저장. onError 발화 시 retry 가능 (텍스트만)
     setLastFailedMessage(trimmed)
     setChatError(null)
-    sendMessage({ text: trimmed })
+
+    // M7.2 — 첨부 있으면 file part로 변환해 함께 전송
+    if (attachment) {
+      try {
+        setAttachmentStatus('parsing')
+        // M7.2 patch — FileReader.readAsDataURL 표준 패턴.
+        // 이전: String.fromCharCode(...new Uint8Array(buffer)) spread는 1MB+에서 stack overflow.
+        // FileReader는 브라우저 native 비동기 base64 인코더라 10MB까지 안전.
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = () => {
+            if (typeof reader.result === 'string') resolve(reader.result)
+            else reject(new Error('FileReader 결과가 string이 아니에요'))
+          }
+          reader.onerror = () => reject(reader.error ?? new Error('FileReader 오류'))
+          reader.readAsDataURL(attachment)
+        })
+        sendMessage({
+          text: trimmed,
+          files: [{ type: 'file', mediaType: attachment.type, url: dataUrl, filename: attachment.name }],
+        })
+        setAttachment(null)
+        setAttachmentStatus('idle')
+        setAttachmentError(undefined)
+      } catch (err) {
+        console.error('[ChatUI] attachment encoding 실패:', err)
+        setAttachmentStatus('error')
+        setAttachmentError('첨부 파일을 읽을 수 없어요.')
+        return
+      }
+    } else {
+      sendMessage({ text: trimmed })
+    }
     setInput('')
     inputRef.current?.focus()
   }
@@ -337,6 +378,24 @@ export function ChatUI({ initialThreadId }: ChatUIProps = {}) {
         </div>
       )}
 
+      {/* M7.1 patch — 음성 오류 (시각장애인 핵심: 별도 role=alert, lastFailedMessage 조건 없음) */}
+      {voiceError && (
+        <div
+          role="alert"
+          className="my-2 flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive"
+        >
+          <span className="flex-1">{voiceError}</span>
+          <button
+            type="button"
+            onClick={() => setVoiceError(null)}
+            aria-label="음성 오류 닫기"
+            className="text-xs underline hover:no-underline focus:outline-none focus:ring-2 focus:ring-ring"
+          >
+            닫기
+          </button>
+        </div>
+      )}
+
       {/* M6.2 — 에러 발생 시 한국어 분기 + 재시도 버튼 */}
       {chatError && lastFailedMessage && (
         <ErrorBanner error={chatError} onRetry={retryLast} />
@@ -352,9 +411,22 @@ export function ChatUI({ initialThreadId }: ChatUIProps = {}) {
         </p>
       )}
 
+      {/* M7.2 — 첨부 칩 (파일 선택됨 또는 에러 상태) */}
+      {attachment && (
+        <AttachmentChip
+          file={attachment}
+          status={attachmentStatus}
+          errorMessage={attachmentError}
+          onRemove={() => {
+            setAttachment(null)
+            setAttachmentStatus('idle')
+            setAttachmentError(undefined)
+          }}
+        />
+      )}
+
       <PromptInput
-        onSubmit={(message) => send(message.text)}
-        aria-label="질문 입력"
+        onSubmit={(message) => void send(message.text)}
         className="border-t border-border pt-3"
       >
         <PromptInputTextarea
@@ -365,11 +437,35 @@ export function ChatUI({ initialThreadId }: ChatUIProps = {}) {
           aria-label="질문 입력"
           disabled={isLoading}
         />
-        <PromptInputSubmit
-          status={status}
-          aria-label="전송"
-          disabled={!input.trim()}
-        />
+        <div className="flex items-center gap-1">
+          {/* M7.2 — 파일 첨부: 동시 1개 (spec §D3) */}
+          <AttachmentButton
+            onSelect={(file) => {
+              setAttachment(file)
+              setAttachmentStatus('ready')
+              setAttachmentError(undefined)
+            }}
+            onError={(reason) => {
+              setAttachmentError(reason)
+              setAttachmentStatus('error')
+            }}
+            disabled={isLoading || !!attachment}
+          />
+          {/* M7.1 — 음성 받아쓰기: 전사 텍스트는 input 뒤에 append. 오류는 voiceError(role=alert) */}
+          <VoiceRecordButton
+            onTranscribed={(text) => {
+              setInput((prev) => (prev ? `${prev} ${text}` : text))
+              setVoiceError(null)
+            }}
+            onError={(error) => setVoiceError(error)}
+            disabled={isLoading}
+          />
+          <PromptInputSubmit
+            status={status}
+            aria-label="전송"
+            disabled={!input.trim() && !attachment}
+          />
+        </div>
       </PromptInput>
     </div>
   )

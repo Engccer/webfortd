@@ -61,10 +61,15 @@ export function formatRetrievedChunks(chunks: RetrievedChunk[]): string {
 /**
  * SYSTEM_PROMPT_TEMPLATE의 {retrievedChunksFormatted}를
  * formatRetrievedChunks(chunks) 결과로 치환한 최종 시스템 프롬프트 반환.
+ *
+ * M7.2: attachmentMarkdown 옵션이 있으면 "## 사용자 첨부 문서" 섹션을 추가.
+ * HWP/HWPX를 Upstage로 markdown 추출한 결과를 추가 컨텍스트로 주입.
  */
-export function buildSystemPrompt(chunks: RetrievedChunk[]): string {
+export function buildSystemPrompt(chunks: RetrievedChunk[], attachmentMarkdown?: string): string {
   const formatted = formatRetrievedChunks(chunks)
-  return SYSTEM_PROMPT_TEMPLATE.replace('{retrievedChunksFormatted}', formatted)
+  const base = SYSTEM_PROMPT_TEMPLATE.replace('{retrievedChunksFormatted}', formatted)
+  if (!attachmentMarkdown) return base
+  return `${base}\n\n[사용자 첨부 문서]\n${attachmentMarkdown}\n\n위 첨부 문서를 응답의 추가 컨텍스트로 활용하세요. 참고 자료보다 사용자 첨부가 더 구체적이면 첨부 내용을 우선해 답변해요.`
 }
 
 /**
