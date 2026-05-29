@@ -24,6 +24,9 @@ import { FocusManager } from "@/components/accessibility/FocusManager"
 import { AccessibilityToolbar } from "@/components/accessibility/AccessibilityToolbar"
 import { KbSourceFooter } from "./KbSourceFooter"
 import { StatusBadge } from "./StatusBadge"
+import { UnderReviewNotice } from "./UnderReviewNotice"
+import { getPreviewActive } from "@/lib/admin/preview"
+import { shouldRenderUnderReview } from "@/lib/admin/preview-policy"
 
 const AXIS_LABEL: Record<ContentAxis, string> = {
   'disability-types': '장애유형별',
@@ -64,6 +67,23 @@ export async function KbPageLayout({ axis, slug }: KbPageLayoutProps) {
   const legacy = adaptFrontmatterToLegacy(doc.frontmatter)
   const fm = doc.frontmatter
 
+  // M2 게이트: published만 일반 공개. non-published는 admin Draft Mode에서만 본문 노출.
+  // published는 getPreviewActive()를 호출하지 않아 정적 렌더가 보존된다.
+  const axisLabel = AXIS_LABEL[axis] ?? axis
+  const axisHref = `/${axis}`
+  if (fm.status !== 'published') {
+    const previewActive = await getPreviewActive()
+    if (shouldRenderUnderReview(fm.status, previewActive)) {
+      return (
+        <UnderReviewNotice
+          title={legacy.title}
+          backHref={axisHref}
+          backLabel={`${axisLabel} 목록`}
+        />
+      )
+    }
+  }
+
   // MDX 호환 정리:
   // 1) HTML 주석 `<!-- TODO ... -->`는 MDX 비지원 — 렌더 시점에 제거(원본 .md에는 유지,
   //    M4 검수자가 파일 직접 보면서 처리).
@@ -84,9 +104,6 @@ export async function KbPageLayout({ axis, slug }: KbPageLayoutProps) {
       rehypePlugins: [rehypeSlug],
     },
   })
-
-  const axisLabel = AXIS_LABEL[axis] ?? axis
-  const axisHref = `/${axis}`
 
   return (
     <>
