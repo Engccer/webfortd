@@ -41,6 +41,26 @@ async function fetchDbCounts(): Promise<DbCounts> {
   }
 }
 
+// 한국어 라벨 — 가독성. 영어 키(파일 frontmatter 직접 값)는 작게 병기.
+const STATUS_LABELS: Record<string, string> = {
+  draft: "초안",
+  in_review: "검수중",
+  published: "게시됨",
+  archived: "보관됨",
+  deprecated: "폐기됨",
+}
+
+const AXIS_LABELS: Record<string, string> = {
+  "disability-types": "장애유형별",
+  domains: "영역별",
+  regions: "지역별",
+  policies: "정책·법령",
+  agreements: "단체협약",
+  stories: "사례",
+  resources: "자료실",
+  uncategorized: "미분류",
+}
+
 interface KbIndexShape {
   documents: Array<{
     slug: string
@@ -82,7 +102,12 @@ export default async function DashboardPage() {
               key={key}
               className="rounded-lg border border-border bg-card p-4"
             >
-              <dt className="text-sm text-muted-foreground">{key}</dt>
+              <dt className="text-sm text-muted-foreground">
+                {STATUS_LABELS[key] ?? key}
+                <span className="ml-1 font-mono text-xs opacity-50">
+                  {key}
+                </span>
+              </dt>
               <dd className="font-mono text-2xl">{count}</dd>
             </div>
           ))}
@@ -99,7 +124,12 @@ export default async function DashboardPage() {
               key={key}
               className="rounded-lg border border-border bg-card p-4"
             >
-              <dt className="text-sm text-muted-foreground">{key}</dt>
+              <dt className="text-sm text-muted-foreground">
+                {AXIS_LABELS[key] ?? key}
+                <span className="ml-1 font-mono text-xs opacity-50">
+                  {key}
+                </span>
+              </dt>
               <dd className="font-mono text-2xl">{count}</dd>
             </div>
           ))}
@@ -130,7 +160,10 @@ export default async function DashboardPage() {
           <dl className="mt-3 grid grid-cols-2 gap-2 text-sm sm:grid-cols-5">
             {Object.entries(dbCounts.byStatus).map(([k, v]) => (
               <div key={k} className="rounded border border-border px-3 py-2">
-                <dt className="text-muted-foreground">DB {k}</dt>
+                <dt className="text-muted-foreground">
+                  DB {STATUS_LABELS[k] ?? k}
+                  <span className="ml-1 font-mono text-xs opacity-50">{k}</span>
+                </dt>
                 <dd className="font-mono">{v}</dd>
               </div>
             ))}
