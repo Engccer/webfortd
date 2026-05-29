@@ -9,9 +9,17 @@ export type { AdminStatus } from './admin-types.ts'
  * Production helper — getServerClient를 통해 현재 요청의 admin 권한을 server-side에서 조회.
  * RSC / Route Handler / Server Action에서 사용. AuthContext(client-side)는 UI hint 용도이며
  * 권한 게이트의 단일 진실은 본 헬퍼.
+ *
+ * Fail-safe: Supabase env 미설정 시(빌드/CI/a11y 테스트 등) silent 비-admin 반환.
+ * AuthContext(client-side)의 tryGetClient 패턴과 정합.
  */
 export async function getCurrentUserAdminStatus(): Promise<AdminStatus> {
-  const supabase = await getServerClient()
+  let supabase
+  try {
+    supabase = await getServerClient()
+  } catch {
+    return { isAdmin: false, userId: null, email: null }
+  }
   return getCurrentUserAdminStatusWith(supabase)
 }
 
