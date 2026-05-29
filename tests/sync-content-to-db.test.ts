@@ -117,11 +117,11 @@ describe('transformDocumentRow', () => {
     assert.deepEqual(row.disability_types, ['시각', '청각'])
   })
 
-  test('D1 regression: frontmatter.status=published → row.status=draft 강제', () => {
+  test('B2: frontmatter.status=published → row.status=published 반영 (마크다운 정본)', () => {
     const doc = {
-      slug: 'd1-regression',
+      slug: 'b2-parity',
       axis: 'policies' as const,
-      filePath: 'content/policies/d1-regression.md',
+      filePath: 'content/policies/b2-parity.md',
       frontmatter: {
         title: '이미 published 상태인 문서',
         type: '지침' as const,
@@ -129,10 +129,10 @@ describe('transformDocumentRow', () => {
         domains: ['정책법령' as const],
         regions: ['전국' as const],
         year: 2026,
-        // frontmatter는 published이지만 transform은 draft 강제 (M5 검수에서만 published 전환)
+        // B2: frontmatter status가 그대로 row.status로 반영됨 (마크다운이 정본).
         status: 'published' as const,
         source: { organization: 'o', citation: 'c' },
-        source_origin: 'd1-regression-fixture',
+        source_origin: 'b2-parity-fixture',
         references: [],
         accessibility: {
           alt_text_complete: true,
@@ -147,7 +147,38 @@ describe('transformDocumentRow', () => {
       body_excerpt: '',
     }
     const row = transformDocumentRow(doc, '본문', [])
-    assert.equal(row.status, 'draft', 'D1 위반: frontmatter.status가 row.status로 통과')
+    assert.equal(row.status, 'published', 'B2 위반: frontmatter.status가 row.status로 반영 안 됨')
+  })
+
+  test('B2: frontmatter.status 누락 → row.status=draft fallback', () => {
+    const doc = {
+      slug: 'b2-fallback',
+      axis: 'policies' as const,
+      filePath: 'content/policies/b2-fallback.md',
+      frontmatter: {
+        title: 'status 없는 문서',
+        type: '지침' as const,
+        disability_types: ['전체' as const],
+        domains: ['정책법령' as const],
+        regions: ['전국' as const],
+        year: 2026,
+        source: { organization: 'o', citation: 'c' },
+        source_origin: 'b2-fallback-fixture',
+        references: [],
+        accessibility: {
+          alt_text_complete: true,
+          captions_available: false,
+          reading_level: 'standard' as const,
+          audio_tts_ready: false,
+        },
+        authors: [],
+        reviewed_by: [],
+        parent_headings: [],
+      },
+      body_excerpt: '',
+    } as never
+    const row = transformDocumentRow(doc, '본문', [])
+    assert.equal(row.status, 'draft', 'status 누락 시 draft fallback 안 됨')
   })
 
   test('wiki_links는 wikilink_adjacency를 source로 사용 (raw 추출 대신)', () => {
