@@ -8,6 +8,9 @@ import { getKBDocBySlugCompat, getStaticParamsForSubsection } from "@/lib/kb"
 import { adaptFrontmatterToLegacy } from "@/lib/kb-adapter"
 import { Calendar, User, ArrowLeft } from "lucide-react"
 import Link from "next/link"
+import { UnderReviewNotice } from "@/components/kb/UnderReviewNotice"
+import { getPreviewActive } from "@/lib/admin/preview"
+import { shouldRenderUnderReview } from "@/lib/admin/preview-policy"
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -41,6 +44,21 @@ export default async function LawDocPage({ params }: PageProps) {
   }
 
   const legacy = adaptFrontmatterToLegacy(kbDoc.frontmatter)
+
+  // M2 게이트: published만 일반 공개.
+  if (kbDoc.frontmatter.status !== 'published') {
+    const previewActive = await getPreviewActive()
+    if (shouldRenderUnderReview(kbDoc.frontmatter.status, previewActive)) {
+      return (
+        <UnderReviewNotice
+          title={legacy.title}
+          backHref="/legacy/resources/law-guide"
+          backLabel="법령·지침 목록"
+        />
+      )
+    }
+  }
+
   const doc = {
     ...legacy,
     content: kbDoc.content,
