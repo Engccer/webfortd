@@ -39,8 +39,9 @@ export interface RetrievalDeps {
 
 const DEFAULT_TOP_K = 5
 const DEFAULT_MIN_SIMILARITY = 0.0
-// Phase 3 정책: draft도 검색 가능 (M3 Route Handler가 인증 분기로 정책 미세 조정).
-const DEFAULT_INCLUDE_DRAFTS = true
+// Phase B M3 정책 전환(B7): 기본 published-only. draft 포함은 호출자(route)가
+// admin Draft Mode일 때만 includeDrafts:true 명시 전달. "검수 안 된 콘텐츠 RAG 제외" 실현.
+const DEFAULT_INCLUDE_DRAFTS = false
 const MAX_TOP_K = 50  // 0006 match_chunks 의 raise exception 과 정합
 
 /**

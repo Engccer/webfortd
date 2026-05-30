@@ -79,7 +79,7 @@ function buildMockDeps(opts: {
 }
 
 describe('rag/retrieval', () => {
-  test('기본값 — topK=5, minSimilarity=0, includeDrafts=true', async () => {
+  test('기본값 — topK=5, minSimilarity=0, includeDrafts=false (기본 published-only)', async () => {
     let captured: Record<string, unknown> = {}
     const deps = buildMockDeps({
       expectArgs: (args) => { captured = args },
@@ -87,7 +87,7 @@ describe('rag/retrieval', () => {
     await retrieveChunksWith('테스트 질의', {}, deps)
     assert.equal(captured.p_top_k, 5)
     assert.equal(captured.p_min_similarity, 0)
-    assert.equal(captured.p_include_drafts, true)
+    assert.equal(captured.p_include_drafts, false)
     assert.ok(Array.isArray(captured.p_query_embedding))
     assert.equal((captured.p_query_embedding as number[]).length, 1536)
   })
