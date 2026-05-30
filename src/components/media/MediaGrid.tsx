@@ -2,11 +2,21 @@
 
 import { useState } from "react"
 import { Search } from "lucide-react"
-import { MEDIA_ITEMS, filterMediaItems } from "@/lib/media-curation"
+import { filterMediaItems, type MediaItem } from "@/lib/media-curation"
 import { MediaCard } from "./MediaCard"
 
-export function MediaGrid() {
-  const [filtered, setFiltered] = useState(MEDIA_ITEMS)
+/**
+ * M3: items는 server 페이지가 published 게이트를 적용해 주입.
+ * includeUnpublished는 admin Draft Mode 여부 — client 검색 재필터 시에도 동일 정책 유지.
+ */
+export function MediaGrid({
+  items,
+  includeUnpublished,
+}: {
+  items: MediaItem[]
+  includeUnpublished: boolean
+}) {
+  const [filtered, setFiltered] = useState(items)
   const [query, setQuery] = useState("")
 
   return (
@@ -23,7 +33,7 @@ export function MediaGrid() {
           value={query}
           onChange={(e) => {
             setQuery(e.target.value)
-            setFiltered(filterMediaItems({ query: e.target.value }))
+            setFiltered(filterMediaItems({ query: e.target.value, includeUnpublished }))
           }}
           placeholder="캡션·alt·출처 검색"
           className="w-full rounded-md border border-input bg-background py-2 pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"

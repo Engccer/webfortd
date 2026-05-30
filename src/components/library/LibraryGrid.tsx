@@ -1,12 +1,22 @@
 "use client"
 
 import { useState } from "react"
-import { LIBRARY_ITEMS, filterLibraryItems, type LibraryCategory } from "@/lib/library-catalog"
+import { filterLibraryItems, type LibraryCategory, type LibraryItem } from "@/lib/library-catalog"
 import { LibraryCard } from "./LibraryCard"
 import { LibrarySearch } from "./LibrarySearch"
 
-export function LibraryGrid() {
-  const [filtered, setFiltered] = useState(LIBRARY_ITEMS)
+/**
+ * M3: items는 server 페이지가 published 게이트를 적용해 주입.
+ * includeUnpublished는 admin Draft Mode 여부 — client 검색 재필터 시에도 동일 정책 유지.
+ */
+export function LibraryGrid({
+  items,
+  includeUnpublished,
+}: {
+  items: LibraryItem[]
+  includeUnpublished: boolean
+}) {
+  const [filtered, setFiltered] = useState(items)
 
   return (
     <div>
@@ -15,6 +25,7 @@ export function LibraryGrid() {
           const opts = {
             category: category === "all" ? undefined : (category as LibraryCategory),
             query,
+            includeUnpublished,
           }
           setFiltered(filterLibraryItems(opts))
         }}
