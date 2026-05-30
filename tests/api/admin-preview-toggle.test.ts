@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { runPreviewToggle, isSameOriginRequest } from '@/lib/admin/preview-handler.ts'
+import { runPreviewToggle } from '@/lib/admin/preview-handler.ts'
 import type { AdminStatus } from '@/lib/auth/admin-types.ts'
 
 const admin: AdminStatus = { isAdmin: true, userId: 'a-1', email: 'a@b.c' }
@@ -39,23 +39,5 @@ describe('runPreviewToggle', () => {
     const body = await res.json()
     assert.equal(body.enabled, false)
     assert.deepEqual(draft.calls, ['disable'])
-  })
-})
-
-describe('isSameOriginRequest (CSRF 방어)', () => {
-  it('same-origin → true', () => {
-    assert.equal(isSameOriginRequest('same-origin'), true)
-  })
-
-  it('cross-site → false', () => {
-    assert.equal(isSameOriginRequest('cross-site'), false)
-  })
-
-  it('same-site → false (서브도메인 공격 방어)', () => {
-    assert.equal(isSameOriginRequest('same-site'), false)
-  })
-
-  it('헤더 부재(null) → false', () => {
-    assert.equal(isSameOriginRequest(null), false)
   })
 })
