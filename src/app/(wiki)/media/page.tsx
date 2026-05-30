@@ -1,12 +1,16 @@
 import type { Metadata } from "next"
 import { MediaGrid } from "@/components/media/MediaGrid"
+import { filterMediaItems } from "@/lib/media-curation"
+import { getPreviewActive } from "@/lib/admin/preview"
 
 export const metadata: Metadata = {
   title: "미디어 자료실",
   description: "장애인교원 안내자료의 카드뉴스·인포그래픽·삽화 모음. alt 텍스트와 출처 포함.",
 }
 
-export default function MediaPage() {
+export default async function MediaPage() {
+  const includeUnpublished = await getPreviewActive()
+  const items = filterMediaItems({ includeUnpublished })
   return (
     <section className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
       <header className="mb-8">
@@ -15,7 +19,7 @@ export default function MediaPage() {
           정책 안내자료의 시각 자료를 alt 텍스트와 함께 모은 곳입니다. 출처 페이지로 이동해 전체 맥락을 확인할 수 있습니다.
         </p>
       </header>
-      <MediaGrid />
+      <MediaGrid items={items} includeUnpublished={includeUnpublished} />
     </section>
   )
 }
