@@ -19,7 +19,7 @@ export default async function MediaPage() {
           정책 안내자료의 시각 자료를 alt 텍스트와 함께 모은 곳입니다. 출처 페이지로 이동해 전체 맥락을 확인할 수 있습니다.
         </p>
       </header>
-      <MediaGrid items={items} includeUnpublished={includeUnpublished} />
+      <MediaGrid items={items} />
     </section>
   )
 }

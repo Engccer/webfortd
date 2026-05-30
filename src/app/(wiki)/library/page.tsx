@@ -19,7 +19,7 @@ export default async function LibraryPage() {
           정책 보고서·안내서·매뉴얼·단체협약 등 원본 자료를 다운로드할 수 있습니다.
         </p>
       </header>
-      <LibraryGrid items={items} includeUnpublished={includeUnpublished} />
+      <LibraryGrid items={items} />
     </section>
   )
 }

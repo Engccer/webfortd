@@ -3,8 +3,8 @@
 
 import type { MetadataRoute } from 'next'
 import kbIndex from '@/lib/kb-index.generated.json'
-import { LIBRARY_ITEMS } from '@/lib/library-catalog'
-import { MEDIA_ITEMS } from '@/lib/media-curation'
+import { filterLibraryItems } from '@/lib/library-catalog'
+import { filterMediaItems } from '@/lib/media-curation'
 
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://webfortd.vercel.app'
 
@@ -51,7 +51,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })
   }
 
-  for (const item of LIBRARY_ITEMS) {
+  // M3: published만 sitemap에 노출(draft 비공개). admin 컨텍스트 없는 빌드/공개 경로.
+  for (const item of filterLibraryItems({})) {
     entries.push({
       url: `${BASE_URL}/library/${item.slug}`,
       lastModified: now,
@@ -60,7 +61,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })
   }
 
-  for (const item of MEDIA_ITEMS) {
+  for (const item of filterMediaItems({})) {
     entries.push({
       url: `${BASE_URL}/media/${item.slug}`,
       lastModified: now,
