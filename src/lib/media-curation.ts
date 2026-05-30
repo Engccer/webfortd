@@ -6,6 +6,9 @@
  * 별도 PR.
  */
 
+import type { CatalogStatus } from './catalog-visibility'
+import { isCatalogItemVisible } from './catalog-visibility'
+
 export interface MediaItem {
   slug: string
   imagePath: string
@@ -22,6 +25,8 @@ export interface MediaItem {
     | "resources/law"
     | "resources/research"
     | "uncategorized"
+  /** M3: 미표기 = published 간주. 명시적 'draft'만 비-admin에게 숨김. */
+  status?: CatalogStatus
 }
 
 export const MEDIA_ITEMS: MediaItem[] = [
@@ -43,10 +48,12 @@ export function getMediaItemBySlug(slug: string): MediaItem | undefined {
 export function filterMediaItems(opts: {
   axis?: MediaItem["sourceAxis"]
   query?: string
+  includeUnpublished?: boolean
 }): MediaItem[] {
-  const { axis, query } = opts
+  const { axis, query, includeUnpublished = false } = opts
   const q = query?.trim().toLowerCase() ?? ""
   return MEDIA_ITEMS.filter((item) => {
+    if (!isCatalogItemVisible(item.status, includeUnpublished)) return false
     if (axis && item.sourceAxis !== axis) return false
     if (q) {
       const hay = `${item.caption} ${item.alt} ${item.sourceDocTitle}`.toLowerCase()

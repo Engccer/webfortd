@@ -28,6 +28,7 @@ import { getServerClient } from '@/lib/supabase/server'
 import { getAdminClient } from '@/lib/supabase/admin'
 import { parseHwpToMarkdown } from '@/lib/chat/upstage-parse.ts'
 import { ALLOWED_MIMES, MAX_FILE_SIZE } from '@/lib/chat/file-validation.ts'
+import { getPreviewActive } from '@/lib/admin/preview'
 
 // M7.2 — HWP/HWPX MIME 집합. 서버에서 Upstage Document Parse로 markdown 추출.
 // PDF/이미지는 messages.parts에 그대로 두어 Gemini multimodal로 직접 전달.
@@ -159,15 +160,16 @@ export async function POST(req: Request): Promise<Response> {
 
   // 5. RAG retrieval (M2). 첨부만 있고 텍스트 비면 첨부 markdown 첫 200자를 query로 fallback.
   const retrievalQuery = queryText.trim() || (attachmentMarkdown ?? '').slice(0, 200) || '첨부 문서'
+  // M3(B7): RAG 기본 published-only. admin Draft Mode일 때만 draft 포함.
+  // getPreviewActive() = draftMode().isEnabled ∧ 현재 사용자 isAdmin (M2 cookie 누수 방어 재사용).
+  // 익명·일반 사용자는 includeDrafts 생략 → retrieval 기본값 false → 검수 안 된 draft 인용 차단.
+  const includeDrafts = await getPreviewActive()
   let retrieval
   try {
-    // D4 (plan §1): retrieveChunks default includeDrafts=true 그대로 사용.
-    // 근거: M2 baseline 535 docs 중 published 8건 / draft 527건.
-    // published-only로 제한하면 채팅 정보 자산 활용 불가.
-    // draft는 자동 sync된 atomic 페이지의 *기본 상태*(승인 대기)이지 "오류 의심" 아님.
-    // 0009 화이트리스트 + retrieval.ts:99 runtime guard로 archived/deprecated 누설 차단.
-    // M5 검수 자동화로 published 비중 증가 시 default 재검토 (Phase 3 M5 carry-over).
-    retrieval = await retrieveChunks(retrievalQuery, { topK: RETRIEVAL_TOP_K })
+    retrieval = await retrieveChunks(retrievalQuery, {
+      topK: RETRIEVAL_TOP_K,
+      includeDrafts,
+    })
   } catch (err) {
     // retrieval.ts:92가 이미 formatSupabaseError로 마스킹된 Error 객체를 throw
     // (`match_chunks RPC 실패: [code] 한국어 description` 형태).

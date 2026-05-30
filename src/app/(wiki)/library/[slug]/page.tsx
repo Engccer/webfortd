@@ -2,20 +2,28 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import { ArrowLeft, Download, FileText } from "lucide-react"
-import { LIBRARY_ITEMS, getLibraryItemBySlug } from "@/lib/library-catalog"
+import { filterLibraryItems, getLibraryItemBySlug } from "@/lib/library-catalog"
+import { isCatalogItemVisible } from "@/lib/catalog-visibility"
+import { getPreviewActive } from "@/lib/admin/preview"
 
 interface PageProps {
   params: Promise<{ slug: string }>
 }
 
 export async function generateStaticParams() {
-  return LIBRARY_ITEMS.map((item) => ({ slug: item.slug }))
+  // M3: published만 사전 렌더. draft slug는 on-demand + 런타임 게이트.
+  return filterLibraryItems({}).map((item) => ({ slug: item.slug }))
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params
   const item = getLibraryItemBySlug(slug)
   if (!item) return { title: "자료를 찾을 수 없습니다" }
+  // M3 게이트: 비-admin에게 draft 자료의 메타데이터(제목/요약)도 노출하지 않음.
+  const includeUnpublished = await getPreviewActive()
+  if (!isCatalogItemVisible(item.status, includeUnpublished)) {
+    return { title: "자료를 찾을 수 없습니다" }
+  }
   return { title: item.title, description: item.summary }
 }
 
@@ -23,6 +31,11 @@ export default async function LibraryItemPage({ params }: PageProps) {
   const { slug } = await params
   const item = getLibraryItemBySlug(slug)
   if (!item) notFound()
+  // M3 게이트: draft 자료는 admin Draft Mode에서만 접근. 비-admin 직접 접근은 404.
+  const includeUnpublished = await getPreviewActive()
+  if (!isCatalogItemVisible(item.status, includeUnpublished)) {
+    notFound()
+  }
 
   return (
     <article className="mx-auto max-w-3xl px-4 py-12 sm:px-6">

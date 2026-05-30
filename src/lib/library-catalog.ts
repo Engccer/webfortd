@@ -7,6 +7,9 @@
  * D6 협업 영역 placeholder — 위원장-허유진 교수 협업 결과 추가 자산은 별도 PR.
  */
 
+import type { CatalogStatus } from './catalog-visibility'
+import { isCatalogItemVisible } from './catalog-visibility'
+
 const STORAGE_BASE = `${process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''}/storage/v1/object/public/library`
 
 export type LibraryCategory = "guide" | "policy" | "manual" | "agreement"
@@ -23,6 +26,8 @@ export interface LibraryItem {
   downloadUrl: string
   relatedAtomicAxis?: string
   relatedAtomicPrefix?: string
+  /** M3: 미표기 = published 간주. 명시적 'draft'만 비-admin에게 숨김. */
+  status?: CatalogStatus
 }
 
 export const LIBRARY_ITEMS: LibraryItem[] = [
@@ -89,10 +94,12 @@ export function getLibraryItemBySlug(slug: string): LibraryItem | undefined {
 export function filterLibraryItems(opts: {
   category?: LibraryCategory
   query?: string
+  includeUnpublished?: boolean
 }): LibraryItem[] {
-  const { category, query } = opts
+  const { category, query, includeUnpublished = false } = opts
   const q = query?.trim().toLowerCase() ?? ""
   return LIBRARY_ITEMS.filter((item) => {
+    if (!isCatalogItemVisible(item.status, includeUnpublished)) return false
     if (category && item.category !== category) return false
     if (q) {
       const hay = `${item.title} ${item.organization} ${item.summary}`.toLowerCase()
