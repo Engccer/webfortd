@@ -9,7 +9,7 @@
  *   - transcript 본문은 로그 X. 길이·언어·confidence만.
  *   - 오디오는 서버 메모리에서 fetch 호출 후 즉시 폐기 (디스크 0).
  *
- * 모델: nova-2-conversationalai (단일 화자 + smart_format).
+ * 모델: nova-2 (general, 한국어 지원 + smart_format).
  * 언어: language=ko 강제 (정책 채팅은 한국어 단일).
  */
 import 'server-only'
@@ -63,7 +63,10 @@ export async function POST(req: Request): Promise<Response> {
 
   const buffer = await audio.arrayBuffer()
   const params = new URLSearchParams({
-    model: 'nova-2-conversationalai',
+    // nova-2 (general): 한국어 지원. 도메인 특화 변종(nova-2-conversationalai 등)은
+    // 영어 전용(en, en-US)이라 language=ko와 함께 쓰면 Deepgram이 400을 반환한다.
+    // (2026-05-30 회귀 수정 — 실음성 스모크로 검증)
+    model: 'nova-2',
     smart_format: 'true',
     punctuate: 'true',
     diarize: 'false',
