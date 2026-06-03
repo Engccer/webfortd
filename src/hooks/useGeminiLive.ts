@@ -164,8 +164,10 @@ export function useGeminiLive(options?: UseGeminiLiveOptions): UseGeminiLiveRetu
         if (disposedRef.current) return;
 
         if (!sessionRes.ok) {
-          const err = await sessionRes.json().catch(() => ({}));
-          throw new Error(err.error || "Failed to create session");
+          if (sessionRes.status === 401) {
+            throw new Error("로그인이 필요해요. 음성 대화는 로그인한 뒤 이용할 수 있어요.");
+          }
+          throw new Error("음성 세션을 시작할 수 없어요. 잠시 후 다시 시도해 주세요.");
         }
 
         const { token, model } = await sessionRes.json();
@@ -200,8 +202,8 @@ export function useGeminiLive(options?: UseGeminiLiveOptions): UseGeminiLiveRetu
                 console.error("Audio capture failed:", err);
                 setErrorMessage(
                   err instanceof Error && err.name === "NotAllowedError"
-                    ? "Microphone permission denied"
-                    : "Failed to start audio capture"
+                    ? "마이크 권한이 필요해요. 브라우저에서 마이크 사용을 허용해 주세요."
+                    : "마이크를 시작할 수 없어요. 다시 시도해 주세요."
                 );
                 setState("error");
               });
@@ -214,7 +216,7 @@ export function useGeminiLive(options?: UseGeminiLiveOptions): UseGeminiLiveRetu
               if (disposedRef.current) return;
               console.error("Live API error:", e);
               audio.stopCapture();
-              setErrorMessage("Connection error");
+              setErrorMessage("연결에 문제가 생겼어요. 다시 시도해 주세요.");
               setState("error");
             },
             onclose: () => {
@@ -231,7 +233,7 @@ export function useGeminiLive(options?: UseGeminiLiveOptions): UseGeminiLiveRetu
         // 타임아웃 레이스 — 연결이 무한 대기하면 에러로 전환
         let connectTimeoutId: ReturnType<typeof setTimeout>;
         const timeoutPromise = new Promise<never>((_, reject) => {
-          connectTimeoutId = setTimeout(() => reject(new Error("Connection timeout")), CONNECT_TIMEOUT_MS);
+          connectTimeoutId = setTimeout(() => reject(new Error("연결 시간이 초과됐어요. 다시 시도해 주세요.")), CONNECT_TIMEOUT_MS);
         });
         let session;
         try {
@@ -272,7 +274,7 @@ export function useGeminiLive(options?: UseGeminiLiveOptions): UseGeminiLiveRetu
       } catch (error) {
         if (disposedRef.current) return;
         console.error("Live connect error:", error);
-        setErrorMessage(error instanceof Error ? error.message : "Connection failed");
+        setErrorMessage(error instanceof Error ? error.message : "연결에 실패했어요. 다시 시도해 주세요.");
         setState("error");
       }
     },
