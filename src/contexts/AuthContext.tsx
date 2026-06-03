@@ -7,7 +7,14 @@ import { getBrowserClient } from '@/lib/supabase/client'
 interface AuthContextValue {
   user: User | null
   loading: boolean
-  signInWithMagicLink: (email: string) => Promise<{ error: Error | null }>
+  /** 인증 코드를 이메일로 발송 (signInWithOtp). 링크 fallback도 함께 포함. */
+  requestOtp: (email: string) => Promise<{ error: Error | null }>
+  /**
+   * 이메일로 받은 인증 코드를 검증해 로그인 (verifyOtp, type:'email').
+   * PKCE code_verifier가 불필요하므로 코드를 입력한 *그 브라우저*에 세션이 생성된다.
+   * → 매직링크가 다른 브라우저 컨텍스트에서 열려 세션이 유실되는 문제를 원천 차단.
+   */
+  verifyOtp: (email: string, token: string) => Promise<{ error: Error | null }>
   signOut: () => Promise<void>
 }
 
@@ -48,15 +55,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => sub.subscription.unsubscribe()
   }, [])
 
-  async function signInWithMagicLink(email: string) {
+  async function requestOtp(email: string) {
     const supabase = tryGetClient()
     if (!supabase) {
       return { error: new Error('Supabase 미설정 — 관리자에게 환경변수 추가 요청') }
     }
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
+    // emailRedirectTo는 이메일에 함께 담기는 링크 fallback 용도. 코드 입력 경로는
+    // verifyOtp(type:'email')로 처리되며 이 redirect를 사용하지 않는다.
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: { emailRedirectTo: `${siteUrl}/auth/callback` },
+    })
+    return { error: error as Error | null }
+  }
+
+  async function verifyOtp(email: string, token: string) {
+    const supabase = tryGetClient()
+    if (!supabase) {
+      return { error: new Error('Supabase 미설정 — 관리자에게 환경변수 추가 요청') }
+    }
+    const { error } = await supabase.auth.verifyOtp({
+      email,
+      token: token.trim(),
+      type: 'email',
     })
     return { error: error as Error | null }
   }
@@ -68,7 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, signInWithMagicLink, signOut }}>
+    <AuthContext.Provider value={{ user, loading, requestOtp, verifyOtp, signOut }}>
       {children}
     </AuthContext.Provider>
   )
