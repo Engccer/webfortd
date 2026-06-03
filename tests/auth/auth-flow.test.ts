@@ -2,9 +2,9 @@ import { test, describe } from 'node:test'
 import assert from 'node:assert/strict'
 
 // AuthContext 자체는 React 컴포넌트라 React Testing Library 없이 unit test 어려움.
-// 대신 핵심 비즈니스 로직 — signInWithMagicLink의 emailRedirectTo 구성 — 만 검증.
+// 대신 핵심 비즈니스 로직 — requestOtp의 emailRedirectTo(링크 fallback) 구성 — 만 검증.
 
-describe('AuthContext signInWithMagicLink emailRedirectTo', () => {
+describe('AuthContext requestOtp emailRedirectTo', () => {
   test('NEXT_PUBLIC_SITE_URL 사용', () => {
     // siteUrl 결정 로직을 별도 함수로 분리하지 않았으므로 logic 자체는 inline.
     // 향후 helper로 추출 시 정밀 테스트 가능.
