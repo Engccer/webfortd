@@ -16,6 +16,7 @@ import {
   SEARCH_POLICY_TOP_K,
   MAX_CHUNK_CHARS,
 } from '@/lib/voice/search-policy'
+import { formatSupabaseError } from '../../../../../scripts/lib/error-format.ts'
 import type { RetrievalResult } from '@/lib/rag/types'
 import type { SearchPolicyResult } from '@/lib/voice/types'
 
@@ -77,7 +78,7 @@ export async function POST(request: Request) {
     })
     return NextResponse.json(buildSearchPolicyResult(retrieval))
   } catch (error) {
-    console.error('[voice/execute] search_policy 실패:', error)
+    console.error('[voice/execute] search_policy 실패', formatSupabaseError(error as { code?: string; message?: string; details?: string; hint?: string }))
     return NextResponse.json(
       { error: '자료를 찾는 중 문제가 생겼어요. 잠시 후 다시 시도해 주세요.' },
       { status: 500 },

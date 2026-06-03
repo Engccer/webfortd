@@ -65,6 +65,7 @@ export function useAudioIO(): UseAudioIOReturn {
   const playbackCtxRef = useRef<AudioContext | null>(null);
   const captureNodeRef = useRef<AudioWorkletNode | null>(null);
   const playbackNodeRef = useRef<AudioWorkletNode | null>(null);
+  const playbackInitRef = useRef<Promise<void> | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const onPcmData = useRef<((base64: string, peakLevel: number) => void) | null>(null);
   const onPlaybackEnded = useRef<(() => void) | null>(null);
@@ -172,39 +173,45 @@ export function useAudioIO(): UseAudioIOReturn {
     setIsCapturing(false);
   }, []);
 
-  /** 재생용 AudioContext + Worklet 초기화 */
+  /** 재생용 AudioContext + Worklet 초기화
+   * 첫 번째 burst에서 ensurePlaybackCtx가 동시에 여러 번 호출되면 각각이
+   * playbackNodeRef.current == null을 보고 AudioWorkletNode를 복수 생성·연결한다.
+   * playbackInitRef에 단 하나의 in-flight Promise를 보관해 생성·연결이 정확히 한 번만
+   * 실행되도록 dedup한다. */
   const ensurePlaybackCtx = useCallback(async () => {
     const ctx = await ensurePlaybackRunningCtx();
-
-    // 이미 playbackNode가 있으면 스킵
     if (playbackNodeRef.current) return;
-
-    try {
-      await ctx.audioWorklet.addModule("/worklets/pcm-playback-processor.js");
-    } catch {
-      // already registered
+    if (!playbackInitRef.current) {
+      playbackInitRef.current = (async () => {
+        try {
+          await ctx.audioWorklet.addModule("/worklets/pcm-playback-processor.js");
+        } catch {
+          // already registered
+        }
+        const playbackNode = new AudioWorkletNode(ctx, "pcm-playback-processor");
+        playbackNode.port.onmessage = (e) => {
+          if (e.data?.type === "playbackEnded") {
+            // duration 기반 추정이 과추정일 수 있는 경우(워클릿 큐 capacity drop, 기타)를
+            // 대비해 실제 재생 종료 시각으로 clamp. 단, 최근 300ms 내에 새 청크가 enqueue된
+            // 경우에는 이 playbackEnded가 **이전 재생분**에 대한 stale 메시지이므로(메시지
+            // 전달 지연 중에 새 재생이 시작됨) clamp를 건너뛴다. 그렇지 않으면 새 재생의
+            // playbackEndAt이 과거로 잘려 게이트가 잘못 열릴 수 있다.
+            const now = Date.now();
+            const STALE_MESSAGE_WINDOW_MS = 300;
+            const recentEnqueue = now - lastEnqueueAt.current < STALE_MESSAGE_WINDOW_MS;
+            if (!recentEnqueue && playbackEndAt.current > now) {
+              playbackEndAt.current = now;
+            }
+            if (onPlaybackEnded.current) {
+              onPlaybackEnded.current();
+            }
+          }
+        };
+        playbackNode.connect(ctx.destination);
+        playbackNodeRef.current = playbackNode; // wiring 완료 후 마지막에 assign
+      })();
     }
-    const playbackNode = new AudioWorkletNode(ctx, "pcm-playback-processor");
-    playbackNodeRef.current = playbackNode;
-    playbackNode.port.onmessage = (e) => {
-      if (e.data?.type === "playbackEnded") {
-        // duration 기반 추정이 과추정일 수 있는 경우(워클릿 큐 capacity drop, 기타)를
-        // 대비해 실제 재생 종료 시각으로 clamp. 단, 최근 300ms 내에 새 청크가 enqueue된
-        // 경우에는 이 playbackEnded가 **이전 재생분**에 대한 stale 메시지이므로(메시지
-        // 전달 지연 중에 새 재생이 시작됨) clamp를 건너뛴다. 그렇지 않으면 새 재생의
-        // playbackEndAt이 과거로 잘려 게이트가 잘못 열릴 수 있다.
-        const now = Date.now();
-        const STALE_MESSAGE_WINDOW_MS = 300;
-        const recentEnqueue = now - lastEnqueueAt.current < STALE_MESSAGE_WINDOW_MS;
-        if (!recentEnqueue && playbackEndAt.current > now) {
-          playbackEndAt.current = now;
-        }
-        if (onPlaybackEnded.current) {
-          onPlaybackEnded.current();
-        }
-      }
-    };
-    playbackNode.connect(ctx.destination);
+    await playbackInitRef.current;
   }, []);
 
   /** PCM 청크를 재생 큐에 추가 — 실제 postMessage가 성공한 뒤에만 playbackEndAt과
@@ -263,6 +270,7 @@ export function useAudioIO(): UseAudioIOReturn {
 
     playbackNodeRef.current?.disconnect();
     playbackNodeRef.current = null;
+    playbackInitRef.current = null;
 
     playbackCtxRef.current?.close().catch(() => {});
     playbackCtxRef.current = null;
