@@ -47,9 +47,11 @@ import { ThreadDrawer } from '@/components/chat/ThreadDrawer'
 import { VoiceChatOverlay } from '@/components/chat/VoiceChatOverlay'
 import { VoiceRecordButton } from '@/components/chat/VoiceRecordButton'
 import { useAuth } from '@/contexts/AuthContext'
+import { useChatCompletionFocus } from '@/hooks/useChatCompletionFocus'
 import { isStaleThread } from '@/lib/chat/session-timeout'
 import { getSuggestions } from '@/lib/chat/suggestions'
 import type { SourceRef } from '@/lib/rag/types'
+import { playChatReceiveSound, playChatSendSound } from '@/lib/sound'
 import { warmupAudioStandalone } from '@/lib/voice/warmup'
 
 interface AssistantMetadata {
@@ -175,6 +177,22 @@ export function ChatUI({ initialThreadId }: ChatUIProps = {}) {
 
   const isLoading = status === 'submitted' || status === 'streaming'
 
+  // 마지막 사용자 질문 id — 이 메시지의 헤딩에만 focus ref를 부착한다.
+  const lastUserMessageId = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === 'user') return messages[i].id
+    }
+    return undefined
+  }, [messages])
+
+  // 응답 완료 시: receive 효과음 + 마지막 질문 헤딩으로 포커스 이동 (접근성 핵심).
+  const lastQueryRef = useChatCompletionFocus({
+    isLoading,
+    messageCount: messages.length,
+    lastMessageRole: messages[messages.length - 1]?.role,
+    onComplete: playChatReceiveSound,
+  })
+
   // M6.5 — 마지막 assistant 응답의 첫 sourceRef axis로 분기.
   const lastAssistantAxis = useMemo(() => {
     for (let i = messages.length - 1; i >= 0; i--) {
@@ -200,6 +218,8 @@ export function ChatUI({ initialThreadId }: ChatUIProps = {}) {
   async function send(text: string) {
     const trimmed = text.trim()
     if (!trimmed && !attachment) return
+    // 전송 효과음 (accessibility.soundEnabled 게이트)
+    playChatSendSound()
     // M6.2 — 전송 시점에 저장. onError 발화 시 retry 가능 (텍스트만)
     setLastFailedMessage(trimmed)
     setChatError(null)
@@ -244,6 +264,7 @@ export function ChatUI({ initialThreadId }: ChatUIProps = {}) {
   function retryLast() {
     if (!lastFailedMessage) return
     const text = lastFailedMessage
+    playChatSendSound()
     setChatError(null)
     sendMessage({ text })
     inputRef.current?.focus()
@@ -310,25 +331,34 @@ export function ChatUI({ initialThreadId }: ChatUIProps = {}) {
                       .map((p) => p.text)
                       .join('') ?? ''
                   : ''
+              // 사용자 질문 본문(text part join) — 헤딩으로 렌더해 스크린리더 턴 탐색 + 응답 완료 포커스 타깃.
+              const userText =
+                m.role === 'user'
+                  ? m.parts
+                      ?.filter((p): p is { type: 'text'; text: string } => p.type === 'text')
+                      .map((p) => p.text)
+                      .join('') ?? ''
+                  : ''
               return (
                 <Message key={m.id} from={m.role}>
                   <MessageContent>
                     <div className="group relative">
-                      {m.parts?.map((part, i) => {
-                        if (part.type === 'text') {
-                          return m.role === 'assistant' ? (
+                      {m.role === 'user' ? (
+                        // 사용자 질문 = 헤딩. 마지막 질문에만 focus ref 부착 (응답 완료 시 이동 타깃).
+                        <h2
+                          ref={m.id === lastUserMessageId ? lastQueryRef : null}
+                          tabIndex={-1}
+                          className="whitespace-pre-line text-base font-medium leading-relaxed focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        >
+                          {userText}
+                        </h2>
+                      ) : (
+                        m.parts?.map((part, i) =>
+                          part.type === 'text' ? (
                             <MessageResponse key={i}>{part.text}</MessageResponse>
-                          ) : (
-                            <span
-                              key={i}
-                              className="whitespace-pre-line"
-                            >
-                              {part.text}
-                            </span>
-                          )
-                        }
-                        return null
-                      })}
+                          ) : null,
+                        )
+                      )}
                       {/* M6.1 — 데스크탑 hover/focus 노출, 모바일 항상 노출 */}
                       {m.role === 'assistant' && assistantText && (
                         <div className="absolute right-0 top-0 opacity-100 transition-opacity sm:opacity-0 sm:group-focus-within:opacity-100 sm:group-hover:opacity-100">
