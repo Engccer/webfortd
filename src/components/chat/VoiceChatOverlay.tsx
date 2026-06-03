@@ -35,16 +35,17 @@ export function VoiceChatOverlay({ open, onClose }: VoiceChatOverlayProps) {
   } = useGeminiLive({ onSourceRefs });
 
   const dialogRef = useRef<HTMLDivElement>(null);
-  const closeBtnRef = useRef<HTMLButtonElement>(null);
 
   // 오버레이 오픈 시 연결 시작
   // (warmup은 ChatUI 진입 버튼의 사용자 제스처 체인에서 이미 호출됨)
   // 닫힐 때 disconnect + 출처 초기화
+  // 포커스는 종료 버튼이 아니라 dialog 컨테이너로 — 전역 Space 핸들러가
+  // 버튼의 네이티브 Space 활성화를 가로채지 않도록 (C-1). 닫기는 Esc가 1차 경로.
   useEffect(() => {
     if (open) {
       setSources([]);
       void connect();
-      closeBtnRef.current?.focus();
+      dialogRef.current?.focus();
     } else {
       disconnect();
       setSources([]);
@@ -58,7 +59,7 @@ export function VoiceChatOverlay({ open, onClose }: VoiceChatOverlayProps) {
     transcripts.length > 0 ? transcripts[transcripts.length - 1].role : null;
   useEffect(() => {
     if (lastRole === "user") setSources([]);
-  }, [lastRole, transcripts.length]);
+  }, [lastRole]);
 
   // 키보드: Esc=종료, Space=mute (modifier 가드 — 다른 단축키 충돌 방지)
   useEffect(() => {
@@ -69,6 +70,8 @@ export function VoiceChatOverlay({ open, onClose }: VoiceChatOverlayProps) {
         e.preventDefault();
         onClose();
       } else if (e.key === " " || e.code === "Space") {
+        // 버튼이 포커스돼 있으면 그 버튼의 네이티브 Space 활성화를 유지 (C-1)
+        if (document.activeElement instanceof HTMLButtonElement) return;
         e.preventDefault();
         toggleMute();
       }
@@ -77,7 +80,7 @@ export function VoiceChatOverlay({ open, onClose }: VoiceChatOverlayProps) {
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose, toggleMute]);
 
-  // 포커스 트랩 (간단형 — dialog 밖으로 나가면 종료 버튼으로 되돌림)
+  // 포커스 트랩 (간단형 — dialog 밖으로 나가면 dialog 컨테이너로 되돌림)
   useEffect(() => {
     if (!open) return;
     const onFocus = (e: FocusEvent) => {
@@ -85,7 +88,7 @@ export function VoiceChatOverlay({ open, onClose }: VoiceChatOverlayProps) {
         dialogRef.current &&
         !dialogRef.current.contains(e.target as Node)
       ) {
-        closeBtnRef.current?.focus();
+        dialogRef.current.focus();
       }
     };
     document.addEventListener("focusin", onFocus);
@@ -100,7 +103,8 @@ export function VoiceChatOverlay({ open, onClose }: VoiceChatOverlayProps) {
       role="dialog"
       aria-modal="true"
       aria-label="음성으로 정책 안내 받기"
-      className="fixed inset-0 z-[60] flex flex-col items-center justify-center gap-6 bg-background/95 p-6 backdrop-blur"
+      tabIndex={-1}
+      className="fixed inset-0 z-[60] flex flex-col items-center justify-center gap-6 bg-background/95 p-6 backdrop-blur outline-none"
     >
       <p aria-live="polite" className="text-lg font-medium text-foreground">
         {errorMessage ?? STATE_LABEL[state] ?? state}
@@ -143,8 +147,14 @@ export function VoiceChatOverlay({ open, onClose }: VoiceChatOverlayProps) {
           <ul className="flex flex-col gap-1 text-sm">
             {sources.map((s) => (
               <li key={s.slug}>
-                <a href={s.href} className="text-primary underline">
+                <a
+                  href={s.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary underline"
+                >
                   {s.title}
+                  <span className="sr-only"> (새 탭에서 열림)</span>
                 </a>
               </li>
             ))}
@@ -167,7 +177,6 @@ export function VoiceChatOverlay({ open, onClose }: VoiceChatOverlayProps) {
           {isMuted ? "음소거 해제" : "음소거"}
         </button>
         <button
-          ref={closeBtnRef}
           type="button"
           onClick={onClose}
           className="flex min-h-[44px] min-w-[44px] items-center gap-2 rounded-full bg-primary px-4 py-2 text-primary-foreground"
