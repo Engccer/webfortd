@@ -128,14 +128,14 @@ export function useGeminiLive(options?: UseGeminiLiveOptions): UseGeminiLiveRetu
 
   /** search_policy 실행 프록시 호출 (/api/voice/execute) */
   const executeSearchPolicy = useCallback(
-    async (query: string, signal: AbortSignal): Promise<unknown> => {
+    async (name: string, query: string, signal: AbortSignal): Promise<unknown> => {
       const res = await fetch("/api/voice/execute", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: "search_policy", args: { query } }),
+        body: JSON.stringify({ name, args: { query } }),
         signal,
       });
-      if (!res.ok) throw new Error(`search_policy failed: ${res.status}`);
+      if (!res.ok) throw new Error(`${name} failed: ${res.status}`);
       return res.json();
     },
     []
@@ -357,6 +357,7 @@ export function useGeminiLive(options?: UseGeminiLiveOptions): UseGeminiLiveRetu
 
             try {
               const result = await executeSearchPolicy(
+                fc.name,
                 typeof fc.args?.query === "string" ? fc.args.query : "",
                 fnAbort.signal
               );
