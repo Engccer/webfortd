@@ -9,8 +9,16 @@
 import { SYSTEM_PROMPT_TEMPLATE } from '@/lib/rag/prompt-builder'
 
 export function buildVoiceSystemPrompt(): string {
-  // SYSTEM_PROMPT_TEMPLATE의 [참고 자료] 이후를 제거 — 정체성/톤/원칙만 유지.
-  const base = SYSTEM_PROMPT_TEMPLATE.split('[참고 자료]')[0].trim()
+  // SYSTEM_PROMPT_TEMPLATE의 [참고 자료] 섹션 이후를 제거 — 정체성/톤/원칙만 유지.
+  // 주의: 답변 원칙 3번에 인라인 "제공된 [참고 자료] 안의"가 먼저 등장하므로,
+  // 단순 split('[참고 자료]')은 거기서 잘려 답변 원칙 4·5(영구 원칙)를 누락시킨다.
+  // 반드시 헤더(앞뒤 개행으로 둘러싸인 '\n[참고 자료]\n')만 split 기준으로 삼는다.
+  const VOICE_SPLIT_MARKER = '\n[참고 자료]\n'
+  const splitIdx = SYSTEM_PROMPT_TEMPLATE.indexOf(VOICE_SPLIT_MARKER)
+  if (splitIdx === -1) {
+    throw new Error('buildVoiceSystemPrompt: SYSTEM_PROMPT_TEMPLATE에서 [참고 자료] 섹션 구분자를 찾을 수 없어요.')
+  }
+  const base = SYSTEM_PROMPT_TEMPLATE.slice(0, splitIdx).trim()
   return `${base}
 
 [정보 검색 — search_policy 도구]
