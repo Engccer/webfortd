@@ -15,7 +15,7 @@ export const defaultSettings: AccessibilitySettings = {
   contrast: "default",
   underlineLinks: false,
   reduceMotion: false,
-  soundEnabled: false,
+  soundEnabled: true,
 }
 
 export function loadSettings(): AccessibilitySettings {

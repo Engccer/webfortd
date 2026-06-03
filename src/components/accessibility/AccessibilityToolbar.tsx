@@ -222,7 +222,7 @@ export function AccessibilityToolbar({ open: controlledOpen, onOpenChange: contr
             <div className="flex items-center justify-between">
               <Label htmlFor="sound-enabled" className="flex items-center gap-2 text-sm font-medium">
                 <Volume2 className="h-4 w-4" />
-                <span>메뉴 효과음</span>
+                <span>효과음</span>
               </Label>
               <Switch
                 id="sound-enabled"
