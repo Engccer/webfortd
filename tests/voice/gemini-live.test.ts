@@ -14,8 +14,11 @@ test('getLiveAuthClient: 키 없으면 throw', () => {
 })
 
 test('getLiveAuthClient: 키 있으면 GoogleGenAI 인스턴스', () => {
+  const prev = process.env.GOOGLE_GENERATIVE_AI_API_KEY
   process.env.GOOGLE_GENERATIVE_AI_API_KEY = 'test-key'
   const client = getLiveAuthClient()
   assert.ok(client)
   assert.ok(typeof client.authTokens?.create === 'function')
+  if (prev !== undefined) process.env.GOOGLE_GENERATIVE_AI_API_KEY = prev
+  else delete process.env.GOOGLE_GENERATIVE_AI_API_KEY
 })

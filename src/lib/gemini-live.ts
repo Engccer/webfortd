@@ -6,6 +6,7 @@
  * authTokens.create()로 발급한 ephemeral 토큰만 클라이언트에 내려가며,
  * raw 키는 절대 브라우저에 노출되지 않는다.
  */
+import 'server-only'
 import { GoogleGenAI } from '@google/genai'
 
 /** native audio 양방향 Live 모델. dodo MODELS.live 정렬. */
