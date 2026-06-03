@@ -19,7 +19,7 @@
 
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
-import { ArrowDown } from 'lucide-react'
+import { ArrowDown, Mic } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { mutate } from 'swr'
 import {
@@ -44,11 +44,13 @@ import { CopyButton } from '@/components/chat/CopyButton'
 import { ErrorBanner } from '@/components/chat/ErrorBanner'
 import { SourceCard } from '@/components/chat/SourceCard'
 import { ThreadDrawer } from '@/components/chat/ThreadDrawer'
+import { VoiceChatOverlay } from '@/components/chat/VoiceChatOverlay'
 import { VoiceRecordButton } from '@/components/chat/VoiceRecordButton'
 import { useAuth } from '@/contexts/AuthContext'
 import { isStaleThread } from '@/lib/chat/session-timeout'
 import { getSuggestions } from '@/lib/chat/suggestions'
 import type { SourceRef } from '@/lib/rag/types'
+import { warmupAudioStandalone } from '@/lib/voice/warmup'
 
 interface AssistantMetadata {
   sourceRefs?: SourceRef[]
@@ -80,6 +82,8 @@ export function ChatUI({ initialThreadId }: ChatUIProps = {}) {
   const [attachmentError, setAttachmentError] = useState<string | undefined>(undefined)
   // M7.1 patch — 음성 오류 별도 표시 (시각장애인 핵심: chatError와 분리해 항상 role="alert" 낭독)
   const [voiceError, setVoiceError] = useState<string | null>(null)
+  // Phase 7 M4 — 음성 라이브 채팅 오버레이 열림 상태
+  const [voiceOpen, setVoiceOpen] = useState(false)
 
   // threadId를 ref로 보관 — useChat transport는 1회 instantiate되지만
   // prepareSendMessagesRequest 콜백에서 매 send마다 최신 ref 값을 읽어 stale 회피.
@@ -460,6 +464,19 @@ export function ChatUI({ initialThreadId }: ChatUIProps = {}) {
             onError={(error) => setVoiceError(error)}
             disabled={isLoading}
           />
+          {/* Phase 7 M4 — 음성 라이브 채팅 진입 버튼. 클릭 체인 내 AudioContext warmup 필수 (iOS Safari/Chrome Autoplay 정책) */}
+          <button
+            type="button"
+            onClick={async () => {
+              await warmupAudioStandalone()
+              setVoiceOpen(true)
+            }}
+            className="flex min-h-[44px] items-center gap-2 rounded-full border px-4 py-2 text-sm hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring disabled:pointer-events-none disabled:opacity-50"
+            disabled={isLoading}
+          >
+            <Mic aria-hidden className="h-5 w-5" />
+            실시간 음성 대화
+          </button>
           <PromptInputSubmit
             status={status}
             aria-label="전송"
@@ -467,6 +484,9 @@ export function ChatUI({ initialThreadId }: ChatUIProps = {}) {
           />
         </div>
       </PromptInput>
+
+      {/* Phase 7 M4 — 음성 라이브 채팅 오버레이 */}
+      <VoiceChatOverlay open={voiceOpen} onClose={() => setVoiceOpen(false)} />
     </div>
   )
 }

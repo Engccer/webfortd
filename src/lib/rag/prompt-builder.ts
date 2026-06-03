@@ -10,6 +10,9 @@ import type { UIMessage } from 'ai'
  * 기준: docs/superpowers/specs/2026-05-23-phase-3-rag-design.md §10.3 #1
  *       webfortd/CLAUDE.md §앱 정체성과 채팅의 역할
  *       docs/DIRECTION_2026.md §4
+ *
+ * NOTE: 본문 끝의 '\n[참고 자료]\n' 헤더는 voice-prompt.ts(buildVoiceSystemPrompt)가
+ * split 기준으로 의존(헤더 이후를 떼고 음성용 프롬프트 생성). 형식 변경 시 동기화.
  */
 export const SYSTEM_PROMPT_TEMPLATE = `당신은 대한민국 장애인교원 관련 제도와 정책을 안내하는 AI예요.
 "장애인교원 교육전념 여건 지원" 사업의 일환으로 운영되고 있어요.
