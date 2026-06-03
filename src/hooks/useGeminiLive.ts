@@ -37,7 +37,7 @@ interface UseGeminiLiveReturn {
   state: LiveState;
   /** 사용자 제스처(클릭) 체인 내에서 호출 — AudioContext 사전 초기화 (iOS/Chrome 필수) */
   warmupAudio: () => Promise<void>;
-  connect: (params: ConnectParams) => Promise<void>;
+  connect: () => Promise<void>;
   disconnect: () => void;
   toggleMute: () => void;
   isMuted: boolean;
@@ -57,10 +57,6 @@ interface UseGeminiLiveOptions {
 /** 연결 타임아웃 (밀리초) — live.connect()가 무한 대기하는 것을 방지 */
 const CONNECT_TIMEOUT_MS = 20_000;
 
-interface ConnectParams {
-  resumeHandle?: string;
-}
-
 /**
  * Gemini Live API 세션 관리 훅
  * - 서버에서 ephemeral token 발급 → 브라우저에서 직접 WebSocket 연결
@@ -75,7 +71,6 @@ export function useGeminiLive(options?: UseGeminiLiveOptions): UseGeminiLiveRetu
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sessionRef = useRef<any>(null);
-  const paramsRef = useRef<ConnectParams | null>(null);
   const resumeHandleRef = useRef<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const isMutedRef = useRef(false);
@@ -148,10 +143,9 @@ export function useGeminiLive(options?: UseGeminiLiveOptions): UseGeminiLiveRetu
 
   /** 연결 — 외부에서 disposedRef를 먼저 false로 설정해야 함 (reconnect 안전성) */
   const connect = useCallback(
-    async (params: ConnectParams) => {
+    async () => {
       // disposed 체크: disconnect 후 goAway 타이머가 지연 호출할 수 있으므로 방어
       if (disposedRef.current) return;
-      paramsRef.current = params;
       setErrorMessage(null);
       setTranscripts([]);
       setState("connecting");
@@ -423,12 +417,11 @@ export function useGeminiLive(options?: UseGeminiLiveOptions): UseGeminiLiveRetu
       // GoAway → 자동 재연결 (타이머 추적)
       if (message.goAway) {
         setState("reconnecting");
-        const params = paramsRef.current;
-        if (params && !disposedRef.current) {
+        if (!disposedRef.current) {
           if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
           reconnectTimerRef.current = setTimeout(() => {
             reconnectTimerRef.current = null;
-            if (!disposedRef.current) connect(params);
+            if (!disposedRef.current) connect();
           }, 1000);
         }
       }
@@ -464,10 +457,10 @@ export function useGeminiLive(options?: UseGeminiLiveOptions): UseGeminiLiveRetu
    * iOS audio session을 `play-and-record`로 전환해 VoiceOver/시스템 사운드의
    * ducking을 막는다 (disconnect/unmount 시 `auto`로 복원). */
   const startSession = useCallback(
-    async (params: ConnectParams) => {
+    async () => {
       disposedRef.current = false;
       setVoiceCallSession();
-      return connect(params);
+      return connect();
     },
     [connect]
   );
