@@ -185,12 +185,17 @@ export function useGeminiLive(options?: UseGeminiLiveOptions): UseGeminiLiveRetu
         abortControllerRef.current = abortController;
 
         // session resumption handle은 서버 토큰에 포함됨 → client config에서 제거
-        // 연결 타임아웃 — live.connect()가 무한 대기하는 것을 방지
+        // 연결 타임아웃 — live.connect()가 무한 대기하는 것을 방지.
+        // timedOut: 타임아웃이 race를 이긴 뒤 connectPromise가 늦게 resolve될 때,
+        // (a) onopen 가드로 마이크가 켜지지 않게 하고 (b) 아래 late-.then으로 누수된
+        // WebSocket을 닫는다. 시각장애 사용자는 마이크 표시등을 볼 수 없어 stuck-on
+        // 마이크가 곧 프라이버시 버그이므로 둘 다 필요.
+        let timedOut = false;
         const connectPromise = clientAi.live.connect({
           model,
           callbacks: {
             onopen: () => {
-              if (disposedRef.current) return;
+              if (disposedRef.current || timedOut) return;
               setState("connected");
               // 마이크 캡처 시작 (.catch 필수 — 실패 시 state 복구)
               audio.startCapture().then(() => {
@@ -230,10 +235,25 @@ export function useGeminiLive(options?: UseGeminiLiveOptions): UseGeminiLiveRetu
           // resumeHandle은 서버 토큰의 sessionResumption에 포함됨 (lockAdditionalFields 미사용 시 모든 필드 잠금)
         });
 
+        // 타임아웃/dispose 후 늦게 resolve된 세션은 누수된 WebSocket이므로 닫는다.
+        // (성공 경로에서는 timedOut=false·미dispose라 no-op — race에서 이긴 session은
+        // 정상적으로 sessionRef에 할당됨.)
+        connectPromise.then(
+          (lateSession) => {
+            if (timedOut || disposedRef.current) {
+              try { lateSession.close(); } catch { /* ignore */ }
+            }
+          },
+          () => { /* rejection은 race/catch에서 이미 처리됨 */ },
+        );
+
         // 타임아웃 레이스 — 연결이 무한 대기하면 에러로 전환
         let connectTimeoutId: ReturnType<typeof setTimeout>;
         const timeoutPromise = new Promise<never>((_, reject) => {
-          connectTimeoutId = setTimeout(() => reject(new Error("연결 시간이 초과됐어요. 다시 시도해 주세요.")), CONNECT_TIMEOUT_MS);
+          connectTimeoutId = setTimeout(() => {
+            timedOut = true;
+            reject(new Error("연결 시간이 초과됐어요. 다시 시도해 주세요."));
+          }, CONNECT_TIMEOUT_MS);
         });
         let session;
         try {
