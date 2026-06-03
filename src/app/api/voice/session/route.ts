@@ -54,6 +54,7 @@ export async function POST(request: Request) {
             responseModalities: [Modality.AUDIO],
             speechConfig: {
               voiceConfig: { prebuiltVoiceConfig: { voiceName: VOICE_NAME } },
+              // languageCode 생략 — native audio 모델이 자동 언어 감지. 명시하면 해당 언어 TTS가 강제됨.
             },
             systemInstruction: { parts: [{ text: systemInstruction }] },
             tools: [{ functionDeclarations: [SEARCH_POLICY_DECLARATION] }],
@@ -83,8 +84,10 @@ export async function POST(request: Request) {
       voiceConfig: { voice: VOICE_NAME, locale: LANGUAGE_CODE },
     })
   } catch (error) {
-    console.error('Voice session error:', error)
-    const message = error instanceof Error ? error.message : 'Unknown error'
-    return NextResponse.json({ error: message }, { status: 500 })
+    console.error('[voice/session] authToken 발급 실패:', error)
+    return NextResponse.json(
+      { error: '음성 세션을 시작할 수 없어요. 잠시 후 다시 시도해 주세요.' },
+      { status: 500 },
+    )
   }
 }
