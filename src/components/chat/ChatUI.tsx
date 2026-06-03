@@ -50,6 +50,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { isStaleThread } from '@/lib/chat/session-timeout'
 import { getSuggestions } from '@/lib/chat/suggestions'
 import type { SourceRef } from '@/lib/rag/types'
+import { warmupAudioStandalone } from '@/lib/voice/warmup'
 
 interface AssistantMetadata {
   sourceRefs?: SourceRef[]
@@ -467,7 +468,6 @@ export function ChatUI({ initialThreadId }: ChatUIProps = {}) {
           <button
             type="button"
             onClick={async () => {
-              const { warmupAudioStandalone } = await import('@/lib/voice/warmup')
               await warmupAudioStandalone()
               setVoiceOpen(true)
             }}
@@ -475,7 +475,7 @@ export function ChatUI({ initialThreadId }: ChatUIProps = {}) {
             disabled={isLoading}
           >
             <Mic aria-hidden className="h-5 w-5" />
-            음성으로 대화
+            실시간 음성 대화
           </button>
           <PromptInputSubmit
             status={status}
