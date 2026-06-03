@@ -24,7 +24,7 @@ export const maxDuration = 30
 
 const ExecuteRequestSchema = z.object({
   name: z.string().min(1),
-  args: z.object({ query: z.string().min(1) }),
+  args: z.object({ query: z.string().trim().min(1) }),
 })
 
 /** 청크 텍스트를 MAX_CHUNK_CHARS로 절단 (TTS 스트림 안정 — dodo payload 절단 교훈). */
