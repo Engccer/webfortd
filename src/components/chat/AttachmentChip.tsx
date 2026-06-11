@@ -65,7 +65,7 @@ export function AttachmentChip({ file, status, errorMessage, onRemove }: Attachm
           <X className="h-4 w-4" aria-hidden="true" />
         </button>
       </div>
-      <p className="mt-1.5 text-[11px] leading-relaxed text-muted-foreground">
+      <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
         첨부 파일은 안전한 외부 분석 서비스({externalService})로 전송되며, 처리 후 즉시 폐기됩니다.
       </p>
     </div>

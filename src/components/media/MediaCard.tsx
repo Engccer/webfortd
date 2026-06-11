@@ -14,9 +14,11 @@ export function MediaCard({ item }: MediaCardProps) {
         className="block focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
       >
         <div className="relative aspect-video bg-muted">
+          {/* 카드 링크 이름은 caption 텍스트가 담당 — 썸네일 alt는 비워
+              링크 이름 오염을 막는다. 전체 alt는 상세 페이지에서 제공. */}
           <Image
             src={item.imagePath}
-            alt={item.alt}
+            alt=""
             fill
             sizes="(min-width: 640px) 50vw, 100vw"
             className="object-contain"

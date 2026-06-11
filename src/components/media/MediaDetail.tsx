@@ -14,7 +14,7 @@ export function MediaDetail({ item }: MediaDetailProps) {
         href="/media"
         className="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
       >
-        ← 미디어 자료실 목록
+        <span aria-hidden="true">←</span> 미디어 자료실 목록
       </Link>
       <header className="mb-6">
         <h1 className="text-2xl font-bold text-foreground">{item.caption}</h1>

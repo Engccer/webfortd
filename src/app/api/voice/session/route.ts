@@ -47,7 +47,10 @@ export async function POST(request: Request) {
     const token = await ai.authTokens.create({
       config: {
         httpOptions: { apiVersion: 'v1alpha' },
-        uses: 0,
+        // uses: 0은 "무제한 사용"(SDK 문서) — 토큰이 탈취·공유되면 세션을 계속 열 수 있다.
+        // 클라이언트(useGeminiLive)는 재연결 때마다 이 라우트에서 새 토큰을 발급받고
+        // 세션 resume은 use로 카운트되지 않으므로 단일 사용으로 조여도 기능 손실 없음.
+        uses: 1,
         liveConnectConstraints: {
           model: LIVE_MODEL,
           config: {

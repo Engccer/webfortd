@@ -20,8 +20,11 @@ import {
   gateway,
   convertToModelMessages,
   validateUIMessages,
+  createUIMessageStream,
+  createUIMessageStreamResponse,
   type UIMessage,
 } from 'ai'
+import { checkRateLimit, getClientIp, json429 } from '@/lib/rate-limit'
 import { retrieveChunks } from '@/lib/rag/retrieval.ts'
 import { buildSystemPrompt, clampHistory } from '@/lib/rag/prompt-builder.ts'
 import { getServerClient } from '@/lib/supabase/server'
@@ -83,6 +86,10 @@ export const maxDuration = 60 // streamText 60초 timeout
 const HISTORY_MAX_TURNS = 5 // D5
 const RETRIEVAL_TOP_K = 5 // RAG design §7.2
 const TITLE_MAX_CHARS = 30 // M5 D1 — thread title은 첫 user 메시지 첫 30자 truncate
+// 비용 가드 — 익명 허용 엔드포인트인데 매 호출이 Gemini 임베딩+생성(+첨부 시 Upstage)
+// 유료 호출로 직결되므로 IP당 한도. 정상 사용(응답 수 초 소요)에는 닿지 않는 수준.
+const RATE_LIMIT = 20
+const RATE_WINDOW_MS = 60_000
 
 interface ChatRequestBody {
   messages?: unknown
@@ -91,6 +98,11 @@ interface ChatRequestBody {
 }
 
 export async function POST(req: Request): Promise<Response> {
+  const rate = checkRateLimit(`chat:${getClientIp(req)}`, RATE_LIMIT, RATE_WINDOW_MS)
+  if (!rate.ok) {
+    return json429(rate.retryAfterSeconds)
+  }
+
   // 1. 요청 본문 파싱
   let body: ChatRequestBody
   try {
@@ -193,15 +205,31 @@ export async function POST(req: Request): Promise<Response> {
     data: { user },
   } = await supabaseSSR.auth.getUser()
 
-  // newThreadId 클로저 변수 — route handler stateless. onFinish set → messageMetadata read.
-  let newThreadId: string | null = null
-
   // 8. streaming 응답
   const result = streamText({
     model: gateway('google/gemini-3.5-flash'),
     system: systemPrompt,
     messages: modelMessages,
-    onFinish: async ({ usage, text }) => {
+  })
+
+  // 9. UI message stream — sourceRefs·(신규) threadId를 생성 완료 "후" metadata로 전달.
+  //
+  // 이전 구현은 streamText.onFinish에서 newThreadId를 set하고
+  // toUIMessageStreamResponse.messageMetadata({ part: 'finish' })에서 읽었지만,
+  // 두 콜백은 서로 다른 tee 스트림에서 실행되어 순서 보장이 없다 —
+  // DB RPC(수십~수백 ms)가 끝나기 전에 finish part가 먼저 흘러 threadId가
+  // 거의 항상 누락됐다 (로그인 사용자의 대화가 턴마다 새 thread로 분절되는 버그).
+  // createUIMessageStream.execute는 result.text를 await한 뒤 DB 저장을 마치고
+  // message-metadata chunk를 직접 write하므로 순서가 구조적으로 보장된다.
+  const stream = createUIMessageStream({
+    execute: async ({ writer }) => {
+      // finish chunk는 metadata write 후 수동 전송 (sendFinish: false)
+      writer.merge(result.toUIMessageStream({ sendFinish: false }))
+
+      // 본문 생성 완료 대기 (delta는 merge로 이미 클라이언트에 흐르는 중)
+      const text = await result.text
+      const usage = await result.usage
+
       // 비용·토큰 로그 (PIPA — user query 본문은 로그 X)
       console.log('[chat] finish', {
         promptTokens: usage?.inputTokens,
@@ -212,63 +240,62 @@ export async function POST(req: Request): Promise<Response> {
       })
 
       // M5: 로그인 사용자만 DB 저장. 비로그인은 클라이언트 useState 휘발 모드.
-      if (!user) return
+      let newThreadId: string | null = null
+      if (user) {
+        const admin = getAdminClient()
+        const sourceRefsJson = JSON.stringify(retrieval.sources)
+        const tokenUsageJson = JSON.stringify({
+          inputTokens: usage?.inputTokens ?? null,
+          outputTokens: usage?.outputTokens ?? null,
+        })
 
-      const admin = getAdminClient()
-      const sourceRefsJson = JSON.stringify(retrieval.sources)
-      const tokenUsageJson = JSON.stringify({
-        inputTokens: usage?.inputTokens ?? null,
-        outputTokens: usage?.outputTokens ?? null,
-      })
-
-      try {
-        if (!body.threadId) {
-          // M5 D2: 신규 thread (assistant 응답 성공 후 INSERT — partial state 회피)
-          // M5 D3: 단일 RPC atomic (thread + 2 메시지)
-          const title = queryText.slice(0, TITLE_MAX_CHARS)
-          const { data, error } = await admin.rpc('create_thread_with_messages', {
-            p_user_id: user.id,
-            p_title: title,
-            p_user_content: queryText,
-            p_assistant_content: text,
-            p_source_refs: sourceRefsJson,
-            p_token_usage: tokenUsageJson,
-          })
-          if (error) throw error
-          newThreadId = data as string
-        } else {
-          // M5 D4: 기존 thread append (DB가 user_id 소유권 검증)
-          const { error } = await admin.rpc('append_messages', {
-            p_thread_id: body.threadId,
-            p_user_id: user.id,
-            p_user_content: queryText,
-            p_assistant_content: text,
-            p_source_refs: sourceRefsJson,
-            p_token_usage: tokenUsageJson,
-          })
-          if (error) throw error
+        try {
+          if (!body.threadId) {
+            // M5 D2: 신규 thread (assistant 응답 성공 후 INSERT — partial state 회피)
+            // M5 D3: 단일 RPC atomic (thread + 2 메시지)
+            const title = queryText.slice(0, TITLE_MAX_CHARS)
+            const { data, error } = await admin.rpc('create_thread_with_messages', {
+              p_user_id: user.id,
+              p_title: title,
+              p_user_content: queryText,
+              p_assistant_content: text,
+              p_source_refs: sourceRefsJson,
+              p_token_usage: tokenUsageJson,
+            })
+            if (error) throw error
+            newThreadId = data as string
+          } else {
+            // M5 D4: 기존 thread append (DB가 user_id 소유권 검증)
+            const { error } = await admin.rpc('append_messages', {
+              p_thread_id: body.threadId,
+              p_user_id: user.id,
+              p_user_content: queryText,
+              p_assistant_content: text,
+              p_source_refs: sourceRefsJson,
+              p_token_usage: tokenUsageJson,
+            })
+            if (error) throw error
+          }
+        } catch (err) {
+          // PIPA: error.message는 retrieval.ts 패턴대로 마스킹된 형태로만 노출.
+          // 사용자 응답은 이미 streaming 완료 — silent (M6 retry UI 검토).
+          const masked = err instanceof Error ? err.message : String(err)
+          console.error('[chat] history save failed:', masked)
         }
-      } catch (err) {
-        // PIPA: error.message는 retrieval.ts 패턴대로 마스킹된 형태로만 노출.
-        // 사용자 응답은 이미 streaming 완료 — silent (M6 retry UI 검토).
-        const masked = err instanceof Error ? err.message : String(err)
-        console.error('[chat] history save failed:', masked)
       }
-    },
-  })
 
-  // 9. UI message stream + source_refs + (신규) threadId를 message metadata로 전달
-  return result.toUIMessageStreamResponse({
-    messageMetadata: ({ part }) => {
-      if (part.type === 'finish') {
-        return {
+      writer.write({
+        type: 'message-metadata',
+        messageMetadata: {
           sourceRefs: retrieval.sources,
           ...(newThreadId ? { threadId: newThreadId } : {}),
-        }
-      }
-      return undefined
+        },
+      })
+      writer.write({ type: 'finish' })
     },
   })
+
+  return createUIMessageStreamResponse({ stream })
 }
 
 /**

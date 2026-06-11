@@ -16,6 +16,15 @@ import { Button } from '@/components/ui/Button'
  * 메일앱 인앱 브라우저 등 다른 컨텍스트에서 열려 세션이 유실되던 "재방문 시 재로그인"
  * 문제가 사라진다. 코드 검증은 PKCE code_verifier가 불필요하다.
  */
+
+// Supabase 영어 오류를 사용자가 행동할 수 있는 한국어 안내로 치환.
+function toKoreanRequestError(message: string): string {
+  if (/security purposes|only request this|rate limit/i.test(message)) {
+    return '요청이 너무 잦아요. 1분 후 다시 시도해 주세요.'
+  }
+  return '인증 코드를 보내지 못했어요. 이메일 주소를 확인한 뒤 잠시 후 다시 시도해 주세요.'
+}
+
 export function AuthModal({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const { requestOtp, verifyOtp } = useAuth()
   const [step, setStep] = useState<'email' | 'code'>('email')
@@ -24,6 +33,7 @@ export function AuthModal({ open, onOpenChange }: { open: boolean; onOpenChange:
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
   const [errorMsg, setErrorMsg] = useState('')
+  const emailInputRef = useRef<HTMLInputElement>(null)
   const codeInputRef = useRef<HTMLInputElement>(null)
 
   // 모달이 닫힐 때 상태 초기화 (effect 내 동기 setState 회피 — 닫기 핸들러에서 처리).
@@ -50,13 +60,17 @@ export function AuthModal({ open, onOpenChange }: { open: boolean; onOpenChange:
 
   async function handleRequest(e: React.FormEvent) {
     e.preventDefault()
+    // aria-disabled 패턴: 버튼을 disabled로 잠그지 않는 대신 여기서 중복 제출을 가드.
+    if (busy) return
     setBusy(true)
     setErrorMsg('')
     setMessage('')
     const { error } = await requestOtp(email)
     setBusy(false)
     if (error) {
-      setErrorMsg(`오류: ${error.message}`)
+      setErrorMsg(toKoreanRequestError(error.message))
+      // 에러 시 포커스를 이메일 입력으로 복귀 (스크린리더 사용자 흐름).
+      emailInputRef.current?.focus()
       return
     }
     setStep('code')
@@ -65,6 +79,8 @@ export function AuthModal({ open, onOpenChange }: { open: boolean; onOpenChange:
 
   async function handleVerify(e: React.FormEvent) {
     e.preventDefault()
+    // aria-disabled 패턴: 제출 중이거나 코드가 비어 있으면 가드.
+    if (busy || code.trim().length === 0) return
     setBusy(true)
     setErrorMsg('')
     const { error } = await verifyOtp(email, code)
@@ -72,6 +88,8 @@ export function AuthModal({ open, onOpenChange }: { open: boolean; onOpenChange:
     if (error) {
       // Supabase 영어 오류를 사용자 친화 한국어로 치환.
       setErrorMsg('코드가 올바르지 않거나 만료되었어요. 코드를 다시 확인하거나 새 코드를 받아 주세요.')
+      // 에러 시 포커스를 코드 입력으로 복귀.
+      codeInputRef.current?.focus()
       return
     }
     // 성공: onAuthStateChange가 user를 채우고, 여기서 모달을 닫는다.
@@ -79,10 +97,13 @@ export function AuthModal({ open, onOpenChange }: { open: boolean; onOpenChange:
   }
 
   function backToEmail() {
+    if (busy) return
     setStep('email')
     setCode('')
     setErrorMsg('')
     setMessage('')
+    // 이메일 입력으로 포커스 이동 (단계 전환 렌더 후).
+    setTimeout(() => emailInputRef.current?.focus(), 50)
   }
 
   return (
@@ -99,40 +120,53 @@ export function AuthModal({ open, onOpenChange }: { open: boolean; onOpenChange:
 
         {step === 'email' ? (
           <form onSubmit={handleRequest} className="space-y-4">
-            <Input
-              type="email"
-              inputMode="email"
-              autoComplete="email"
-              required
-              placeholder="이메일 주소"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              aria-label="이메일 주소 입력"
-              disabled={busy}
-            />
-            <Button type="submit" disabled={busy}>
+            <div className="space-y-2">
+              <label htmlFor="auth-email" className="text-sm font-medium text-foreground">
+                이메일 주소
+              </label>
+              <Input
+                ref={emailInputRef}
+                id="auth-email"
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                aria-label="이메일 주소 입력"
+              />
+            </div>
+            <Button type="submit" aria-disabled={busy}>
               {busy ? '발송 중...' : '인증 코드 받기'}
             </Button>
           </form>
         ) : (
           <form onSubmit={handleVerify} className="space-y-4">
-            <Input
-              ref={codeInputRef}
-              type="text"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              required
-              placeholder="인증 코드"
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              aria-label="인증 코드 입력"
-              disabled={busy}
-            />
+            <div className="space-y-2">
+              <label htmlFor="auth-code" className="text-sm font-medium text-foreground">
+                인증 코드
+              </label>
+              <Input
+                ref={codeInputRef}
+                id="auth-code"
+                type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                required
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                aria-label="인증 코드 입력"
+                aria-describedby="auth-code-hint"
+              />
+              <p id="auth-code-hint" className="text-xs text-muted-foreground">
+                이메일로 받은 인증 코드를 입력해 주세요
+              </p>
+            </div>
             <div className="flex gap-2">
-              <Button type="submit" disabled={busy || code.trim().length === 0}>
+              <Button type="submit" aria-disabled={busy || code.trim().length === 0}>
                 {busy ? '확인 중...' : '로그인'}
               </Button>
-              <Button type="button" variant="outline" onClick={backToEmail} disabled={busy}>
+              <Button type="button" variant="outline" onClick={backToEmail} aria-disabled={busy}>
                 이메일 다시 입력
               </Button>
             </div>
@@ -140,7 +174,13 @@ export function AuthModal({ open, onOpenChange }: { open: boolean; onOpenChange:
         )}
 
         <div aria-live="polite" className="min-h-[1.5rem] text-sm">
-          {errorMsg ? <span className="text-destructive">{errorMsg}</span> : message}
+          {errorMsg ? (
+            <span className="text-destructive">{errorMsg}</span>
+          ) : busy ? (
+            <span>{step === 'email' ? '발송 중...' : '확인 중...'}</span>
+          ) : (
+            message
+          )}
         </div>
       </DialogContent>
     </Dialog>

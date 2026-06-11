@@ -40,7 +40,7 @@ export function LibraryCard({ item }: LibraryCardProps) {
         <a
           href={item.downloadUrl}
           download
-          className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          className="inline-flex min-h-11 items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
           aria-label={`${item.title} 다운로드 (${item.fileSize})`}
         >
           <Download className="h-3.5 w-3.5" aria-hidden="true" />

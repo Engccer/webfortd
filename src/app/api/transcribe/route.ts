@@ -14,10 +14,15 @@
  */
 import 'server-only'
 
+import { checkRateLimit, getClientIp, json429 } from '@/lib/rate-limit'
+
 export const runtime = 'nodejs'
 export const maxDuration = 30 // 오디오 업로드(최대 25MB) + Deepgram 응답 마진
 
 const MAX_SIZE = 25 * 1024 * 1024 // 25MB
+// 비용 가드 — 인증 없는 Deepgram 프록시라 IP당 한도 필수 (받아쓰기 1회/수십 초가 정상 사용 패턴)
+const RATE_LIMIT = 10
+const RATE_WINDOW_MS = 60_000
 
 interface DeepgramWord {
   word: string
@@ -39,6 +44,11 @@ interface DeepgramResponse {
 }
 
 export async function POST(req: Request): Promise<Response> {
+  const rate = checkRateLimit(`transcribe:${getClientIp(req)}`, RATE_LIMIT, RATE_WINDOW_MS)
+  if (!rate.ok) {
+    return json429(rate.retryAfterSeconds)
+  }
+
   let formData: FormData
   try {
     formData = await req.formData()

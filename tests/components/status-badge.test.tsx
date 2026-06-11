@@ -17,10 +17,13 @@ describe("StatusBadge", () => {
       expect(screen.getByText(label)).toBeDefined()
     })
 
-    it(`status='${status}' is a status role with aria-label containing the label`, () => {
-      render(<StatusBadge status={status} />)
-      const badge = screen.getByRole("status")
-      expect(badge.getAttribute("aria-label")).toContain(label)
+    // a11y 패치(2026-06-11): 정적 배지의 role="status"(live region) 오용 제거 —
+    // 시각 라벨은 aria-hidden, 스크린리더에는 sr-only 전체 설명 제공.
+    it(`status='${status}' has no live role + sr-only description contains the label`, () => {
+      const { container } = render(<StatusBadge status={status} />)
+      expect(screen.queryByRole("status")).not.toBeInTheDocument()
+      const srOnly = container.querySelector(".sr-only")
+      expect(srOnly?.textContent).toContain(label)
     })
   }
 

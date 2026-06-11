@@ -39,16 +39,18 @@ describe("AdminBarView", () => {
     ).toBe("/admin/dashboard")
   })
 
-  it("previewEnabled=false → '미리보기 켜기' + aria-pressed=false", () => {
+  // a11y 패치(2026-06-11): 동작 라벨 단독 패턴 — 라벨 토글 + aria-pressed 병용은
+  // "미리보기 끄기, 눌림" 같은 모순 낭독을 만들어 aria-pressed를 제거함.
+  it("previewEnabled=false → '미리보기 켜기' (aria-pressed 없음)", () => {
     render(<AdminBarView status={admin} previewEnabled={false} />)
     const btn = screen.getByRole("button", { name: /미리보기 켜기/ })
-    expect(btn.getAttribute("aria-pressed")).toBe("false")
+    expect(btn.hasAttribute("aria-pressed")).toBe(false)
   })
 
-  it("previewEnabled=true → '미리보기 끄기' + aria-pressed=true", () => {
+  it("previewEnabled=true → '미리보기 끄기' (aria-pressed 없음)", () => {
     render(<AdminBarView status={admin} previewEnabled={true} />)
     const btn = screen.getByRole("button", { name: /미리보기 끄기/ })
-    expect(btn.getAttribute("aria-pressed")).toBe("true")
+    expect(btn.hasAttribute("aria-pressed")).toBe(false)
   })
 
   it("토글 클릭(off→on) → enable POST + router.refresh + aria-live 알림", async () => {

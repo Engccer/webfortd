@@ -20,6 +20,7 @@
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
 import { ArrowDown, Mic } from 'lucide-react'
+import dynamic from 'next/dynamic'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { mutate } from 'swr'
 import {
@@ -44,7 +45,6 @@ import { CopyButton } from '@/components/chat/CopyButton'
 import { ErrorBanner } from '@/components/chat/ErrorBanner'
 import { SourceCard } from '@/components/chat/SourceCard'
 import { ThreadDrawer } from '@/components/chat/ThreadDrawer'
-import { VoiceChatOverlay } from '@/components/chat/VoiceChatOverlay'
 import { VoiceRecordButton } from '@/components/chat/VoiceRecordButton'
 import { useAuth } from '@/contexts/AuthContext'
 import { useChatCompletionFocus } from '@/hooks/useChatCompletionFocus'
@@ -53,6 +53,14 @@ import { getSuggestions } from '@/lib/chat/suggestions'
 import type { SourceRef } from '@/lib/rag/types'
 import { playChatReceiveSound, playChatSendSound } from '@/lib/sound'
 import { warmupAudioStandalone } from '@/lib/voice/warmup'
+
+// Phase 7 M4 — 음성 오버레이 지연 로드: @google/genai 훅 체인이 채팅 초기 번들에 들어가지
+// 않도록 next/dynamic으로 분리. 오버레이 open 시점 로드 지연은 수용.
+const VoiceChatOverlay = dynamic(
+  () =>
+    import('@/components/chat/VoiceChatOverlay').then((m) => m.VoiceChatOverlay),
+  { ssr: false },
+)
 
 interface AssistantMetadata {
   sourceRefs?: SourceRef[]
@@ -136,7 +144,7 @@ export function ChatUI({ initialThreadId }: ChatUIProps = {}) {
   }, [])
 
   // useChat v6 — DefaultChatTransport. body는 정적 객체가 아닌 동적 콜백으로.
-  const { messages, sendMessage, status } = useChat({
+  const { messages, sendMessage, status, stop } = useChat({
     transport: new DefaultChatTransport({
       api: '/api/chat',
       prepareSendMessagesRequest: ({ messages: msgs }) => ({
@@ -216,6 +224,8 @@ export function ChatUI({ initialThreadId }: ChatUIProps = {}) {
   )
 
   async function send(text: string) {
+    // 스트리밍 중 재전송 가드 — textarea를 disabled로 막는 대신 여기서 차단 (포커스 유지, WCAG 2.4.3)
+    if (isLoading) return
     const trimmed = text.trim()
     if (!trimmed && !attachment) return
     // 전송 효과음 (accessibility.soundEnabled 게이트)
@@ -430,6 +440,28 @@ export function ChatUI({ initialThreadId }: ChatUIProps = {}) {
         </div>
       )}
 
+      {/* M7.2 patch — 첨부 검증 실패 안내 (WCAG 3.3.1): 파일이 거부되면 attachment가
+          null이라 AttachmentChip이 렌더되지 않음 — 칩과 무관하게 항상 보이는 role=alert로 표시 */}
+      {attachmentError && !attachment && (
+        <div
+          role="alert"
+          className="my-2 flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive"
+        >
+          <span className="flex-1">{attachmentError}</span>
+          <button
+            type="button"
+            onClick={() => {
+              setAttachmentError(undefined)
+              setAttachmentStatus('idle')
+            }}
+            aria-label="첨부 오류 닫기"
+            className="text-xs underline hover:no-underline focus:outline-none focus:ring-2 focus:ring-ring"
+          >
+            닫기
+          </button>
+        </div>
+      )}
+
       {/* M6.2 — 에러 발생 시 한국어 분기 + 재시도 버튼 */}
       {chatError && lastFailedMessage && (
         <ErrorBanner error={chatError} onRetry={retryLast} />
@@ -469,7 +501,6 @@ export function ChatUI({ initialThreadId }: ChatUIProps = {}) {
           onChange={(e) => setInput(e.target.value)}
           placeholder="질문을 입력하세요…"
           aria-label="질문 입력"
-          disabled={isLoading}
         />
         <div className="flex items-center gap-1">
           {/* M7.2 — 파일 첨부: 동시 1개 (spec §D3) */}
@@ -507,10 +538,12 @@ export function ChatUI({ initialThreadId }: ChatUIProps = {}) {
             <Mic aria-hidden className="h-5 w-5" />
             실시간 음성 대화
           </button>
+          {/* 스트리밍/제출 중에는 중단 버튼으로 동작 (WCAG 4.1.2) — onStop은 prompt-input 내장 처리 */}
           <PromptInputSubmit
             status={status}
-            aria-label="전송"
-            disabled={!input.trim() && !attachment}
+            onStop={stop}
+            aria-label={isLoading ? '응답 중단' : '전송'}
+            disabled={!isLoading && !input.trim() && !attachment}
           />
         </div>
       </PromptInput>

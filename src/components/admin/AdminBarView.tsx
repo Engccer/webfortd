@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import type { AdminStatus } from "@/lib/auth/admin-types"
 
 /**
@@ -21,6 +21,13 @@ export function AdminBarView({
   const router = useRouter()
   const [pending, setPending] = useState(false)
   const [announcement, setAnnouncement] = useState("")
+
+  // aria-live 알림 자동 클리어 — 같은 메시지가 DOM에 남아 재방문 시 중복 낭독되는 것을 방지.
+  useEffect(() => {
+    if (!announcement) return
+    const t = setTimeout(() => setAnnouncement(""), 4000)
+    return () => clearTimeout(t)
+  }, [announcement])
 
   if (!status.isAdmin) return null
 
@@ -68,12 +75,15 @@ export function AdminBarView({
           >
             대시보드
           </Link>
+          {/* disabled 대신 aria-disabled + 클릭 가드(togglePreview 내 pending 체크) —
+              전환 중에도 포커스가 버튼에서 튕기지 않아 스크린리더 맥락이 유지된다 (WCAG 4.1.2). */}
           <button
             type="button"
             onClick={togglePreview}
-            disabled={pending}
-            aria-pressed={previewEnabled}
-            className="rounded border border-amber-300 px-3 py-1 text-amber-900 hover:bg-amber-100 focus:outline-none focus:ring-2 focus:ring-amber-600 disabled:opacity-60"
+            aria-disabled={pending}
+            // aria-pressed 미사용 — 동작 라벨("미리보기 켜기/끄기")이 상태를 이미 전달.
+            // 라벨 토글 + aria-pressed 병용은 "미리보기 끄기, 눌림" 같은 모순 낭독을 만든다.
+            className="rounded border border-amber-300 px-3 py-1 text-amber-900 hover:bg-amber-100 focus:outline-none focus:ring-2 focus:ring-amber-600 aria-disabled:opacity-60"
           >
             {previewEnabled ? "미리보기 끄기" : "미리보기 켜기"}
           </button>

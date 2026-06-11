@@ -12,9 +12,8 @@ export function Footer() {
               운영 주체
             </h2>
             <div className="mt-4 space-y-2 text-sm text-muted-foreground">
-              <p>주소: 본 정보는 추후 갱신됩니다</p>
-              <p>이메일: support@example.go.kr</p>
-              <p>전화: 044-XXX-XXXX</p>
+              {/* 실제 운영 주체 정보 확정 전까지 가짜 연락처(이메일·전화) 노출 금지 */}
+              <p>운영 주체 정보와 연락처는 준비 중이에요.</p>
             </div>
           </section>
 

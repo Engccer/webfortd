@@ -82,11 +82,8 @@ export default async function DashboardPage() {
     dbCounts.total !== null && dbCounts.total !== indexTotal
 
   return (
-    <main
-      id="main-content"
-      tabIndex={-1}
-      className="mx-auto max-w-6xl px-4 py-8 sm:px-6"
-    >
+    // main 랜드마크와 #main-content(SkipLink 대상)는 AppShell이 단일 렌더 — 페이지 내부는 div.
+    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
       <h1 className="mb-6 text-2xl font-bold">관리자 대시보드</h1>
       <p className="mb-8 text-sm text-muted-foreground">
         Phase A — 데이터 가시성 강화. Preview Mode와 일괄 publish는 Phase B에서 활성화됩니다.
@@ -204,6 +201,6 @@ export default async function DashboardPage() {
           빌드 파이프라인이 식별한 broken_wikilinks (kb-index.generated.json).
         </p>
       </section>
-    </main>
+    </div>
   )
 }

@@ -15,11 +15,13 @@ describe("Footer", () => {
     expect(screen.queryByText("바로가기")).not.toBeInTheDocument()
   })
 
-  it("renders 운영 주체 section with email/phone placeholder", () => {
+  it("renders 운영 주체 section without 가짜 연락처 (준비 중 안내)", () => {
     render(<Footer />)
     expect(screen.getByRole("heading", { name: "운영 주체" })).toBeInTheDocument()
-    expect(screen.getByText(/support@/)).toBeInTheDocument()
-    expect(screen.getByText(/044-/)).toBeInTheDocument()
+    // a11y 패치(2026-06-11): 실제 운영 주체 정보 확정 전까지 가짜 이메일·전화 노출 금지
+    expect(screen.getByText(/준비 중이에요/)).toBeInTheDocument()
+    expect(screen.queryByText(/support@/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/044-/)).not.toBeInTheDocument()
   })
 
   it("renders 관련 사이트 section (currently empty placeholder)", () => {

@@ -249,6 +249,8 @@ export function AccessibilityToolbar({ open: controlledOpen, onOpenChange: contr
               <li>Alt+1: 본문으로 이동</li>
               <li>Alt+2: 메뉴로 이동</li>
               <li>Alt+3: 검색으로 이동</li>
+              <li>Cmd/Ctrl+B: 사이드바 접기/펼치기</li>
+              <li>Cmd/Ctrl+K: 검색으로 이동</li>
             </ul>
           </div>
         </div>

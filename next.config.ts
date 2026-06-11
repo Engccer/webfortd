@@ -9,6 +9,22 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
+  // 보안 응답 헤더 — clickjacking(frame-ancestors)·MIME 스니핑·referrer 누출 방어.
+  // HSTS는 Vercel 플랫폼이 *.vercel.app에 기본 제공. GitHub Pages export 모드에서는
+  // headers()가 무시되지만(정적 export 한계) Vercel 경로가 production이므로 충분.
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "Content-Security-Policy", value: "frame-ancestors 'none'" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+        ],
+      },
+    ];
+  },
   async redirects() {
     return [
       // 위키 entry — /wiki → / 영구 redirect
