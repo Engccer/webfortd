@@ -7,7 +7,14 @@ const MDXContent = dynamic(
   () => import("./MDXContent").then((mod) => mod.MDXContent),
   {
     ssr: false,
-    loading: () => <div className="animate-pulse h-96 bg-gray-100 rounded-lg" />
+    // 로딩 중임을 스크린리더에도 알린다 (role="status" + 한국어 라벨)
+    loading: () => (
+      <div
+        role="status"
+        aria-label="본문을 불러오는 중입니다"
+        className="animate-pulse h-96 bg-muted rounded-lg"
+      />
+    )
   }
 )
 

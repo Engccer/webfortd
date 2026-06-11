@@ -10,7 +10,9 @@ import { getServerClient } from '@/lib/supabase/server'
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
-  const next = searchParams.get('next') ?? '/wiki'
+  // next는 상대 경로만 허용 — `//evil.com`·`https://...` 류 open redirect 차단.
+  const rawNext = searchParams.get('next') ?? '/wiki'
+  const next = rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : '/wiki'
 
   if (code) {
     const supabase = await getServerClient()

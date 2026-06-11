@@ -47,7 +47,7 @@ export function TableOfContents({ headings }: TableOfContentsProps) {
 
   return (
     <nav className="sticky top-24" aria-label="목차">
-      <h2 className="mb-4 text-sm font-semibold text-gray-900">목차</h2>
+      <h2 className="mb-4 text-sm font-semibold text-foreground">목차</h2>
       <ul className="space-y-2 text-sm">
         {filteredHeadings.map((heading) => (
           <li
@@ -56,17 +56,22 @@ export function TableOfContents({ headings }: TableOfContentsProps) {
           >
             <a
               href={`#${heading.id}`}
+              aria-current={activeId === heading.id ? "location" : undefined}
               className={cn(
-                "block py-1 transition-colors hover:text-blue-600",
+                "block py-1 transition-colors hover:text-primary",
                 activeId === heading.id
-                  ? "font-medium text-blue-600"
-                  : "text-gray-600"
+                  ? "font-medium text-primary"
+                  : "text-muted-foreground"
               )}
               onClick={(e) => {
                 e.preventDefault()
-                document.getElementById(heading.id)?.scrollIntoView({
-                  behavior: "smooth",
-                })
+                const target = document.getElementById(heading.id)
+                if (!target) return
+                target.scrollIntoView({ behavior: "smooth" })
+                // 스크린리더 읽기 위치도 함께 이동 (WCAG 2.4.3):
+                // 대상 헤딩에 프로그래매틱 포커스를 부여한다.
+                target.tabIndex = -1
+                target.focus({ preventScroll: true })
               }}
             >
               {heading.text}

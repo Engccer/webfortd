@@ -23,7 +23,7 @@ export function PopularPages() {
           <Link
             key={page.slug}
             href={page.href}
-            className="group focus:outline-none"
+            className="group rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <Card className="h-full transition-colors hover:border-primary hover:bg-primary/5 focus-within:border-primary">
               <CardHeader>

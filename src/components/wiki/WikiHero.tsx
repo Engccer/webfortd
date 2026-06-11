@@ -1,23 +1,14 @@
 "use client"
 
-import { useEffect, useRef } from "react"
 import { Search, ArrowRight } from "lucide-react"
 import Link from "next/link"
 
 export function WikiHero() {
-  const buttonRef = useRef<HTMLButtonElement | null>(null)
-
-  useEffect(() => {
-    function focus() {
-      const search = document.querySelector<HTMLButtonElement>(
-        '[aria-haspopup="dialog"][aria-label*="검색"], [aria-label*="사이트 검색"]'
-      )
-      search?.click()
-    }
-    const node = buttonRef.current
-    node?.addEventListener("click", focus)
-    return () => node?.removeEventListener("click", focus)
-  }, [])
+  // 헤더 SiteSearch의 실제 input(id="search-input")으로 포커스 이동.
+  // input은 onFocus로 결과 팝오버가 열리므로 focus() 호출이 곧 검색 시작이다.
+  function focusSearch() {
+    document.querySelector<HTMLInputElement>("#search-input")?.focus()
+  }
 
   return (
     <section className="bg-gradient-to-b from-primary/5 to-background py-16 sm:py-24">
@@ -33,15 +24,12 @@ export function WikiHero() {
         </p>
         <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
           <button
-            ref={buttonRef}
             type="button"
+            onClick={focusSearch}
             className="inline-flex h-12 items-center gap-2 rounded-full border border-input bg-background px-5 text-base text-muted-foreground shadow-sm transition-colors hover:bg-accent hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring sm:min-w-[320px]"
           >
             <Search className="h-4 w-4" aria-hidden="true" />
             <span className="flex-1 text-left">검색어를 입력하세요…</span>
-            <kbd className="hidden rounded border border-border bg-muted px-1.5 py-0.5 text-xs sm:inline">
-              /
-            </kbd>
           </button>
           <Link
             href="/chat"

@@ -105,7 +105,7 @@ export default function FaqPage() {
                     >
                       <summary className="flex cursor-pointer items-center justify-between p-4 font-medium text-gray-900 hover:bg-gray-50">
                         <span>{item.q}</span>
-                        <span className="ml-4 shrink-0 text-gray-400 group-open:rotate-180 transition-transform">
+                        <span className="ml-4 shrink-0 text-muted-foreground group-open:rotate-180 transition-transform">
                           ▼
                         </span>
                       </summary>

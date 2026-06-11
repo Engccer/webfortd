@@ -19,7 +19,6 @@ import { adaptFrontmatterToLegacy } from "@/lib/kb-adapter"
 import { Calendar, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import type { ContentAxis } from "@/types/kb"
-import { SkipLink } from "@/components/accessibility/SkipLink"
 import { FocusManager } from "@/components/accessibility/FocusManager"
 import { AccessibilityToolbar } from "@/components/accessibility/AccessibilityToolbar"
 import { KbSourceFooter } from "./KbSourceFooter"
@@ -107,7 +106,6 @@ export async function KbPageLayout({ axis, slug }: KbPageLayoutProps) {
 
   return (
     <>
-      <SkipLink />
       <FocusManager />
       <div
         className="fixed inset-x-0 bottom-0 z-50 overflow-auto bg-background"
@@ -129,7 +127,9 @@ export async function KbPageLayout({ axis, slug }: KbPageLayoutProps) {
           </div>
         </div>
 
-        <main id="main-content" tabIndex={-1} className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
+        {/* main 랜드마크와 #main-content(SkipLink 대상)는 AppShell이 단일 렌더 —
+            내부 중첩 main은 로터에 main 2개를 만들어 WCAG 1.3.1 위반이라 div로 유지. */}
+        <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
         <article>
           <header className="mb-8 border-b border-border pb-6">
             {/* M4-B: 출처 문서 내 상위 헤딩 경로 — 분해 페이지의 컨텍스트를
@@ -185,7 +185,7 @@ export async function KbPageLayout({ axis, slug }: KbPageLayoutProps) {
           <MDXClientWrapper source={mdxSource} headings={doc.headings} />
           <KbSourceFooter sourceOrigin={fm.source_origin} />
         </article>
-      </main>
+      </div>
       </div>
     </>
   )

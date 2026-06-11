@@ -7,6 +7,9 @@
  * - 한국어 토큰화: tokenize="forward" — 전방 부분 문자열 인덱싱.
  * - 키보드 내비게이션: ↑↓ Enter Escape + aria-activedescendant.
  * - 결과는 Popover 형태(자체 div). 외부 클릭 시 닫힘.
+ * - 검색 데이터(kb-index.generated.json ≈1.2MB)는 정적 import 대신
+ *   첫 포커스/입력 시점에 dynamic import — 초기 클라이언트 번들에서 분리.
+ * - 결과 건수는 상시 mount된 sr-only role="status" 영역으로 알림 (WCAG 4.1.3).
  */
 
 import * as React from "react"
@@ -16,7 +19,7 @@ import { Search, X } from "lucide-react"
 import FlexSearch from "flexsearch"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/Button"
-import { getSearchDocs, type SearchDoc } from "@/lib/kb-search-data"
+import type { SearchDoc } from "@/lib/kb-search-data"
 
 const LIMIT = 8
 
@@ -74,14 +77,29 @@ export function SiteSearch() {
   const [query, setQuery] = React.useState("")
   const [open, setOpen] = React.useState(false)
   const [activeIndex, setActiveIndex] = React.useState(-1)
+  // sr-only 상태 영역에 출력할 알림 (검색 결과 건수 · 준비 중 안내)
+  const [announcement, setAnnouncement] = React.useState("")
   // React 19 react-hooks/refs 정합 — index를 ref가 아닌 state로 보관.
   // useMemo 안에서 ref.current 직접 접근 시 cascading render 위험으로 잡힘.
   // state 전환으로 deps 추적이 자연스럽고 useMemo 재계산이 정확.
   const [index, setIndex] = React.useState<DocumentIndex | null>(null)
+  const [indexLoading, setIndexLoading] = React.useState(false)
+  const loadStartedRef = React.useRef(false)
 
-  // 클라이언트에서만 인덱스 빌드 (SSR mismatch 회피)
-  React.useEffect(() => {
-    setIndex(buildIndex(getSearchDocs()))
+  // 검색 데이터 지연 로드 — 첫 포커스/입력 시점에만 1.2MB 인덱스 청크를 받아온다.
+  const ensureIndex = React.useCallback(async () => {
+    if (loadStartedRef.current) return
+    loadStartedRef.current = true
+    setIndexLoading(true)
+    try {
+      const { getSearchDocs } = await import("@/lib/kb-search-data")
+      setIndex(buildIndex(getSearchDocs()))
+    } catch {
+      // 로드 실패 시 다음 포커스에서 재시도할 수 있게 가드 해제
+      loadStartedRef.current = false
+    } finally {
+      setIndexLoading(false)
+    }
   }, [])
 
   const results = React.useMemo<ResultHit[]>(() => {
@@ -92,6 +110,24 @@ export function SiteSearch() {
   React.useEffect(() => {
     setActiveIndex(results.length > 0 ? 0 : -1)
   }, [results])
+
+  // 결과 변경 알림 — 입력 직후가 아닌 디바운스된 시점에 1회만 출력.
+  React.useEffect(() => {
+    if (!query.trim()) {
+      setAnnouncement("")
+      return
+    }
+    if (!index) {
+      if (indexLoading) setAnnouncement("검색 준비 중…")
+      return
+    }
+    const t = setTimeout(() => {
+      setAnnouncement(
+        results.length > 0 ? `검색 결과 ${results.length}건` : "검색 결과가 없습니다.",
+      )
+    }, 400)
+    return () => clearTimeout(t)
+  }, [query, index, indexLoading, results])
 
   // 외부 클릭 닫기
   React.useEffect(() => {
@@ -165,16 +201,20 @@ export function SiteSearch() {
           onChange={(e) => {
             setQuery(e.target.value)
             setOpen(true)
+            void ensureIndex()
           }}
-          onFocus={() => setOpen(true)}
+          onFocus={() => {
+            setOpen(true)
+            void ensureIndex()
+          }}
           onKeyDown={handleKeyDown}
-          className="h-9 w-44 rounded-md border border-input bg-background pl-9 pr-8 text-sm shadow-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring sm:w-64"
+          className="h-9 w-44 rounded-md border border-input bg-background pl-9 pr-11 text-sm shadow-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring sm:w-64"
         />
         {query && (
           <Button
             variant="ghost"
             size="icon"
-            className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2"
+            className="absolute right-0 top-1/2 h-11 w-11 -translate-y-1/2"
             aria-label="검색어 지우기"
             onClick={() => {
               setQuery("")
@@ -185,6 +225,12 @@ export function SiteSearch() {
             <X className="h-3.5 w-3.5" aria-hidden="true" />
           </Button>
         )}
+      </div>
+
+      {/* 상시 mount sr-only 상태 영역 — 결과 건수·빈 결과·준비 중 알림 (WCAG 4.1.3).
+          role="status"는 aria-live="polite"를 암시하므로 명시 속성은 생략. */}
+      <div role="status" className="sr-only">
+        {announcement}
       </div>
 
       {open && results.length > 0 && (
@@ -226,7 +272,7 @@ export function SiteSearch() {
                     {hit.doc.subtitle}
                   </div>
                 )}
-                <div className="mt-1 flex flex-wrap gap-1 text-[10px] text-muted-foreground">
+                <div className="mt-1 flex flex-wrap gap-1 text-xs text-muted-foreground">
                   {hit.doc.domains.slice(0, 3).map((d) => (
                     <span
                       key={d}
@@ -242,11 +288,14 @@ export function SiteSearch() {
         </ul>
       )}
 
-      {open && query && results.length === 0 && (
-        <div
-          role="status"
-          className="absolute right-0 top-full z-50 mt-1 w-[min(28rem,90vw)] rounded-md border border-border bg-popover p-3 text-sm text-muted-foreground shadow-lg"
-        >
+      {open && query && !index && indexLoading && (
+        <div className="absolute right-0 top-full z-50 mt-1 w-[min(28rem,90vw)] rounded-md border border-border bg-popover p-3 text-sm text-muted-foreground shadow-lg">
+          검색 준비 중…
+        </div>
+      )}
+
+      {open && query && index && results.length === 0 && (
+        <div className="absolute right-0 top-full z-50 mt-1 w-[min(28rem,90vw)] rounded-md border border-border bg-popover p-3 text-sm text-muted-foreground shadow-lg">
           검색 결과가 없습니다.
         </div>
       )}

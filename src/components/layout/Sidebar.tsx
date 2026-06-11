@@ -15,7 +15,8 @@ export function Sidebar({ items, title }: SidebarProps) {
   const pathname = usePathname()
 
   return (
-    <nav className="w-64 shrink-0" aria-label="사이드바 메뉴">
+    // AppSidebar의 "주 메뉴"와 라벨 차별화 — 로터에서 두 nav를 구분 가능하게 (WCAG 2.4.6)
+    <nav className="w-64 shrink-0" aria-label="레거시 메뉴">
       {title && (
         <h2 className="mb-4 text-lg font-bold text-foreground">{title}</h2>
       )}
@@ -42,6 +43,7 @@ function SidebarItem({ item, pathname, level = 0 }: SidebarItemProps) {
     <li>
       <Link
         href={item.href}
+        aria-current={isActive ? "page" : undefined}
         className={cn(
           "flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors",
           level > 0 && "ml-4 border-l border-border pl-4",

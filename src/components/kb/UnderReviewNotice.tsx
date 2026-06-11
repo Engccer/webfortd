@@ -5,7 +5,6 @@
  */
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
-import { SkipLink } from "@/components/accessibility/SkipLink"
 import { FocusManager } from "@/components/accessibility/FocusManager"
 
 interface UnderReviewNoticeProps {
@@ -21,7 +20,6 @@ export function UnderReviewNotice({
 }: UnderReviewNoticeProps) {
   return (
     <>
-      <SkipLink />
       <FocusManager />
       <div
         className="fixed inset-x-0 bottom-0 z-50 overflow-auto bg-background"
@@ -39,11 +37,8 @@ export function UnderReviewNotice({
           </div>
         </div>
 
-        <main
-          id="main-content"
-          tabIndex={-1}
-          className="mx-auto max-w-4xl px-4 py-16 sm:px-6"
-        >
+        {/* main 랜드마크와 #main-content(SkipLink 대상)는 AppShell이 단일 렌더 — 내부는 div. */}
+        <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6">
           <div className="rounded-lg border border-border bg-muted/40 p-8 text-center">
             <h1 className="mb-3 text-2xl font-bold text-foreground">
               검수 중인 페이지입니다
@@ -56,7 +51,7 @@ export function UnderReviewNotice({
               끝나면 내용을 보실 수 있습니다.
             </p>
           </div>
-        </main>
+        </div>
       </div>
     </>
   )

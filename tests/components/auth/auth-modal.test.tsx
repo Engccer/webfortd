@@ -66,7 +66,9 @@ describe('AuthModal — 인증코드 2단계 플로우', () => {
     await user.type(screen.getByLabelText('이메일 주소 입력'), 'me@example.com')
     await user.click(screen.getByRole('button', { name: /인증 코드 받기/ }))
 
-    expect(await screen.findByText(/오류/)).toBeInTheDocument()
+    // a11y 패치(2026-06-11): Supabase 영어 원문 대신 행동 가능한 한국어 메시지
+    // ('rate limit' mock → "요청이 너무 잦아요. 1분 후 다시 시도해 주세요.")
+    expect(await screen.findByText(/요청이 너무 잦아요/)).toBeInTheDocument()
     // 코드 단계로 전환되지 않음
     expect(screen.queryByLabelText('인증 코드 입력')).not.toBeInTheDocument()
   })

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, type ReactNode } from "react"
+import { useEffect, useRef, useState, type ReactNode } from "react"
 import { SidebarProvider, useSidebar } from "@/contexts/SidebarContext"
 import { useMediaQuery } from "@/hooks/useMediaQuery"
 import { useKeyboardShortcut } from "@/hooks/useKeyboardShortcut"
@@ -16,9 +16,12 @@ import { cn } from "@/lib/utils"
 export interface AppShellProps {
   children: ReactNode
   initialExpanded: boolean
+  /** AdminBar 등 페이지 최상단 바 슬롯 — 모바일 overlay focus trap(inert) 범위에 포함시키기
+      위해 AppShell 내부에서 렌더한다 (WCAG 2.1.2). */
+  topBar?: ReactNode
 }
 
-export function AppShell({ children, initialExpanded }: AppShellProps) {
+export function AppShell({ children, initialExpanded, topBar }: AppShellProps) {
   // SSR-safe initial isMobile: assume desktop (true initialValue means xl matches)
   // until client mount confirms the actual viewport. Cookie's initialExpanded
   // is desktop-only state; mobile overlay is ephemeral and always starts closed.
@@ -29,7 +32,7 @@ export function AppShell({ children, initialExpanded }: AppShellProps) {
     <SidebarProvider initialExpanded={initialExpanded} initialIsMobile={isMobile}>
       <SidebarSync isMobile={isMobile} />
       <FocusManager />
-      <AppShellInner>{children}</AppShellInner>
+      <AppShellInner topBar={topBar}>{children}</AppShellInner>
     </SidebarProvider>
   )
 }
@@ -46,7 +49,7 @@ function SidebarSync({ isMobile }: { isMobile: boolean }) {
   return null
 }
 
-function AppShellInner({ children }: { children: ReactNode }) {
+function AppShellInner({ children, topBar }: { children: ReactNode; topBar?: ReactNode }) {
   const { isExpanded, isMobile, isMobileOpen, toggle, openSidebar } = useSidebar()
   const [liveMessage, setLiveMessage] = useState("")
 
@@ -107,6 +110,26 @@ function AppShellInner({ children }: { children: ReactNode }) {
   // NOTE: moved from <main> to the wrapping div to also trap Header and Footer.
   const contentInert = isMobile && isMobileOpen
 
+  // 모바일 overlay 닫힘: 햄버거 버튼으로 포커스 복귀 + aria-live 알림 (WCAG 2.4.3).
+  // 햄버거 버튼은 Header 내부 — id가 없으므로 aria-controls 선택자로 참조.
+  // 닫힘 transition과 같은 commit에서 content wrapper inert가 해제되므로 focus 가능.
+  const prevMobileOpenRef = useRef(isMobileOpen)
+  useEffect(() => {
+    const wasOpen = prevMobileOpenRef.current
+    prevMobileOpenRef.current = isMobileOpen
+    if (!isMobile || !wasOpen || isMobileOpen) return
+    const hamburger = document.querySelector<HTMLElement>(
+      'button[aria-controls="app-sidebar"]',
+    )
+    hamburger?.focus()
+    const announce = setTimeout(() => setLiveMessage("메뉴를 닫았습니다."), 0)
+    const clear = setTimeout(() => setLiveMessage(""), 1500)
+    return () => {
+      clearTimeout(announce)
+      clearTimeout(clear)
+    }
+  }, [isMobile, isMobileOpen])
+
   return (
     <div className="flex min-h-screen flex-col bg-background">
       {/* SkipLink는 DOM의 가장 첫 위치 — 페이지 진입 첫 Tab으로 도달 가능해야 함.
@@ -115,6 +138,13 @@ function AppShellInner({ children }: { children: ReactNode }) {
       <div inert={contentInert}>
         <SkipLink />
       </div>
+      {/* AdminBar 등 상단 바 — 모바일 overlay focus trap에 포함되도록 inert 동일 적용.
+          display:contents(.contents)로 박스를 만들지 않아 sticky 동작을 보존한다. */}
+      {topBar && (
+        <div className="contents" inert={contentInert}>
+          {topBar}
+        </div>
+      )}
       <AppSidebar onOpenAccessibility={() => setA11yOpen(true)} />
       {/* AccessibilityToolbar는 사이드바 inert 영역 바깥에 위치 — Alt+0 이벤트 수신 시에도 동작 */}
       <AccessibilityToolbar open={a11yOpen} onOpenChange={setA11yOpen} hideTrigger />

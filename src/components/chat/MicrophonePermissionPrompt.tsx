@@ -8,10 +8,11 @@
  * 접근성:
  *   - role="dialog" aria-modal="true"
  *   - ESC 닫힘 (window keydown — CopyButton 패턴 재사용)
+ *   - 열릴 때 첫 버튼 포커스 + Tab 순환 트랩 + 닫힐 때 호출 버튼 복귀 (WCAG 2.4.3)
  *   - "허용" / "취소" 버튼 44px 이상
  */
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { Mic } from 'lucide-react'
 
 interface MicrophonePermissionPromptProps {
@@ -21,19 +22,50 @@ interface MicrophonePermissionPromptProps {
 }
 
 export function MicrophonePermissionPrompt({ open, onOpenChange, onAllow }: MicrophonePermissionPromptProps) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  // 닫힘 시 포커스 복귀 대상 — 모달을 연 마이크 버튼
+  const returnFocusRef = useRef<HTMLElement | null>(null)
+
   useEffect(() => {
     if (!open) return
+    returnFocusRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null
+    // 열릴 때 첫 버튼으로 포커스 이동
+    const buttons = containerRef.current?.querySelectorAll<HTMLButtonElement>('button')
+    buttons?.[0]?.focus()
     const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onOpenChange(false)
+      if (e.key === 'Escape') {
+        onOpenChange(false)
+        return
+      }
+      // 간단한 포커스 트랩 — Tab이 모달 버튼들 사이에서 순환
+      if (e.key !== 'Tab') return
+      const focusables = containerRef.current?.querySelectorAll<HTMLButtonElement>('button')
+      if (!focusables || focusables.length === 0) return
+      const first = focusables[0]
+      const last = focusables[focusables.length - 1]
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault()
+        last.focus()
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault()
+        first.focus()
+      }
     }
     window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
+    return () => {
+      window.removeEventListener('keydown', handler)
+      // 닫힐 때 마이크 버튼으로 복귀
+      returnFocusRef.current?.focus()
+      returnFocusRef.current = null
+    }
   }, [open, onOpenChange])
 
   if (!open) return null
 
   return (
     <div
+      ref={containerRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="mic-prompt-title"

@@ -31,24 +31,13 @@ interface VoiceRecordButtonProps {
   disabled?: boolean
 }
 
+const MAX_DURATION = 120 // 자동 정지 시각 (spec §D4)
+
 export function VoiceRecordButton({ onTranscribed, onError, disabled }: VoiceRecordButtonProps) {
   const announcerRef = useRef<HTMLDivElement>(null)
   const { playRecordStart, playRecordStop } = useSound()
   const { permissionState, checkPermission, requestPermission } = useMicrophonePermission()
   const [showPrompt, setShowPrompt] = useState(false)
-
-  const { state, duration, startRecording, stopRecording, cancelRecording, isSupported } =
-    useVoiceRecorder({
-      maxDuration: 120,
-      onTranscribed: (text) => {
-        playRecordStop()
-        onTranscribed(text)
-      },
-      onError: (error) => {
-        console.error('[VoiceRecordButton] error:', error)
-        onError?.(error)
-      },
-    })
 
   const announce = useCallback((message: string) => {
     if (announcerRef.current) {
@@ -58,6 +47,21 @@ export function VoiceRecordButton({ onTranscribed, onError, disabled }: VoiceRec
       }, 1500)
     }
   }, [])
+
+  const { state, duration, startRecording, stopRecording, cancelRecording, isSupported } =
+    useVoiceRecorder({
+      maxDuration: MAX_DURATION,
+      onTranscribed: (text) => {
+        playRecordStop()
+        // STT 성공을 announcer로 알림 (WCAG 4.1.3) — 무음이면 결과 반영을 알 수 없음
+        announce('받아쓰기를 입력창에 추가했어요')
+        onTranscribed(text)
+      },
+      onError: (error) => {
+        console.error('[VoiceRecordButton] error:', error)
+        onError?.(error)
+      },
+    })
 
   const handleAllowed = useCallback(async () => {
     const granted = await requestPermission()
@@ -102,6 +106,22 @@ export function VoiceRecordButton({ onTranscribed, onError, disabled }: VoiceRec
     return () => window.removeEventListener('keydown', handler)
   }, [state, cancelRecording, announce])
 
+  // 녹음 타이머 간헐 안내 — 시각 타이머는 비가청이라 주요 시점만 발화 (매초 발화 금지)
+  useEffect(() => {
+    if (state !== 'recording') return
+    if (duration === 60) announce('1분이 지났어요')
+    else if (duration === MAX_DURATION - 10) announce('10초 후 자동으로 멈춰요')
+  }, [state, duration, announce])
+
+  // 120초 자동 정지 감지 — recording → processing 전환 시점에 duration이 한계치면 발화
+  const prevStateRef = useRef(state)
+  useEffect(() => {
+    if (prevStateRef.current === 'recording' && state === 'processing' && duration >= MAX_DURATION) {
+      announce('녹음 시간이 다 되어 자동으로 멈췄어요')
+    }
+    prevStateRef.current = state
+  }, [state, duration, announce])
+
   const ariaLabel = !isSupported
     ? '음성 입력 미지원 브라우저예요'
     : state === 'recording'
@@ -126,17 +146,19 @@ export function VoiceRecordButton({ onTranscribed, onError, disabled }: VoiceRec
         </div>
       )}
 
+      {/* disabled 대신 aria-disabled — 정지 직후 disabled가 되면 포커스가 소실됨 (WCAG 2.4.3).
+          실제 동작 차단은 handleClick 첫머리 가드가 담당. */}
       <button
         type="button"
         onClick={handleClick}
-        disabled={disabled || !isSupported || state === 'processing'}
+        aria-disabled={disabled || !isSupported || state === 'processing'}
         aria-label={ariaLabel}
         className={
           state === 'recording'
             ? 'inline-flex h-11 w-11 items-center justify-center rounded-md bg-destructive text-destructive-foreground animate-pulse focus:outline-none focus:ring-2 focus:ring-ring'
             : state === 'processing'
-              ? 'inline-flex h-11 w-11 items-center justify-center rounded-md bg-amber-500 text-white cursor-wait'
-              : 'inline-flex h-11 w-11 items-center justify-center rounded-md bg-muted text-muted-foreground hover:bg-muted/80 focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50'
+              ? 'inline-flex h-11 w-11 items-center justify-center rounded-md bg-amber-500 text-white cursor-wait focus:outline-none focus:ring-2 focus:ring-ring'
+              : 'inline-flex h-11 w-11 items-center justify-center rounded-md bg-muted text-muted-foreground hover:bg-muted/80 focus:outline-none focus:ring-2 focus:ring-ring aria-disabled:cursor-not-allowed aria-disabled:opacity-50'
         }
       >
         {!isSupported || permissionState === 'denied' ? (

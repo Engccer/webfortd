@@ -84,7 +84,9 @@ export function useVoiceRecorder(options: UseVoiceRecorderOptions = {}): UseVoic
           return
         }
         const blob = new Blob(chunksRef.current, { type: mr.mimeType })
-        if (duration < 0.3) {
+        // 최소 녹음 길이는 ms 단위로 비교 — duration(초 단위 Math.floor)은
+        // 1초 미만이 항상 0이라 정상 녹음까지 오거부됐던 버그.
+        if (Date.now() - startTimeRef.current < 300) {
           onError?.('녹음이 너무 짧아요. 좀 더 길게 말씀해 주세요.')
           setState('idle')
           setDuration(0)
@@ -112,7 +114,7 @@ export function useVoiceRecorder(options: UseVoiceRecorderOptions = {}): UseVoic
       }
       mr.stop()
     })
-  }, [state, duration, onTranscribed, onError])
+  }, [state, onTranscribed, onError])
 
   const startRecording = useCallback(async () => {
     if (state !== 'idle') return

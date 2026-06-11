@@ -120,6 +120,17 @@ body {
   transition-duration: 0.001ms !important;
 }
 
+/* OS 수준 "동작 줄이기" 설정 준수 (WCAG 2.3.3) — .reduce-motion 클래스와 동일한 모션 억제 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
 /* Screen reader only class */
 .sr-only {
   position: absolute;
@@ -133,9 +144,9 @@ body {
   border-width: 0;
 }
 
-/* Focus visible styles */
+/* Focus visible styles — 고대비 모드(--ring 오버라이드)에서도 보이도록 테마 토큰 사용 */
 :focus-visible {
-  outline: 2px solid #6366f1;
+  outline: 2px solid var(--ring);
   outline-offset: 2px;
 }
 

@@ -171,7 +171,7 @@ export default async function LawPage() {
                             <ExternalLink className="h-3 w-3" />
                           </a>
                         ) : (
-                          <span className="shrink-0 text-sm text-gray-400">
+                          <span className="shrink-0 text-sm text-muted-foreground">
                             준비중
                           </span>
                         )}

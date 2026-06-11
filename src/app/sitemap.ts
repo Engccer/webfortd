@@ -40,8 +40,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })
   }
 
-  type AtomicDoc = { slug: string; axis: string }
-  const atomicDocs = (kbIndex as unknown as { documents: AtomicDoc[] }).documents ?? []
+  // published만 노출 — draft/in_review는 위키 라우트에서 UnderReviewNotice로 게이트되므로
+  // sitemap에 실어도 검색엔진에 검수 전 URL만 광고하는 꼴이 된다 (library/media 게이트와 정합).
+  type AtomicDoc = { slug: string; axis: string; frontmatter?: { status?: string } }
+  const atomicDocs = ((kbIndex as unknown as { documents: AtomicDoc[] }).documents ?? []).filter(
+    (doc) => (doc.frontmatter?.status ?? 'draft') === 'published',
+  )
   for (const doc of atomicDocs) {
     entries.push({
       url: `${BASE_URL}/${doc.axis}/${doc.slug}`,

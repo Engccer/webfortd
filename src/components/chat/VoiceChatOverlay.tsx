@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Mic, MicOff, X, Loader2 } from "lucide-react";
+import { Mic, MicOff, X, Loader2, RefreshCw } from "lucide-react";
 import { useGeminiLive } from "@/hooks/useGeminiLive";
 import type { SourceRef } from "@/lib/voice/types";
 
@@ -35,20 +35,28 @@ export function VoiceChatOverlay({ open, onClose }: VoiceChatOverlayProps) {
   } = useGeminiLive({ onSourceRefs });
 
   const dialogRef = useRef<HTMLDivElement>(null);
+  // 닫힘 시 포커스 복귀 대상 (WCAG 2.4.3) — open 직전의 activeElement (보통 진입 버튼)
+  const returnFocusRef = useRef<HTMLElement | null>(null);
 
   // 오버레이 오픈 시 연결 시작
   // (warmup은 ChatUI 진입 버튼의 사용자 제스처 체인에서 이미 호출됨)
-  // 닫힐 때 disconnect + 출처 초기화
+  // 닫힐 때 disconnect + 출처 초기화 + 열기 전 포커스 위치로 복귀 (Esc·종료 버튼 공통 경로)
   // 포커스는 종료 버튼이 아니라 dialog 컨테이너로 — 전역 Space 핸들러가
   // 버튼의 네이티브 Space 활성화를 가로채지 않도록 (C-1). 닫기는 Esc가 1차 경로.
   useEffect(() => {
     if (open) {
+      returnFocusRef.current =
+        document.activeElement instanceof HTMLElement
+          ? document.activeElement
+          : null;
       setSources([]);
       void connect();
       dialogRef.current?.focus();
     } else {
       disconnect();
       setSources([]);
+      returnFocusRef.current?.focus();
+      returnFocusRef.current = null;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
@@ -70,8 +78,13 @@ export function VoiceChatOverlay({ open, onClose }: VoiceChatOverlayProps) {
         e.preventDefault();
         onClose();
       } else if (e.key === " " || e.code === "Space") {
-        // 버튼이 포커스돼 있으면 그 버튼의 네이티브 Space 활성화를 유지 (C-1)
-        if (document.activeElement instanceof HTMLButtonElement) return;
+        // 인터랙티브 요소(링크·버튼·폼 컨트롤)가 포커스돼 있으면 네이티브 Space 동작 유지 (C-1 확장)
+        const active = document.activeElement;
+        if (
+          active instanceof HTMLElement &&
+          active.closest("a, button, input, textarea, select")
+        )
+          return;
         e.preventDefault();
         toggleMute();
       }
@@ -103,9 +116,14 @@ export function VoiceChatOverlay({ open, onClose }: VoiceChatOverlayProps) {
       role="dialog"
       aria-modal="true"
       aria-label="음성으로 정책 안내 받기"
+      aria-describedby="voice-chat-keys"
       tabIndex={-1}
       className="fixed inset-0 z-[60] flex flex-col items-center justify-center gap-6 bg-background/95 p-6 backdrop-blur outline-none"
     >
+      {/* 키보드 안내 — 스크린리더 전용 (dialog aria-describedby 대상) */}
+      <p id="voice-chat-keys" className="sr-only">
+        Esc 키로 종료, Space 키로 음소거할 수 있어요.
+      </p>
       <p aria-live="polite" className="text-lg font-medium text-foreground">
         {errorMessage ?? STATE_LABEL[state] ?? state}
       </p>
@@ -125,10 +143,9 @@ export function VoiceChatOverlay({ open, onClose }: VoiceChatOverlayProps) {
         )}
       </div>
 
-      <div
-        className="max-h-48 w-full max-w-md overflow-y-auto text-sm"
-        aria-live="polite"
-      >
+      {/* transcripts에는 aria-live를 두지 않음 — Gemini 음성 출력과 스크린리더
+          낭독이 이중 오디오로 충돌. 상태 라벨의 aria-live만 유지. */}
+      <div className="max-h-48 w-full max-w-md overflow-y-auto text-sm">
         {transcripts.map((t, i) => (
           <p
             key={i}
@@ -163,6 +180,19 @@ export function VoiceChatOverlay({ open, onClose }: VoiceChatOverlayProps) {
       )}
 
       <div className="flex gap-4">
+        {/* error 상태에서 재연결 수단 제공 (44px 타깃) */}
+        {state === "error" && (
+          <button
+            type="button"
+            onClick={() => void connect()}
+            className="flex min-h-[44px] min-w-[44px] items-center gap-2 rounded-full border px-4 py-2"
+          >
+            <RefreshCw aria-hidden className="h-5 w-5" />
+            다시 연결
+          </button>
+        )}
+        {/* 라벨은 "음소거"로 고정, 상태는 aria-pressed로만 표현 (WCAG 4.1.2)
+            — 라벨 토글 + aria-pressed 동시 사용 시 "음소거 해제, 눌림"으로 모호해짐 */}
         <button
           type="button"
           onClick={toggleMute}
@@ -174,7 +204,7 @@ export function VoiceChatOverlay({ open, onClose }: VoiceChatOverlayProps) {
           ) : (
             <Mic aria-hidden className="h-5 w-5" />
           )}
-          {isMuted ? "음소거 해제" : "음소거"}
+          음소거
         </button>
         <button
           type="button"

@@ -136,7 +136,7 @@ export default async function ResearchPage() {
                       <p className="mb-2 text-sm text-gray-500">{paper.author}</p>
                       <p className="text-gray-600">{paper.summary}</p>
                     </div>
-                    <span className="shrink-0 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-400">
+                    <span className="shrink-0 rounded-lg border border-gray-200 px-3 py-2 text-sm text-muted-foreground">
                       준비중
                     </span>
                   </div>

@@ -61,10 +61,12 @@ export function AppSidebar({ onOpenAccessibility }: AppSidebarProps) {
   useEffect(() => {
     if (!isMobile || !isMobileOpen) return
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault()
-        closeMobile()
-      }
+      if (e.key !== "Escape") return
+      // 다른 dialog(접근성 설정 등)가 열려 있으면 그쪽 Escape 처리에 양보 —
+      // 사이드바까지 동시에 닫히는 것을 방지.
+      if (document.querySelector('[role="dialog"][data-state="open"]')) return
+      e.preventDefault()
+      closeMobile()
     }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)

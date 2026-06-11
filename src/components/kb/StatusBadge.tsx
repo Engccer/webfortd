@@ -44,13 +44,12 @@ interface StatusBadgeProps {
 
 export function StatusBadge({ status }: StatusBadgeProps) {
   const config = STATUS_MAP[status] ?? FALLBACK
+  // 정적 배지 — live region(role="status") 오용 금지. 시각 라벨은 짧게,
+  // 스크린리더에는 sr-only로 전체 설명을 제공한다.
   return (
-    <span
-      role="status"
-      aria-label={config.description}
-      className={`rounded-full px-3 py-1 text-xs font-medium ${config.className}`}
-    >
-      {config.label}
+    <span className={`rounded-full px-3 py-1 text-xs font-medium ${config.className}`}>
+      <span aria-hidden="true">{config.label}</span>
+      <span className="sr-only">{config.description}</span>
     </span>
   )
 }
