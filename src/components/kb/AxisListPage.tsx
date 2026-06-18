@@ -11,7 +11,7 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import type { ContentAxis } from "@/types/kb"
-import { getDocsByFilter } from "@/lib/kb"
+import { getDocsByFilter } from "@/lib/kb-query"
 import { getPreviewActive } from "@/lib/admin/preview"
 import {
   AXIS_LABEL,

@@ -13,7 +13,7 @@ import Link from "next/link"
 import { Accessibility, Layers, Scale, FileText, MapPin } from "lucide-react"
 import type { ContentAxis } from "@/types/kb"
 import { BROWSABLE_AXES } from "@/lib/kb-axis"
-import { getDocsByFilter } from "@/lib/kb"
+import { getDocsByFilter } from "@/lib/kb-query"
 import { getPreviewActive } from "@/lib/admin/preview"
 
 const AXIS_ICON: Record<ContentAxis, typeof Layers> = {
