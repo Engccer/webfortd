@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { WikiHero } from "@/components/wiki/WikiHero"
 import { RoleEntries } from "@/components/wiki/RoleEntries"
+import { AxisBrowseEntries } from "@/components/wiki/AxisBrowseEntries"
 import { PopularPages } from "@/components/wiki/PopularPages"
 
 export const metadata: Metadata = {
@@ -14,6 +15,7 @@ export default function WikiHomePage() {
     <>
       <WikiHero />
       <RoleEntries />
+      <AxisBrowseEntries />
       <PopularPages />
     </>
   )
