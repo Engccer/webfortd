@@ -26,17 +26,7 @@ import { StatusBadge } from "./StatusBadge"
 import { UnderReviewNotice } from "./UnderReviewNotice"
 import { getPreviewActive } from "@/lib/admin/preview"
 import { shouldRenderUnderReview } from "@/lib/admin/preview-policy"
-
-const AXIS_LABEL: Record<ContentAxis, string> = {
-  'disability-types': '장애유형별',
-  'domains': '영역별',
-  'regions': '지역별',
-  'policies': '정책·법령',
-  'agreements': '단체협약',
-  'stories': '사례',
-  'resources': '자료실',
-  'uncategorized': '미분류',
-}
+import { AXIS_LABEL } from "@/lib/kb-axis"
 
 export async function buildKbMetadata(
   axis: ContentAxis,
