@@ -2,7 +2,7 @@
 
 > **목적**: 자동 검증(axe-core)이 못 잡는 *실제 사용 경험*을 위원장이 iPhone Safari + VoiceOver로 10분 동안 점검.
 > **시점**: Phase 4 M3 PR B 머지 + production deploy 검증 직후.
-> **결과 보관**: 자유 형식 메모 → `~/Library/CloudStorage/GoogleDrive-hudt0715@gmail.com/My Drive/장교조 업무 공유 폴더/22. 위원장 메모/2. 2026/1. 중부대 웹사이트 개발/2026/`
+> **결과 보관**: 자유 형식 메모 → `~/Library/CloudStorage/GoogleDrive-hudt0715@gmail.com/My Drive/장교조 업무 공유 폴더/17. 교육부 및 교육청 등 정책연구/2026년 교육부 정책연구/[과제 5[ 정보 지원 웹페이지 개발 및 운영/`
 
 ---
 
@@ -98,7 +98,7 @@
 - 버튼 음성에 자잘한 띄어쓰기 차이
 - 페이지 진입 시 음성 시작 0.5초 지연
 
-발견 사항은 위원장 메모 폴더에 자유 형식 기록.
+발견 사항은 자문 디렉터리에 자유 형식 기록.
 
 ---
 

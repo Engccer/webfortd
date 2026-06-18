@@ -133,7 +133,7 @@ PR comment: critical/serious 0건 ✓
 - B3 placeholder는 디자인 평가가 아닌 *메타데이터 정합 검증*용. 정식 디자인은 별도 PR로 PNG 파일만 교체 (코드 무변경).
 - B4 axe-core 실패 시 — *critical/serious 발견 = M3 머지 차단 사유*. 위원장에게 보고 후 fix 분기.
 - B5 GitHub Actions는 PR마다 dev server 기동 (`npm run build && npm run start`) → axe-core 실행. 시간 cap을 위해 `--project=chromium`만 (firefox/webkit 미설치).
-- B6 VoiceOver 검수 결과는 git commit으로 남기지 않고 위원장 메모 폴더(`자문 디렉터리/2026/`)에 보관.
+- B6 VoiceOver 검수 결과는 git commit으로 남기지 않고 자문 디렉터리(`2026/`)에 보관.
 
 ### 작업 dependency
 
@@ -259,7 +259,7 @@ KHUDT Vercel 결제 락 동안 — admin squash merge (`gh pr merge <N> --admin 
 | PR B 머지 + production deploy READY | `vercel ls --prod` + `curl -I` 8 라우트 + sitemap.xml + robots.txt |
 | `outputFileTracingExcludes` 응급 우회 제거 완료 | `next.config.ts` diff 확인 |
 | axe-core CI 그린 (PR B 이후 모든 PR에서) | `.github/workflows/a11y.yml` 실행 결과 |
-| 위원장 VoiceOver 7 step 통과 | 위원장 메모 (자문 디렉터리) |
+| 위원장 VoiceOver 7 step 통과 | 자문 디렉터리 |
 
 위 5건 모두 충족 → Phase 4 완료. 다음 단계는 위원장 명시 신호 후 Phase 5 (TTS·이미지 alt 자동생성) 또는 사업 진척에 따른 우선순위 재정의.
 

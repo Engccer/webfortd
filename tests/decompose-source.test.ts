@@ -169,12 +169,12 @@ describe('C. 슬러그·axis 검증', () => {
         }
       }
     }
-    assert.ok(drafted >= 500, `draft 페이지 수가 500 이상이어야 함 (현재 ${drafted})`)
-    // 검수 진행률 가드: M4 잔여 작업이 대량 publish하기 전까진 95% 이상 draft.
+    assert.ok(published >= 500, `published 페이지 수가 500 이상이어야 함 (현재 ${published})`)
+    // 검수 진행률 가드: Phase B M1 bootstrap publish 완료 후 95% 이상 published.
     const total = drafted + published
     assert.ok(
-      drafted / total >= 0.95,
-      `draft 비율 ${(drafted / total * 100).toFixed(1)}%가 95% 미만 — 대량 publish 의도된 것인지 확인`,
+      published / total >= 0.95,
+      `published 비율 ${(published / total * 100).toFixed(1)}%가 95% 미만 — 대량 publish 상태가 유지되고 있는지 확인`,
     )
   })
 })
