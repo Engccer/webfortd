@@ -14,6 +14,7 @@ import { Accessibility, Layers, Scale, FileText, MapPin } from "lucide-react"
 import type { ContentAxis } from "@/types/kb"
 import { BROWSABLE_AXES } from "@/lib/kb-axis"
 import { getDocsByFilter } from "@/lib/kb"
+import { getPreviewActive } from "@/lib/admin/preview"
 
 const AXIS_ICON: Record<ContentAxis, typeof Layers> = {
   "disability-types": Accessibility,
@@ -28,10 +29,17 @@ const AXIS_ICON: Record<ContentAxis, typeof Layers> = {
 }
 
 export async function AxisBrowseEntries() {
+  // 목록 페이지(AxisListPage)와 동일한 published 게이트로 카운트 — admin Draft Mode에서
+  // 홈 카드 건수와 목록 페이지 건수가 어긋나지 않도록 같은 기준을 쓴다.
+  const includeUnpublished = await getPreviewActive()
   const entries = await Promise.all(
     BROWSABLE_AXES.map(async (b) => ({
       ...b,
-      count: (await getDocsByFilter({ axis: b.axis, status: "published" })).length,
+      count: (
+        await getDocsByFilter(
+          includeUnpublished ? { axis: b.axis } : { axis: b.axis, status: "published" },
+        )
+      ).length,
     })),
   )
 
