@@ -12,12 +12,9 @@ import { ArrowRight } from "lucide-react"
 export function PopularPages() {
   return (
     <section className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
-      <div className="mb-6 flex items-end justify-between">
-        <h2 className="text-xl font-semibold text-foreground sm:text-2xl">
-          자주 찾는 문서
-        </h2>
-        <p className="text-xs text-muted-foreground">큐레이션</p>
-      </div>
+      <h2 className="mb-6 text-xl font-semibold text-foreground sm:text-2xl">
+        자주 찾는 문서를 모았어요
+      </h2>
       <div className="grid gap-4 sm:grid-cols-2">
         {POPULAR_PAGES.map((page) => (
           <Link

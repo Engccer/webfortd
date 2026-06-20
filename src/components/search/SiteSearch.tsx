@@ -10,6 +10,11 @@
  * - 검색 데이터(kb-index.generated.json ≈1.2MB)는 정적 import 대신
  *   첫 포커스/입력 시점에 dynamic import — 초기 클라이언트 번들에서 분리.
  * - 결과 건수는 상시 mount된 sr-only role="status" 영역으로 알림 (WCAG 4.1.3).
+ *
+ * variant:
+ * - "header"(기본): 헤더 우측 소형 검색창. id="search-input"(Alt+3 타깃) + aria-label.
+ * - "hero": 위키 홈 상단 대형 검색창. 헤더와 동시에 존재하므로 id/listbox를 분리하고
+ *   접근명은 aria-label 대신 연결된 <label>로 준다(시맨틱 우선 — 위원장 지시).
  */
 
 import * as React from "react"
@@ -70,7 +75,13 @@ function runQuery(idx: DocumentIndex, q: string): ResultHit[] {
   return Array.from(seen.values()).slice(0, LIMIT)
 }
 
-export function SiteSearch() {
+export function SiteSearch({
+  variant = "header",
+}: {
+  variant?: "header" | "hero"
+} = {}) {
+  const isHero = variant === "hero"
+  const inputId = isHero ? "hero-search-input" : "search-input"
   const router = useRouter()
   const inputRef = React.useRef<HTMLInputElement>(null)
   const containerRef = React.useRef<HTMLDivElement>(null)
@@ -174,19 +185,31 @@ export function SiteSearch() {
     }
   }
 
-  const listboxId = "site-search-listbox"
+  const listboxId = isHero ? "hero-search-listbox" : "site-search-listbox"
 
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef} className={cn("relative", isHero && "w-full")}>
+      {/* hero에서는 시각 텍스트 없는 큰 검색창이라 연결된 <label>로 접근명을 준다.
+          (aria-label 대신 시맨틱 <label> — 위원장 지시) */}
+      {isHero && (
+        <label htmlFor={inputId} className="sr-only">
+          장애인교원 위키 검색
+        </label>
+      )}
       <div className="flex items-center gap-2">
         <Search
-          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+          className={cn(
+            "pointer-events-none absolute top-1/2 -translate-y-1/2 text-muted-foreground",
+            isHero ? "left-4 h-5 w-5" : "left-3 h-4 w-4",
+          )}
           aria-hidden="true"
         />
         <input
           ref={inputRef}
-          id="search-input"
-          type="text"
+          id={inputId}
+          // hero는 시맨틱 검색 입력(type="search"). 헤더는 커스텀 X 버튼과의
+          // 중복(브라우저 기본 clear 버튼)을 피하려 기존 type="text" 유지.
+          type={isHero ? "search" : "text"}
           role="combobox"
           aria-expanded={open && results.length > 0}
           aria-controls={listboxId}
@@ -194,8 +217,8 @@ export function SiteSearch() {
             activeIndex >= 0 ? `${listboxId}-option-${activeIndex}` : undefined
           }
           aria-autocomplete="list"
-          aria-label="사이트 검색"
-          placeholder="검색..."
+          aria-label={isHero ? undefined : "사이트 검색"}
+          placeholder={isHero ? "장애인교원에 관해 검색해 보세요" : "검색..."}
           autoComplete="off"
           value={query}
           onChange={(e) => {
@@ -208,7 +231,12 @@ export function SiteSearch() {
             void ensureIndex()
           }}
           onKeyDown={handleKeyDown}
-          className="h-9 w-44 rounded-md border border-input bg-background pl-9 pr-11 text-sm shadow-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring sm:w-64"
+          className={cn(
+            "rounded-md border border-input bg-background shadow-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring",
+            isHero
+              ? "h-14 w-full pl-12 pr-12 text-base sm:text-lg [&::-webkit-search-cancel-button]:appearance-none"
+              : "h-9 w-44 pl-9 pr-11 text-sm sm:w-64",
+          )}
         />
         {query && (
           <Button
@@ -238,7 +266,10 @@ export function SiteSearch() {
           id={listboxId}
           role="listbox"
           aria-label="검색 결과"
-          className="absolute right-0 top-full z-50 mt-1 max-h-96 w-[min(28rem,90vw)] overflow-auto rounded-md border border-border bg-popover p-1 shadow-lg"
+          className={cn(
+            "absolute top-full z-50 mt-1 max-h-96 overflow-auto rounded-md border border-border bg-popover p-1 shadow-lg",
+            isHero ? "inset-x-0 w-full" : "right-0 w-[min(28rem,90vw)]",
+          )}
         >
           {results.map((hit, i) => (
             <li
@@ -289,13 +320,23 @@ export function SiteSearch() {
       )}
 
       {open && query && !index && indexLoading && (
-        <div className="absolute right-0 top-full z-50 mt-1 w-[min(28rem,90vw)] rounded-md border border-border bg-popover p-3 text-sm text-muted-foreground shadow-lg">
+        <div
+          className={cn(
+            "absolute top-full z-50 mt-1 rounded-md border border-border bg-popover p-3 text-sm text-muted-foreground shadow-lg",
+            isHero ? "inset-x-0 w-full" : "right-0 w-[min(28rem,90vw)]",
+          )}
+        >
           검색 준비 중…
         </div>
       )}
 
       {open && query && index && results.length === 0 && (
-        <div className="absolute right-0 top-full z-50 mt-1 w-[min(28rem,90vw)] rounded-md border border-border bg-popover p-3 text-sm text-muted-foreground shadow-lg">
+        <div
+          className={cn(
+            "absolute top-full z-50 mt-1 rounded-md border border-border bg-popover p-3 text-sm text-muted-foreground shadow-lg",
+            isHero ? "inset-x-0 w-full" : "right-0 w-[min(28rem,90vw)]",
+          )}
+        >
           검색 결과가 없습니다.
         </div>
       )}

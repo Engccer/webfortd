@@ -14,17 +14,12 @@ const ICON_MAP: Record<Role | "default", typeof User> = {
 export function RoleEntries() {
   return (
     <section className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
-      <div className="mb-6">
-        <h2
-          id="role-entries-heading"
-          className="text-xl font-semibold text-foreground sm:text-2xl"
-        >
-          역할별 진입점
-        </h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          어떤 역할이신가요? 가장 필요한 정보로 안내해 드립니다.
-        </p>
-      </div>
+      <h2
+        id="role-entries-heading"
+        className="mb-6 text-xl font-semibold text-foreground sm:text-2xl"
+      >
+        내 역할에 맞는 정보부터 찾아보세요
+      </h2>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {ROLE_ENTRIES.map((entry) => {
           const Icon = ICON_MAP[entry.role] ?? ICON_MAP.default
