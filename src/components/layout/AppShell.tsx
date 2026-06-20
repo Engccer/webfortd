@@ -5,7 +5,6 @@ import { SidebarProvider, useSidebar } from "@/contexts/SidebarContext"
 import { useMediaQuery } from "@/hooks/useMediaQuery"
 import { useKeyboardShortcut } from "@/hooks/useKeyboardShortcut"
 import { writeSidebarCookieClient } from "@/lib/sidebar-cookie"
-import { SkipLink } from "@/components/accessibility/SkipLink"
 import { FocusManager } from "@/components/accessibility/FocusManager"
 import { AccessibilityToolbar } from "@/components/accessibility/AccessibilityToolbar"
 import { Header } from "./Header"
@@ -132,12 +131,8 @@ function AppShellInner({ children, topBar }: { children: ReactNode; topBar?: Rea
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      {/* SkipLink는 DOM의 가장 첫 위치 — 페이지 진입 첫 Tab으로 도달 가능해야 함.
-          모바일 overlay 활성 시는 inert 처리: '본문 바로가기'는 inert main을 가리켜
-          무의미하고, '메뉴 바로가기'는 이미 overlay 안에 있는 사이드바를 가리켜 redundant. */}
-      <div inert={contentInert}>
-        <SkipLink />
-      </div>
+      {/* 본문/메뉴/검색 '건너뛰기'는 sr-only 링크가 아니라 Alt+1/2/3 단축키로 제공한다
+          (src/lib/accessibility.ts). 단일 화면 + 햄버거 수납 메뉴라 시각적 skip link는 실익이 없어 제거. */}
       {/* AdminBar 등 상단 바 — 모바일 overlay focus trap에 포함되도록 inert 동일 적용.
           display:contents(.contents)로 박스를 만들지 않아 sticky 동작을 보존한다. */}
       {topBar && (

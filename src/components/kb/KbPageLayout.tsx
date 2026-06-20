@@ -117,7 +117,7 @@ export async function KbPageLayout({ axis, slug }: KbPageLayoutProps) {
           </div>
         </div>
 
-        {/* main 랜드마크와 #main-content(SkipLink 대상)는 AppShell이 단일 렌더 —
+        {/* main 랜드마크와 #main-content(Alt+1 단축키 대상)는 AppShell이 단일 렌더 —
             내부 중첩 main은 로터에 main 2개를 만들어 WCAG 1.3.1 위반이라 div로 유지. */}
         <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
         <article>
