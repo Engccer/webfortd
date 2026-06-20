@@ -126,8 +126,8 @@ export function AppSidebar({ onOpenAccessibility }: AppSidebarProps) {
         // 데스크탑 complementary는 무명(landmark 노이즈 최소화, 미니멀 접근성).
         aria-label={isMobile ? "주 메뉴" : undefined}
         aria-hidden={!isOpen}
-        // tabIndex={-1}: SkipLink "메뉴 바로가기" href="#app-sidebar"가
-        // 포커스를 이 요소로 옮길 수 있도록 프로그래매틱 포커스를 허용.
+        // tabIndex={-1}: Alt+2 단축키(src/lib/accessibility.ts)가 포커스를
+        // 이 요소로 옮길 수 있도록 프로그래매틱 포커스를 허용.
         // 탭 순서에 추가하지 않음(음수 값).
         tabIndex={-1}
         // React 19 native `inert` prop: 닫힌 사이드바 내부 포커스 제거.

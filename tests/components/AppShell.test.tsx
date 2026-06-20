@@ -75,10 +75,11 @@ function wrap(node: React.ReactNode) {
 }
 
 describe("AppShell", () => {
-  it("renders SkipLink + Header + AppSidebar + main + Footer", () => {
+  it("renders Header + AppSidebar + main + Footer (no visual skip link)", () => {
     render(wrap(<AppShell initialExpanded={true}>page content</AppShell>))
-    expect(screen.getByRole("link", { name: "본문 바로가기" })).toBeInTheDocument()
-    expect(screen.getByRole("link", { name: "메뉴 바로가기" })).toBeInTheDocument()
+    // 시각적 skip link 제거됨 — '건너뛰기'는 Alt+1/2/3 단축키로 제공(src/lib/accessibility.ts).
+    expect(screen.queryByRole("link", { name: "본문 바로가기" })).not.toBeInTheDocument()
+    expect(screen.queryByRole("link", { name: "메뉴 바로가기" })).not.toBeInTheDocument()
     expect(screen.getByRole("banner")).toBeInTheDocument() // <header>
     expect(document.getElementById("app-sidebar")).toBeTruthy()
     expect(screen.getByRole("main")).toBeInTheDocument()

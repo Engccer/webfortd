@@ -18,7 +18,7 @@ export function RoleEntries() {
         id="role-entries-heading"
         className="mb-6 text-xl font-semibold text-foreground sm:text-2xl"
       >
-        내 역할에 맞는 정보부터 찾아보세요
+        나에게 맞는 정보부터 찾아보세요
       </h2>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {ROLE_ENTRIES.map((entry) => {

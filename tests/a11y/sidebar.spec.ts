@@ -5,7 +5,7 @@
 //   2. 햄버거 aria-expanded 토글
 //   3. Cmd+B 단축키 사이드바 토글
 //   4. ESC 모바일 overlay 닫기
-//   5. SkipLink Tab 순서 — 본문 바로가기 → 메뉴 바로가기
+//   5. 건너뛰기 단축키 — Alt+1 본문, Alt+2 사이드바 (시각적 skip link 대체)
 
 import { test, expect } from "@playwright/test"
 import { expectNoAxeViolations } from "./axe-helper"
@@ -139,41 +139,27 @@ test.describe("ESC: closes mobile overlay at 768px", () => {
   })
 })
 
-// ─── SkipLink Tab 순서 ────────────────────────────────────────────────────────
+// ─── 건너뛰기 단축키 (시각적 skip link 대체) ──────────────────────────────────
+// 시각적 sr-only skip link는 제거됨 — 동일한 '건너뛰기'를 Alt 단축키로 제공한다
+// (src/lib/accessibility.ts: Alt+1 본문, Alt+2 사이드바, Alt+3 검색).
 
-test("SkipLink: Tab once → 본문 바로가기, Tab twice → 메뉴 바로가기", async ({ page }) => {
+test("Alt+1 moves focus to #main-content", async ({ page }) => {
   await page.goto("/")
 
-  // Tab #1 — sr-only SkipLink 첫 번째 링크 ("본문 바로가기")
-  await page.keyboard.press("Tab")
-  const firstText = await page.evaluate(() =>
-    (document.activeElement as HTMLElement | null)?.textContent?.trim() ?? "",
-  )
-  expect(firstText).toContain("본문")
+  await page.keyboard.press("Alt+1")
+  await page.waitForTimeout(50) // 포커스 이동 완료 대기
 
-  // Tab #2 — sr-only SkipLink 두 번째 링크 ("메뉴 바로가기")
-  await page.keyboard.press("Tab")
-  const secondText = await page.evaluate(() =>
-    (document.activeElement as HTMLElement | null)?.textContent?.trim() ?? "",
+  const focusedId = await page.evaluate(
+    () => (document.activeElement as HTMLElement | null)?.id ?? "",
   )
-  expect(secondText).toContain("메뉴")
+  expect(focusedId).toBe("main-content")
 })
 
-test("SkipLink: Enter on 메뉴 바로가기 moves focus to #app-sidebar", async ({ page }) => {
+test("Alt+2 moves focus to #app-sidebar", async ({ page }) => {
   await page.goto("/")
 
-  // Tab × 2 to reach 메뉴 바로가기
-  await page.keyboard.press("Tab")
-  await page.keyboard.press("Tab")
-
-  const secondText = await page.evaluate(() =>
-    (document.activeElement as HTMLElement | null)?.textContent?.trim() ?? "",
-  )
-  expect(secondText).toContain("메뉴")
-
-  // Enter — SkipLink href="#app-sidebar" → sidebar gets focus
-  await page.keyboard.press("Enter")
-  await page.waitForTimeout(50) // 포커스 이동 완료 대기
+  await page.keyboard.press("Alt+2")
+  await page.waitForTimeout(50) // 사이드바 열림 + requestAnimationFrame 포커스 이동 대기
 
   const focusedId = await page.evaluate(
     () => (document.activeElement as HTMLElement | null)?.id ?? "",

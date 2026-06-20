@@ -29,7 +29,7 @@ export async function TodaysWiki() {
   return (
     <section className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
       <h2 className="mb-6 text-xl font-semibold text-foreground sm:text-2xl">
-        오늘의 장애인교원 위키
+        오늘 추천하는 위키 문서입니다
       </h2>
       <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {today.map((doc) => {
