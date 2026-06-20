@@ -45,17 +45,12 @@ export async function AxisBrowseEntries() {
 
   return (
     <section className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
-      <div className="mb-6">
-        <h2
-          id="axis-browse-heading"
-          className="text-xl font-semibold text-foreground sm:text-2xl"
-        >
-          주제별 둘러보기
-        </h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          카테고리를 골라 전체 문서를 둘러보세요.
-        </p>
-      </div>
+      <h2
+        id="axis-browse-heading"
+        className="mb-6 text-xl font-semibold text-foreground sm:text-2xl"
+      >
+        주제를 골라 전체 문서를 둘러보세요
+      </h2>
       <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {entries.map((b) => {
           const Icon = AXIS_ICON[b.axis] ?? Layers

@@ -1,15 +1,8 @@
-"use client"
-
-import { Search, ArrowRight } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 import Link from "next/link"
+import { SiteSearch } from "@/components/search/SiteSearch"
 
 export function WikiHero() {
-  // 헤더 SiteSearch의 실제 input(id="search-input")으로 포커스 이동.
-  // input은 onFocus로 결과 팝오버가 열리므로 focus() 호출이 곧 검색 시작이다.
-  function focusSearch() {
-    document.querySelector<HTMLInputElement>("#search-input")?.focus()
-  }
-
   return (
     <section className="bg-gradient-to-b from-primary/5 to-background py-16 sm:py-24">
       <div className="mx-auto max-w-3xl px-4 text-center sm:px-6">
@@ -19,18 +12,13 @@ export function WikiHero() {
           <span className="text-primary"> 모든 정보를 한 번에</span>
         </h1>
         <p className="mx-auto mt-5 max-w-2xl text-base text-muted-foreground sm:text-lg">
-          535개의 정책·법령·사례·보조공학 페이지가 위키로 연결되어 있습니다.
-          단어 하나로 답을 찾거나, 채팅으로 자연어 질문도 가능합니다.
+          정책·법령·사례부터 보조공학까지, 검색하거나 채팅으로 물어보세요.
         </p>
-        <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-          <button
-            type="button"
-            onClick={focusSearch}
-            className="inline-flex h-12 items-center gap-2 rounded-full border border-input bg-background px-5 text-base text-muted-foreground shadow-sm transition-colors hover:bg-accent hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring sm:min-w-[320px]"
-          >
-            <Search className="h-4 w-4" aria-hidden="true" />
-            <span className="flex-1 text-left">검색어를 입력하세요…</span>
-          </button>
+        {/* 버튼 우회 없이 검색 편집창을 바로 노출 — 헤더와 동일한 즉시 인라인 검색. */}
+        <div className="mt-8 flex flex-col items-center gap-3">
+          <div className="w-full max-w-xl text-left">
+            <SiteSearch variant="hero" />
+          </div>
           <Link
             href="/chat"
             className="inline-flex h-12 items-center gap-2 rounded-full bg-primary px-5 text-base font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring"
