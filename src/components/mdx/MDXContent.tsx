@@ -74,9 +74,11 @@ const components = {
   blockquote: (props: React.HTMLAttributes<HTMLQuoteElement>) => (
     <blockquote className="border-l-4 border-primary pl-4 py-2 my-4 bg-muted text-muted-foreground italic" {...props} />
   ),
-  // 표 래퍼: 가로 스크롤 영역을 키보드로도 스크롤할 수 있도록 tabIndex + role 부여 (WCAG 2.1.1)
+  // 표 래퍼: 가로 스크롤 영역을 키보드로도 스크롤할 수 있도록 tabIndex 부여 (WCAG 2.1.1).
+  // role=region/aria-label은 주지 않음 — 표는 <table> 시맨틱으로 충분하고, 무명 region은
+  // landmark 노이즈만 더한다 (미니멀 접근성).
   table: (props: React.HTMLAttributes<HTMLTableElement>) => (
-    <div className="overflow-x-auto my-4" tabIndex={0} role="region" aria-label="표">
+    <div className="overflow-x-auto my-4" tabIndex={0}>
       <table className="min-w-full border-collapse border border-border" {...props} />
     </div>
   ),

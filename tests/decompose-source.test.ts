@@ -325,7 +325,8 @@ describe('F. M3 codex-rescue P0/P1 패치 회귀 방지', () => {
       'utf-8',
     )
     assert.match(src, /parent_headings/, 'KbPageLayout에 parent_headings 참조 누락')
-    assert.match(src, /aria-label="출처 문서 내 위치"/, 'breadcrumb nav 시맨틱 누락')
+    // breadcrumb은 무명 div + 시맨틱 <ol>로 렌더 — nav landmark/aria-label은 제거(미니멀 접근성).
+    assert.match(src, /<ol className="flex flex-wrap items-center/, 'breadcrumb ol 렌더 누락')
   })
 
   it('FrontmatterSchema에 parent_headings 필드가 정의되어야 한다 (M4-B)', () => {

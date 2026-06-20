@@ -76,9 +76,10 @@ describe("SidebarNav", () => {
     expect(onNavigate).toHaveBeenCalledTimes(1)
   })
 
-  it("nav has aria-label", () => {
+  it("renders a navigation landmark (unnamed — 미니멀 접근성)", () => {
     render(<SidebarNav items={items} pathname="/" onNavigate={() => {}} />)
-    expect(screen.getByRole("navigation", { name: "주 메뉴" })).toBeInTheDocument()
+    // aria-label 없는 무명 nav. landmark 이름표는 제거했다.
+    expect(screen.getByRole("navigation")).toBeInTheDocument()
   })
 
   it("auto-expanded branch can be collapsed via button then re-expands on navigation", async () => {

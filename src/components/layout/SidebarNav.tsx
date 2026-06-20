@@ -105,7 +105,7 @@ export function SidebarNav({ items, pathname, onNavigate }: SidebarNavProps) {
   }, [])
 
   return (
-    <nav aria-label="주 메뉴">
+    <nav>
       <ul className="space-y-0.5">
         {items.map((item) => (
           <SidebarNavItem

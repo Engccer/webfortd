@@ -24,10 +24,7 @@ const ENTRIES = [
 
 export function ChatLibraryMediaEntries() {
   return (
-    <section
-      aria-labelledby="chat-library-media-heading"
-      className="mx-auto max-w-5xl px-4 py-12 sm:px-6"
-    >
+    <section className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
       <h2 id="chat-library-media-heading" className="sr-only">채팅·자료실·미디어</h2>
       <div className="grid gap-4 sm:grid-cols-3">
         {ENTRIES.map((entry) => {

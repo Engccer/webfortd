@@ -17,8 +17,6 @@ export function EntryToggle({ variant = "default" }: EntryToggleProps) {
 
   return (
     <div
-      role="group"
-      aria-label="사이트 모드 전환"
       className={
         isSidebar
           ? "flex w-full items-center rounded-lg border border-border bg-muted/50 p-0.5 text-sm"

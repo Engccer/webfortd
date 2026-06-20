@@ -133,7 +133,6 @@ export function AuthModal({ open, onOpenChange }: { open: boolean; onOpenChange:
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                aria-label="이메일 주소 입력"
               />
             </div>
             <Button type="submit" aria-disabled={busy}>
@@ -155,7 +154,6 @@ export function AuthModal({ open, onOpenChange }: { open: boolean; onOpenChange:
                 required
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
-                aria-label="인증 코드 입력"
                 aria-describedby="auth-code-hint"
               />
               <p id="auth-code-hint" className="text-xs text-muted-foreground">

@@ -46,7 +46,7 @@ export function TableOfContents({ headings }: TableOfContentsProps) {
   if (filteredHeadings.length === 0) return null
 
   return (
-    <nav className="sticky top-24" aria-label="목차">
+    <div className="sticky top-24">
       <h2 className="mb-4 text-sm font-semibold text-foreground">목차</h2>
       <ul className="space-y-2 text-sm">
         {filteredHeadings.map((heading) => (
@@ -79,6 +79,6 @@ export function TableOfContents({ headings }: TableOfContentsProps) {
           </li>
         ))}
       </ul>
-    </nav>
+    </div>
   )
 }

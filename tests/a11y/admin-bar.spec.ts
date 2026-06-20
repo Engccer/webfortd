@@ -8,16 +8,15 @@ import { test, expect } from '@playwright/test'
 import { expectNoAxeViolations } from './axe-helper'
 
 test.describe('AdminBar — 비-admin 비노출', () => {
-  test('/ 라우트에 관리자 도구 모음 region 없음', async ({ page }) => {
+  test('/ 라우트에 관리자 모드 바 없음', async ({ page }) => {
     await page.goto('/')
-    const region = page.getByRole('region', { name: '관리자 도구 모음' })
-    await expect(region).toHaveCount(0)
+    // role=region 제거 — "관리자 모드" 텍스트 부재로 AdminBar 비노출 확인 (미니멀 접근성)
+    await expect(page.getByText('관리자 모드')).toHaveCount(0)
   })
 
-  test('/library 라우트에 관리자 도구 모음 region 없음', async ({ page }) => {
+  test('/library 라우트에 관리자 모드 바 없음', async ({ page }) => {
     await page.goto('/library')
-    const region = page.getByRole('region', { name: '관리자 도구 모음' })
-    await expect(region).toHaveCount(0)
+    await expect(page.getByText('관리자 모드')).toHaveCount(0)
   })
 
   test('비-admin 사용자가 /admin/dashboard 접근 시 redirect', async ({ page }) => {

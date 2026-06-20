@@ -122,7 +122,9 @@ export function AppSidebar({ onOpenAccessibility }: AppSidebarProps) {
         id="app-sidebar"
         role={isMobile ? "dialog" : "complementary"}
         aria-modal={isMobile ? "true" : undefined}
-        aria-label="주 메뉴"
+        // 모바일 overlay는 dialog라 접근명이 필수 — 그때만 이름 부여.
+        // 데스크탑 complementary는 무명(landmark 노이즈 최소화, 미니멀 접근성).
+        aria-label={isMobile ? "주 메뉴" : undefined}
         aria-hidden={!isOpen}
         // tabIndex={-1}: SkipLink "메뉴 바로가기" href="#app-sidebar"가
         // 포커스를 이 요소로 옮길 수 있도록 프로그래매틱 포커스를 허용.

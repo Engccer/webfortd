@@ -57,11 +57,12 @@ beforeEach(() => {
 })
 
 describe("AppSidebar", () => {
-  it("desktop expanded: aria-hidden=false, accessible by name 주 메뉴", () => {
+  it("desktop expanded: aria-hidden=false, complementary 무명 (미니멀 접근성)", () => {
     render(wrap(makeAppSidebar()))
     const sidebar = document.getElementById("app-sidebar")
     expect(sidebar).toBeTruthy()
-    expect(sidebar).toHaveAttribute("aria-label", "주 메뉴")
+    // 데스크탑 complementary는 무명 — landmark 이름표는 모바일 dialog일 때만 부여한다.
+    expect(sidebar).not.toHaveAttribute("aria-label")
     expect(sidebar).toHaveAttribute("aria-hidden", "false")
   })
 
@@ -87,8 +88,9 @@ describe("AppSidebar", () => {
 
   it("renders EntryToggle with sidebar variant", () => {
     render(wrap(makeAppSidebar()))
-    const group = screen.getByRole("group", { name: "사이트 모드 전환" })
-    expect(group.className).toContain("w-full")
+    // role=group 제거 — 두 모드 링크 존재로 EntryToggle 렌더 확인
+    expect(screen.getByRole("link", { name: /위키·채팅/ })).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: /레거시 사이트/ })).toBeInTheDocument()
   })
 
   it("renders 접근성 설정 trigger button", () => {
@@ -143,23 +145,26 @@ describe("AppSidebar", () => {
     expect(screen.getByRole("button", { name: "메뉴 닫기" })).toBeInTheDocument()
   })
 
-  it("wiki mode (pathname='/') renders WikiEntriesNav with 위키 메뉴 label", () => {
+  it("wiki mode (pathname='/') renders WikiEntriesNav, not SidebarNav", () => {
     mockedPathname.mockReturnValue("/")
     render(wrap(makeAppSidebar()))
-    expect(screen.getByRole("navigation", { name: "위키 메뉴" })).toBeInTheDocument()
-    expect(screen.queryByRole("navigation", { name: "주 메뉴" })).not.toBeInTheDocument()
+    // 무명 nav라 이름 대신 고유 항목으로 모드 판별: 위키 진입점(자료실) 존재, 레거시 항목(플랫폼 소개) 부재
+    expect(screen.getByRole("navigation")).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: /자료실/ })).toBeInTheDocument()
+    expect(screen.queryByRole("link", { name: "플랫폼 소개" })).not.toBeInTheDocument()
   })
 
-  it("legacy mode (pathname='/legacy/support') renders SidebarNav with 주 메뉴 label", () => {
+  it("legacy mode (pathname='/legacy/support') renders SidebarNav, not WikiEntriesNav", () => {
     mockedPathname.mockReturnValue("/legacy/support")
     render(wrap(makeAppSidebar()))
-    expect(screen.getByRole("navigation", { name: "주 메뉴" })).toBeInTheDocument()
-    expect(screen.queryByRole("navigation", { name: "위키 메뉴" })).not.toBeInTheDocument()
+    expect(screen.getByRole("navigation")).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: "플랫폼 소개" })).toBeInTheDocument()
+    expect(screen.queryByRole("link", { name: /자료실/ })).not.toBeInTheDocument()
   })
 
   it("legacy mode for exact '/legacy' path renders SidebarNav", () => {
     mockedPathname.mockReturnValue("/legacy")
     render(wrap(makeAppSidebar()))
-    expect(screen.getByRole("navigation", { name: "주 메뉴" })).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: "플랫폼 소개" })).toBeInTheDocument()
   })
 })

@@ -33,11 +33,7 @@ export function SourceCard({ sources }: SourceCardProps) {
   if (sources.length === 0) return null
 
   return (
-    <ul
-      role="list"
-      aria-label="출처"
-      className="mt-3 flex flex-wrap gap-2 text-xs"
-    >
+    <ul className="mt-3 flex flex-wrap gap-2 text-xs">
       {sources.map((src) => (
         <li key={src.slug}>
           <Link

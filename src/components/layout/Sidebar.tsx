@@ -15,8 +15,9 @@ export function Sidebar({ items, title }: SidebarProps) {
   const pathname = usePathname()
 
   return (
-    // AppSidebar의 "주 메뉴"와 라벨 차별화 — 로터에서 두 nav를 구분 가능하게 (WCAG 2.4.6)
-    <nav className="w-64 shrink-0" aria-label="레거시 메뉴">
+    // 보조 사이드바 — landmark(nav) 대신 제목 heading(h2)으로 탐색. AppSidebar 주 메뉴와
+    // 동시에 렌더되어 무명 nav 중복을 만들지 않도록 div로 유지 (미니멀 접근성).
+    <div className="w-64 shrink-0">
       {title && (
         <h2 className="mb-4 text-lg font-bold text-foreground">{title}</h2>
       )}
@@ -25,7 +26,7 @@ export function Sidebar({ items, title }: SidebarProps) {
           <SidebarItem key={item.href} item={item} pathname={pathname} />
         ))}
       </ul>
-    </nav>
+    </div>
   )
 }
 

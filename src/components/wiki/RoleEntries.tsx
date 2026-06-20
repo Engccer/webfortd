@@ -13,10 +13,7 @@ const ICON_MAP: Record<Role | "default", typeof User> = {
 
 export function RoleEntries() {
   return (
-    <section
-      aria-labelledby="role-entries-heading"
-      className="mx-auto max-w-5xl px-4 py-12 sm:px-6"
-    >
+    <section className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
       <div className="mb-6">
         <h2
           id="role-entries-heading"
