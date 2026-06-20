@@ -89,7 +89,7 @@ export default async function DashboardPage() {
         Phase A — 데이터 가시성 강화. Preview Mode와 일괄 publish는 Phase B에서 활성화됩니다.
       </p>
 
-      <section aria-labelledby="status-counts" className="mb-10">
+      <section className="mb-10">
         <h2 id="status-counts" className="mb-3 text-lg font-semibold">
           페이지 상태 분포 (마크다운 정본 기준)
         </h2>
@@ -111,7 +111,7 @@ export default async function DashboardPage() {
         </dl>
       </section>
 
-      <section aria-labelledby="axis-dist" className="mb-10">
+      <section className="mb-10">
         <h2 id="axis-dist" className="mb-3 text-lg font-semibold">
           축(axis)별 페이지 분포
         </h2>
@@ -133,7 +133,7 @@ export default async function DashboardPage() {
         </dl>
       </section>
 
-      <section aria-labelledby="parity" className="mb-10">
+      <section className="mb-10">
         <h2 id="parity" className="mb-3 text-lg font-semibold">
           마크다운 ↔ DB 정합 검증
         </h2>
@@ -168,7 +168,7 @@ export default async function DashboardPage() {
         )}
       </section>
 
-      <section aria-labelledby="review-queue" className="mb-10">
+      <section className="mb-10">
         <h2 id="review-queue" className="mb-3 text-lg font-semibold">
           검수 대기 큐 ({reviewQueue.length}건)
         </h2>
@@ -193,7 +193,7 @@ export default async function DashboardPage() {
         </ul>
       </section>
 
-      <section aria-labelledby="broken-links" className="mb-10">
+      <section className="mb-10">
         <h2 id="broken-links" className="mb-3 text-lg font-semibold">
           깨진 위키링크 ({brokenCount}건)
         </h2>

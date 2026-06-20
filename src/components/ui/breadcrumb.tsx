@@ -4,8 +4,10 @@ import { ChevronRight, MoreHorizontal } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
-function Breadcrumb({ ...props }: React.ComponentProps<"nav">) {
-  return <nav aria-label="현재 위치" data-slot="breadcrumb" {...props} />
+// breadcrumb은 무명 div로 렌더 — nav landmark/aria-label("현재 위치")은 제거(미니멀 접근성).
+// 경로는 ol/li + 마지막 항목 aria-current="page"로 전달되므로 landmark 없이도 탐색 가능.
+function Breadcrumb({ ...props }: React.ComponentProps<"div">) {
+  return <div data-slot="breadcrumb" {...props} />
 }
 
 function BreadcrumbList({ className, ...props }: React.ComponentProps<"ol">) {

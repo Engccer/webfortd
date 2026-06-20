@@ -38,10 +38,10 @@ beforeEach(() => {
 describe('AuthModal — 인증코드 2단계 플로우', () => {
   it('초기에는 이메일 입력 단계 (인증 코드 받기 버튼)', () => {
     render(<AuthModal open onOpenChange={vi.fn()} />)
-    expect(screen.getByLabelText('이메일 주소 입력')).toBeInTheDocument()
+    expect(screen.getByLabelText('이메일 주소')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /인증 코드 받기/ })).toBeInTheDocument()
     // 아직 코드 입력칸은 없음
-    expect(screen.queryByLabelText('인증 코드 입력')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('인증 코드')).not.toBeInTheDocument()
   })
 
   it('이메일 제출 성공 → requestOtp 호출 + 코드 입력 단계로 전환', async () => {
@@ -49,12 +49,12 @@ describe('AuthModal — 인증코드 2단계 플로우', () => {
     mocks.requestOtp.mockResolvedValue({ error: null })
     render(<AuthModal open onOpenChange={vi.fn()} />)
 
-    await user.type(screen.getByLabelText('이메일 주소 입력'), 'me@example.com')
+    await user.type(screen.getByLabelText('이메일 주소'), 'me@example.com')
     await user.click(screen.getByRole('button', { name: /인증 코드 받기/ }))
 
     expect(mocks.requestOtp).toHaveBeenCalledWith('me@example.com')
     // 코드 입력 단계로 전환
-    expect(await screen.findByLabelText('인증 코드 입력')).toBeInTheDocument()
+    expect(await screen.findByLabelText('인증 코드')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '로그인' })).toBeInTheDocument()
   })
 
@@ -63,14 +63,14 @@ describe('AuthModal — 인증코드 2단계 플로우', () => {
     mocks.requestOtp.mockResolvedValue({ error: new Error('rate limit') })
     render(<AuthModal open onOpenChange={vi.fn()} />)
 
-    await user.type(screen.getByLabelText('이메일 주소 입력'), 'me@example.com')
+    await user.type(screen.getByLabelText('이메일 주소'), 'me@example.com')
     await user.click(screen.getByRole('button', { name: /인증 코드 받기/ }))
 
     // a11y 패치(2026-06-11): Supabase 영어 원문 대신 행동 가능한 한국어 메시지
     // ('rate limit' mock → "요청이 너무 잦아요. 1분 후 다시 시도해 주세요.")
     expect(await screen.findByText(/요청이 너무 잦아요/)).toBeInTheDocument()
     // 코드 단계로 전환되지 않음
-    expect(screen.queryByLabelText('인증 코드 입력')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('인증 코드')).not.toBeInTheDocument()
   })
 
   it('코드 제출 성공 → verifyOtp 호출 + 모달 닫힘', async () => {
@@ -80,10 +80,10 @@ describe('AuthModal — 인증코드 2단계 플로우', () => {
     mocks.verifyOtp.mockResolvedValue({ error: null })
     render(<AuthModal open onOpenChange={onOpenChange} />)
 
-    await user.type(screen.getByLabelText('이메일 주소 입력'), 'me@example.com')
+    await user.type(screen.getByLabelText('이메일 주소'), 'me@example.com')
     await user.click(screen.getByRole('button', { name: /인증 코드 받기/ }))
 
-    const codeInput = await screen.findByLabelText('인증 코드 입력')
+    const codeInput = await screen.findByLabelText('인증 코드')
     await user.type(codeInput, '12345678')
     await user.click(screen.getByRole('button', { name: '로그인' }))
 
@@ -98,15 +98,15 @@ describe('AuthModal — 인증코드 2단계 플로우', () => {
     mocks.verifyOtp.mockResolvedValue({ error: new Error('Token has expired or is invalid') })
     render(<AuthModal open onOpenChange={onOpenChange} />)
 
-    await user.type(screen.getByLabelText('이메일 주소 입력'), 'me@example.com')
+    await user.type(screen.getByLabelText('이메일 주소'), 'me@example.com')
     await user.click(screen.getByRole('button', { name: /인증 코드 받기/ }))
-    await user.type(await screen.findByLabelText('인증 코드 입력'), '00000000')
+    await user.type(await screen.findByLabelText('인증 코드'), '00000000')
     await user.click(screen.getByRole('button', { name: '로그인' }))
 
     expect(await screen.findByText(/코드가 올바르지 않거나 만료/)).toBeInTheDocument()
     expect(onOpenChange).not.toHaveBeenCalledWith(false)
     // 코드 단계 유지
-    expect(screen.getByLabelText('인증 코드 입력')).toBeInTheDocument()
+    expect(screen.getByLabelText('인증 코드')).toBeInTheDocument()
   })
 
   it('"이메일 다시 입력" → 이메일 단계로 복귀', async () => {
@@ -114,12 +114,12 @@ describe('AuthModal — 인증코드 2단계 플로우', () => {
     mocks.requestOtp.mockResolvedValue({ error: null })
     render(<AuthModal open onOpenChange={vi.fn()} />)
 
-    await user.type(screen.getByLabelText('이메일 주소 입력'), 'me@example.com')
+    await user.type(screen.getByLabelText('이메일 주소'), 'me@example.com')
     await user.click(screen.getByRole('button', { name: /인증 코드 받기/ }))
-    await screen.findByLabelText('인증 코드 입력')
+    await screen.findByLabelText('인증 코드')
 
     await user.click(screen.getByRole('button', { name: '이메일 다시 입력' }))
-    expect(screen.getByLabelText('이메일 주소 입력')).toBeInTheDocument()
-    expect(screen.queryByLabelText('인증 코드 입력')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('이메일 주소')).toBeInTheDocument()
+    expect(screen.queryByLabelText('인증 코드')).not.toBeInTheDocument()
   })
 })

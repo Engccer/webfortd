@@ -56,11 +56,7 @@ export function AdminBarView({
   }
 
   return (
-    <div
-      role="region"
-      aria-label="관리자 도구 모음"
-      className="sticky top-0 z-40 border-b border-amber-300 bg-amber-50 text-amber-950"
-    >
+    <div className="sticky top-0 z-40 border-b border-amber-300 bg-amber-50 text-amber-950">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-2 text-sm">
         <div className="flex items-center gap-3">
           <span className="font-semibold">관리자 모드</span>

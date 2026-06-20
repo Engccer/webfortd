@@ -184,25 +184,29 @@ test("SkipLink: Enter on 메뉴 바로가기 moves focus to #app-sidebar", async
 // ─── 위키/레거시 모드 분기 + 신규 페이지 (T10) ───────────────────────────────────
 
 test.describe("위키/레거시 모드 분기 + 신규 페이지", () => {
-  test("위키 모드(/) → 사이드바에 위키 메뉴 nav + 5 진입", async ({ page }) => {
+  // 사이드바 nav는 무명(landmark 이름표 제거) — #app-sidebar 안 nav + 고유 항목으로 식별.
+  test("위키 모드(/) → 사이드바에 위키 nav + 5 진입", async ({ page }) => {
     await page.goto("/")
-    const wikiNav = page.getByRole("navigation", { name: "위키 메뉴" })
+    const wikiNav = page.locator("#app-sidebar").getByRole("navigation")
     await expect(wikiNav).toBeVisible()
     const links = await wikiNav.getByRole("link").all()
     expect(links).toHaveLength(5)
   })
 
-  test("레거시 모드(/legacy) → 사이드바에 주 메뉴 nav", async ({ page }) => {
+  test("레거시 모드(/legacy) → 사이드바에 레거시 nav", async ({ page }) => {
     await page.goto("/legacy")
-    const legacyNav = page.getByRole("navigation", { name: "주 메뉴" })
+    const legacyNav = page.locator("#app-sidebar").getByRole("navigation")
     await expect(legacyNav).toBeVisible()
+    await expect(legacyNav.getByRole("link", { name: "플랫폼 소개" })).toBeVisible()
   })
 
   test("EntryToggle 클릭으로 모드 전환 — 위키 → 레거시", async ({ page }) => {
     await page.goto("/")
     await page.getByRole("link", { name: /레거시 사이트/ }).click()
     await page.waitForURL(/\/legacy/)
-    await expect(page.getByRole("navigation", { name: "주 메뉴" })).toBeVisible()
+    await expect(
+      page.locator("#app-sidebar").getByRole("link", { name: "플랫폼 소개" }),
+    ).toBeVisible()
   })
 
   test("Footer 정책 + about 4 페이지 200 응답", async ({ page }) => {

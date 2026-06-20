@@ -44,10 +44,7 @@ export async function AxisBrowseEntries() {
   )
 
   return (
-    <section
-      aria-labelledby="axis-browse-heading"
-      className="mx-auto max-w-5xl px-4 py-12 sm:px-6"
-    >
+    <section className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
       <div className="mb-6">
         <h2
           id="axis-browse-heading"

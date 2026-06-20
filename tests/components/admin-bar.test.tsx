@@ -29,9 +29,9 @@ describe("AdminBarView", () => {
     expect(container.firstChild).toBeNull()
   })
 
-  it("isAdmin=true → region + 관리자 모드 + 대시보드 링크", () => {
+  it("isAdmin=true → 관리자 모드 + 대시보드 링크", () => {
     render(<AdminBarView status={admin} previewEnabled={false} />)
-    expect(screen.getByRole("region", { name: /관리자 도구/ })).toBeDefined()
+    // role=region/aria-label 제거 — "관리자 모드" 텍스트가 맥락을 전달 (미니멀 접근성)
     expect(screen.getByText("관리자 모드")).toBeDefined()
     expect(screen.getByText("admin@example.com")).toBeDefined()
     expect(

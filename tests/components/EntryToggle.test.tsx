@@ -7,25 +7,28 @@ vi.mock("next/navigation", () => ({ usePathname: () => "/" }))
 describe("EntryToggle", () => {
   it("default variant renders inline-flex container", () => {
     const { container } = render(<EntryToggle />)
-    const group = container.querySelector("[role='group']")
-    expect(group?.className).toContain("inline-flex")
+    const root = container.firstElementChild
+    expect(root?.className).toContain("inline-flex")
   })
 
   it("sidebar variant renders w-full flex with flex-1 children", () => {
     const { container } = render(<EntryToggle variant="sidebar" />)
-    const group = container.querySelector("[role='group']")
-    expect(group?.className).toContain("flex")
-    expect(group?.className).toContain("w-full")
+    const root = container.firstElementChild
+    expect(root?.className).toContain("flex")
+    expect(root?.className).toContain("w-full")
     const links = screen.getAllByRole("link")
     expect(links).toHaveLength(2)
     links.forEach((link) => expect(link.className).toContain("flex-1"))
   })
 
-  it("preserves role=group aria-label in both variants", () => {
-    const { rerender } = render(<EntryToggle />)
-    expect(screen.getByRole("group", { name: "사이트 모드 전환" })).toBeInTheDocument()
+  it("renders two mode links without a group role (미니멀 접근성)", () => {
+    // role=group + aria-label은 제거 — 두 Link 텍스트가 의미를 전달하고 aria-current가
+    // 현재 모드를 표시하므로 group 래핑은 불필요한 ARIA였다.
+    const { container, rerender } = render(<EntryToggle />)
+    expect(container.querySelector("[role='group']")).toBeNull()
+    expect(screen.getAllByRole("link")).toHaveLength(2)
     rerender(<EntryToggle variant="sidebar" />)
-    expect(screen.getByRole("group", { name: "사이트 모드 전환" })).toBeInTheDocument()
+    expect(container.querySelector("[role='group']")).toBeNull()
   })
 
   it("legacy button label is '레거시 사이트' (not '이전 버전')", () => {

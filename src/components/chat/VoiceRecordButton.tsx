@@ -14,7 +14,7 @@
  *
  * 접근성:
  *   - aria-label 상태별 (마이크 시작/정지/변환 중/지원 안 됨)
- *   - role="status" + aria-live="assertive" announcer
+ *   - role="status" + aria-live="polite" announcer
  *   - 44px 터치 타깃
  */
 
@@ -135,7 +135,7 @@ export function VoiceRecordButton({ onTranscribed, onError, disabled }: VoiceRec
 
   return (
     <div className="relative inline-flex items-center">
-      <div ref={announcerRef} role="status" aria-live="assertive" aria-atomic="true" className="sr-only" />
+      <div ref={announcerRef} role="status" aria-live="polite" aria-atomic="true" className="sr-only" />
 
       {state === 'recording' && (
         <div className="absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap" aria-hidden="true">

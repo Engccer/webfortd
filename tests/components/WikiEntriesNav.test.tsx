@@ -5,9 +5,10 @@ import { WikiEntriesNav } from "@/components/layout/WikiEntriesNav"
 import { wikiEntries } from "@/lib/wiki-entries"
 
 describe("WikiEntriesNav", () => {
-  it("renders nav with aria-label '위키 메뉴'", () => {
+  it("renders a navigation landmark (unnamed — 미니멀 접근성)", () => {
     render(<WikiEntriesNav items={wikiEntries} pathname="/" onNavigate={() => {}} />)
-    expect(screen.getByRole("navigation", { name: "위키 메뉴" })).toBeInTheDocument()
+    // aria-label 없는 무명 nav. landmark 이름표는 노이즈라 제거했다.
+    expect(screen.getByRole("navigation")).toBeInTheDocument()
   })
 
   it("renders 5 items as links", () => {

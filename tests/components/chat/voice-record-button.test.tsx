@@ -42,9 +42,9 @@ describe('VoiceRecordButton (M7.1 음성 받아쓰기)', () => {
     expect(button).toHaveAttribute('aria-disabled', 'true')
   })
 
-  it('aria-live announcer 렌더 (role=status sr-only assertive)', () => {
+  it('aria-live announcer 렌더 (role=status sr-only polite)', () => {
     render(<VoiceRecordButton onTranscribed={vi.fn()} />)
-    const announcer = document.querySelector('[role="status"][aria-live="assertive"]')
+    const announcer = document.querySelector('[role="status"][aria-live="polite"]')
     expect(announcer).toBeInTheDocument()
     expect(announcer).toHaveClass('sr-only')
   })

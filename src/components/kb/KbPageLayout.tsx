@@ -129,10 +129,7 @@ export async function KbPageLayout({ axis, slug }: KbPageLayoutProps) {
               const parents = fm.parent_headings ?? []
               if (parents.length === 0) return null
               return (
-                <nav
-                  aria-label="출처 문서 내 위치"
-                  className="mb-3 text-sm text-muted-foreground"
-                >
+                <div className="mb-3 text-sm text-muted-foreground">
                   <ol className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
                     {parents.map((heading, idx) => (
                       <li key={idx} className="flex items-center gap-x-1.5">
@@ -145,7 +142,7 @@ export async function KbPageLayout({ axis, slug }: KbPageLayoutProps) {
                       </li>
                     ))}
                   </ol>
-                </nav>
+                </div>
               )
             })()}
             <h1 className="mb-4 text-3xl font-bold text-foreground">{legacy.title}</h1>

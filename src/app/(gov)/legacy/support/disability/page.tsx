@@ -91,7 +91,7 @@ export default function DisabilityPage() {
             장애유형에 따라 필요한 지원제도를 확인하세요.
           </p>
 
-          <nav className="mb-8">
+          <div className="mb-8">
             <h2 className="sr-only">장애유형 바로가기</h2>
             <ul className="flex flex-wrap gap-2">
               {disabilityTypes.map((type) => (
@@ -105,7 +105,7 @@ export default function DisabilityPage() {
                 </li>
               ))}
             </ul>
-          </nav>
+          </div>
 
           <div className="space-y-8">
             {disabilityTypes.map((type) => (

@@ -160,7 +160,7 @@ export function VoiceChatOverlay({ open, onClose }: VoiceChatOverlayProps) {
       </div>
 
       {sources.length > 0 && (
-        <nav aria-label="인용 출처" className="w-full max-w-md">
+        <div className="w-full max-w-md">
           <ul className="flex flex-col gap-1 text-sm">
             {sources.map((s) => (
               <li key={s.slug}>
@@ -176,7 +176,7 @@ export function VoiceChatOverlay({ open, onClose }: VoiceChatOverlayProps) {
               </li>
             ))}
           </ul>
-        </nav>
+        </div>
       )}
 
       <div className="flex gap-4">

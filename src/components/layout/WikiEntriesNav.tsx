@@ -12,7 +12,7 @@ export interface WikiEntriesNavProps {
 
 export function WikiEntriesNav({ items, pathname, onNavigate }: WikiEntriesNavProps) {
   return (
-    <nav aria-label="위키 메뉴">
+    <nav>
       <ul className="space-y-0.5">
         {items.map((item) => {
           const Icon = item.icon

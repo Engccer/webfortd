@@ -300,13 +300,11 @@ export function ChatUI({ initialThreadId }: ChatUIProps = {}) {
         </div>
       )}
 
-      {/* aria-live="polite" — codex-rescue PR #31 P2 권고.
-          AI Elements Conversation은 role="log"만 갖는다(implicit polite).
-          VoiceOver 스트리밍 낭독을 확실히 보장하기 위해 명시. */}
+      {/* 스트리밍 낭독은 Conversation 내부 role="log"(implicit aria-live=polite)가 담당.
+          wrapper의 aria-live="polite"는 순수 중복, aria-relevant="additions text"는 기본값을
+          덮어써 스트리밍 중 텍스트 변경까지 반복 낭독 → 둘 다 제거(미니멀 접근성). */}
       <Conversation
         aria-label="대화 내역"
-        aria-live="polite"
-        aria-relevant="additions text"
         className="flex-1"
       >
         <ConversationContent>

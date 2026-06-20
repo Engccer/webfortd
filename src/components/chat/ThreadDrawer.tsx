@@ -58,8 +58,8 @@ export function ThreadDrawer({ currentThreadId, onSelect }: ThreadDrawerProps) {
             아직 저장된 대화가 없어요.
           </p>
         ) : (
-          <nav className="mt-4">
-            <ul role="list" className="space-y-1">
+          <div className="mt-4">
+            <ul className="space-y-1">
               {threads.map((t) => (
                 <li key={t.id}>
                   <button
@@ -73,7 +73,7 @@ export function ThreadDrawer({ currentThreadId, onSelect }: ThreadDrawerProps) {
                 </li>
               ))}
             </ul>
-          </nav>
+          </div>
         )}
       </SheetContent>
     </Sheet>
