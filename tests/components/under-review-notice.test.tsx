@@ -26,4 +26,10 @@ describe("UnderReviewNotice", () => {
     const link = screen.getByRole("link", { name: /정책·법령 목록/ })
     expect(link.getAttribute("href")).toBe("/policies")
   })
+
+  it("메인으로 돌아가는 홈 링크를 렌더한다", () => {
+    render(<UnderReviewNotice backHref="/policies" backLabel="정책·법령 목록" />)
+    const home = screen.getByRole("link", { name: /홈/ })
+    expect(home.getAttribute("href")).toBe("/")
+  })
 })
