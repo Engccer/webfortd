@@ -16,7 +16,7 @@ import rehypeSlug from "rehype-slug"
 import { MDXClientWrapper } from "@/components/mdx/MDXClientWrapper"
 import { getKBDocBySlug } from "@/lib/kb"
 import { adaptFrontmatterToLegacy } from "@/lib/kb-adapter"
-import { Calendar, ArrowLeft } from "lucide-react"
+import { Calendar, Home } from "lucide-react"
 import Link from "next/link"
 import type { ContentAxis } from "@/types/kb"
 import { FocusManager } from "@/components/accessibility/FocusManager"
@@ -103,14 +103,28 @@ export async function KbPageLayout({ axis, slug }: KbPageLayoutProps) {
       >
         <div className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur">
           <div className="mx-auto flex h-14 max-w-4xl items-center justify-between gap-3 px-4 sm:px-6">
-            <Link
-              href={axisHref}
-              className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            >
-              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-              {axisLabel} 목록
-            </Link>
-            <div className="flex items-center gap-2">
+            {/* 홈 / {axis} 목록 — 문서 오버레이가 AppShell 헤더(로고→홈)를 가리므로
+                메인으로 돌아갈 진입점을 이 고정 헤더에 직접 둔다. nav 래핑 없이
+                링크 2개 + aria-hidden 구분자(미니멀 ARIA). */}
+            <div className="flex min-w-0 items-center gap-0.5 text-sm font-medium text-muted-foreground">
+              <Link
+                href="/"
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-2 transition-colors hover:bg-accent hover:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              >
+                <Home className="h-4 w-4" aria-hidden="true" />
+                홈
+              </Link>
+              <span aria-hidden="true" className="shrink-0 text-muted-foreground/50">
+                /
+              </span>
+              <Link
+                href={axisHref}
+                className="inline-flex min-w-0 items-center rounded-lg px-2.5 py-2 transition-colors hover:bg-accent hover:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              >
+                <span className="truncate">{axisLabel} 목록</span>
+              </Link>
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
               <StatusBadge status={fm.status} />
               <AccessibilityToolbar />
             </div>

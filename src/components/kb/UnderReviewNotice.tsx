@@ -4,7 +4,7 @@
  * KbPageLayout과 동일한 fixed overlay + --admin-bar-h 정합.
  */
 import Link from "next/link"
-import { ArrowLeft } from "lucide-react"
+import { Home } from "lucide-react"
 import { FocusManager } from "@/components/accessibility/FocusManager"
 
 interface UnderReviewNoticeProps {
@@ -27,13 +27,25 @@ export function UnderReviewNotice({
       >
         <div className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur">
           <div className="mx-auto flex h-14 max-w-4xl items-center justify-between gap-3 px-4 sm:px-6">
-            <Link
-              href={backHref}
-              className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            >
-              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-              {backLabel}
-            </Link>
+            {/* 홈 / {axis} 목록 — KbPageLayout과 동일한 진입점(메인으로 돌아가기). */}
+            <div className="flex min-w-0 items-center gap-0.5 text-sm font-medium text-muted-foreground">
+              <Link
+                href="/"
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-2 transition-colors hover:bg-accent hover:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              >
+                <Home className="h-4 w-4" aria-hidden="true" />
+                홈
+              </Link>
+              <span aria-hidden="true" className="shrink-0 text-muted-foreground/50">
+                /
+              </span>
+              <Link
+                href={backHref}
+                className="inline-flex min-w-0 items-center rounded-lg px-2.5 py-2 transition-colors hover:bg-accent hover:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              >
+                <span className="truncate">{backLabel}</span>
+              </Link>
+            </div>
           </div>
         </div>
 
