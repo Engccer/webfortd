@@ -17,7 +17,9 @@ import {
   isBrowsableAxis,
   toListItem,
   sortDocsForList,
+  visibleAxisCards,
   type AxisDocListItem,
+  type AxisCardEntry,
 } from "@/lib/kb-axis"
 import { CONTENT_AXES } from "@/types/kb"
 import type { DocumentSummary, Frontmatter } from "@/types/kb"
@@ -31,11 +33,11 @@ describe("AXIS_LABEL", () => {
 })
 
 describe("BROWSABLE_AXES", () => {
-  it("본문 5 axis만 포함한다", () => {
+  it("본문 axis + faq를 포함한다", () => {
     const axes = BROWSABLE_AXES.map((b) => b.axis)
     assert.deepEqual(
       [...axes].sort(),
-      ["agreements", "disability-types", "domains", "policies", "regions"],
+      ["agreements", "disability-types", "domains", "faq", "policies", "regions"],
     )
   })
 
@@ -124,5 +126,35 @@ describe("sortDocsForList", () => {
       items.map((i) => i.slug),
       before,
     )
+  })
+})
+
+describe("visibleAxisCards", () => {
+  const base = { axis: "faq", label: "자주 묻는 질문", description: "d" } as const
+
+  it("count가 0인 카드는 숨긴다", () => {
+    const entries: AxisCardEntry[] = [
+      { ...base, axis: "faq", count: 0 },
+      { ...base, axis: "policies", label: "정책·법령", count: 3 },
+    ]
+    const visible = visibleAxisCards(entries)
+    assert.deepEqual(
+      visible.map((e) => e.axis),
+      ["policies"],
+    )
+  })
+
+  it("count가 1 이상인 카드는 모두 남긴다", () => {
+    const entries: AxisCardEntry[] = [
+      { ...base, axis: "faq", count: 2 },
+      { ...base, axis: "policies", label: "정책·법령", count: 3 },
+    ]
+    assert.equal(visibleAxisCards(entries).length, 2)
+  })
+
+  it("원본 배열을 변형하지 않는다", () => {
+    const entries: AxisCardEntry[] = [{ ...base, axis: "faq", count: 0 }]
+    visibleAxisCards(entries)
+    assert.equal(entries.length, 1)
   })
 })

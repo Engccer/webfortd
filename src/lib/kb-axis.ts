@@ -19,6 +19,7 @@ export const AXIS_LABEL: Record<ContentAxis, string> = {
   regions: "지역별",
   policies: "정책·법령",
   agreements: "단체협약",
+  faq: "자주 묻는 질문",
   stories: "사례",
   resources: "자료실",
   uncategorized: "미분류",
@@ -60,6 +61,11 @@ export const BROWSABLE_AXES: BrowsableAxis[] = [
     axis: "regions",
     label: AXIS_LABEL.regions,
     description: "시·도 교육청별 조례·지침과 지역 지원 현황",
+  },
+  {
+    axis: "faq",
+    label: AXIS_LABEL.faq,
+    description: "편의지원 신청·인사·권리구제 등 장애인교원이 자주 묻는 질문과 답변",
   },
 ]
 
@@ -104,4 +110,18 @@ export function sortDocsForList(items: AxisDocListItem[]): AxisDocListItem[] {
     if (byTitle !== 0) return byTitle
     return a.slug.localeCompare(b.slug)
   })
+}
+
+/** 홈 "주제별 둘러보기" 카드 항목 — BrowsableAxis + 집계된 문서 수. */
+export interface AxisCardEntry extends BrowsableAxis {
+  count: number
+}
+
+/**
+ * published 문서가 0건인 axis 카드를 숨긴다.
+ * draft만 있는 신규 axis(예: 검수 전 faq)가 홈에 "0개" 빈 카드로 노출되는 것을 방지.
+ * admin Draft Mode에서는 count가 draft를 포함하므로 검수 중에도 카드가 보인다.
+ */
+export function visibleAxisCards(entries: AxisCardEntry[]): AxisCardEntry[] {
+  return entries.filter((e) => e.count > 0)
 }

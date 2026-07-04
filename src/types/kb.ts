@@ -105,6 +105,7 @@ export const CONTENT_AXES = [
   'regions',
   'policies',
   'agreements',
+  'faq',
   'stories',
   'resources',
   'uncategorized',
