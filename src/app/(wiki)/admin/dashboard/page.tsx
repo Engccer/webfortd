@@ -5,6 +5,7 @@ import {
   computeReviewQueue,
 } from "@/lib/admin/dashboard-stats"
 import { getServerClient } from "@/lib/supabase/server"
+import { AXIS_LABEL } from "@/lib/kb-axis"
 import kbIndex from "@/lib/kb-index.generated.json"
 
 export const metadata: Metadata = {
@@ -48,17 +49,6 @@ const STATUS_LABELS: Record<string, string> = {
   published: "게시됨",
   archived: "보관됨",
   deprecated: "폐기됨",
-}
-
-const AXIS_LABELS: Record<string, string> = {
-  "disability-types": "장애유형별",
-  domains: "영역별",
-  regions: "지역별",
-  policies: "정책·법령",
-  agreements: "단체협약",
-  stories: "사례",
-  resources: "자료실",
-  uncategorized: "미분류",
 }
 
 interface KbIndexShape {
@@ -122,7 +112,7 @@ export default async function DashboardPage() {
               className="rounded-lg border border-border bg-card p-4"
             >
               <dt className="text-sm text-muted-foreground">
-                {AXIS_LABELS[key] ?? key}
+                {AXIS_LABEL[key as keyof typeof AXIS_LABEL] ?? key}
                 <span className="ml-1 font-mono text-xs opacity-50">
                   {key}
                 </span>

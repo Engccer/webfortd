@@ -12,7 +12,7 @@
 import Link from "next/link"
 import { Accessibility, Layers, Scale, FileText, MapPin, HelpCircle } from "lucide-react"
 import type { ContentAxis } from "@/types/kb"
-import { BROWSABLE_AXES, visibleAxisCards, type AxisCardEntry } from "@/lib/kb-axis"
+import { BROWSABLE_AXES, visibleAxisCards } from "@/lib/kb-axis"
 import { getDocsByFilter } from "@/lib/kb-query"
 import { getPreviewActive } from "@/lib/admin/preview"
 
@@ -44,7 +44,7 @@ export async function AxisBrowseEntries() {
     })),
   )
   // published 0건 axis 카드는 숨긴다(검수 전 faq 등 "0개" 빈 카드 방지).
-  const visible = visibleAxisCards(entries as AxisCardEntry[])
+  const visible = visibleAxisCards(entries)
 
   return (
     <section className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
