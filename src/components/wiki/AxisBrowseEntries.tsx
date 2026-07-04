@@ -10,9 +10,9 @@
  */
 
 import Link from "next/link"
-import { Accessibility, Layers, Scale, FileText, MapPin } from "lucide-react"
+import { Accessibility, Layers, Scale, FileText, MapPin, HelpCircle } from "lucide-react"
 import type { ContentAxis } from "@/types/kb"
-import { BROWSABLE_AXES } from "@/lib/kb-axis"
+import { BROWSABLE_AXES, visibleAxisCards } from "@/lib/kb-axis"
 import { getDocsByFilter } from "@/lib/kb-query"
 import { getPreviewActive } from "@/lib/admin/preview"
 
@@ -22,6 +22,7 @@ const AXIS_ICON: Record<ContentAxis, typeof Layers> = {
   policies: Scale,
   agreements: FileText,
   regions: MapPin,
+  faq: HelpCircle,
   // 아래는 BROWSABLE_AXES에 없지만 타입 완전성을 위해 채운다.
   stories: FileText,
   resources: FileText,
@@ -42,6 +43,8 @@ export async function AxisBrowseEntries() {
       ).length,
     })),
   )
+  // published 0건 axis 카드는 숨긴다(검수 전 faq 등 "0개" 빈 카드 방지).
+  const visible = visibleAxisCards(entries)
 
   return (
     <section className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
@@ -52,7 +55,7 @@ export async function AxisBrowseEntries() {
         주제를 골라 전체 문서를 둘러보세요
       </h2>
       <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {entries.map((b) => {
+        {visible.map((b) => {
           const Icon = AXIS_ICON[b.axis] ?? Layers
           return (
             <li
