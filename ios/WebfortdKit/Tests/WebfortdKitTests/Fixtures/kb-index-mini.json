@@ -1,0 +1,86 @@
+{
+ "generated_at": null,
+ "source_count": 2,
+ "documents": [
+  {
+   "slug": "2020-ca-1-2",
+   "axis": "agreements",
+   "filePath": "content/agreements/2020-ca-1-2.md",
+   "frontmatter": {
+    "title": "제1조【유효기간】",
+    "type": "지침",
+    "disability_types": [
+     "전체"
+    ],
+    "domains": [
+     "정책법령"
+    ],
+    "regions": [
+     "전국"
+    ],
+    "year": 2020,
+    "status": "published",
+    "source": {
+     "organization": "교육부·함께하는장애인교원노동조합",
+     "citation": "교육부와 함께하는장애인교원노동조합 간 2020 단체협약 (2023.6.2. 개정)"
+    },
+    "source_origin": "2020-collective-agreement",
+    "parent_headings": [
+     "2020 교육부-함께하는장애인교원노동조합 단체교섭 협약",
+     "부칙"
+    ],
+    "authors": [],
+    "reviewed_by": [
+     "1차 검토(김헌용)"
+    ],
+    "references": [],
+    "accessibility": {
+     "alt_text_complete": true,
+     "captions_available": false,
+     "reading_level": "standard",
+     "audio_tts_ready": false
+    }
+   }
+  },
+  {
+   "slug": "accommodation-refused",
+   "axis": "faq",
+   "filePath": "content/faq/accommodation-refused.md",
+   "frontmatter": {
+    "title": "편의제공을 거부당하면 어떻게 해야 하나요?",
+    "type": "FAQ",
+    "disability_types": [
+     "전체"
+    ],
+    "domains": [
+     "권리구제"
+    ],
+    "regions": [
+     "전국"
+    ],
+    "year": 2026,
+    "status": "draft",
+    "source": {
+     "organization": "장애인교원 위키 편집부",
+     "citation": "장애인교원 위키 자주 묻는 질문 (2026)"
+    },
+    "source_origin": "faq",
+    "parent_headings": [],
+    "authors": [],
+    "reviewed_by": [],
+    "references": [],
+    "accessibility": {
+     "alt_text_complete": true,
+     "captions_available": false,
+     "reading_level": "easy",
+     "audio_tts_ready": false
+    }
+   }
+  }
+ ],
+ "wiki_backlinks": {},
+ "slug_index": {
+  "2020-ca-1-2": "content/agreements/2020-ca-1-2.md",
+  "accommodation-refused": "content/faq/accommodation-refused.md"
+ }
+}
