@@ -61,22 +61,47 @@ public struct ChatAPI: Sendable {
         }
     }
 
-    /// UIMessage 인코딩: `{"messages":[{"id":<uuid>,"role":role,"parts":[{"type":"text","text":text}]}], "threadId"?}`.
+    /// UIMessage 인코딩: `{"messages":[{"id":<uuid>,"role":role,"parts":[{"type":"text","text":text}, <file part>?]}], "threadId"?}`.
+    /// 첨부가 있으면 text part 뒤에 file part(`{type:"file", mediaType, url:"data:<mime>;base64,...", filename}`)를
+    /// 이어 붙인다(웹 `ChatUI.tsx` `files:[{type:'file', ...}]` 계약 미러).
     private static func encodeBody(messages: [ChatOutgoingMessage], threadId: String?) throws -> Data {
         let payload = UIMessagesPayload(
-            messages: messages.map {
-                UIMessagesPayload.Message(
-                    id: UUID().uuidString, role: $0.role,
-                    parts: [UIMessagesPayload.Part(type: "text", text: $0.text)])
+            messages: messages.map { message in
+                var parts: [UIMessagesPayload.Part] = [.text(message.text)]
+                if let attachment = message.attachment {
+                    parts.append(.file(
+                        mediaType: attachment.mediaType,
+                        url: "data:\(attachment.mediaType);base64,\(attachment.dataBase64)",
+                        filename: attachment.filename))
+                }
+                return UIMessagesPayload.Message(id: UUID().uuidString, role: message.role, parts: parts)
             },
             threadId: threadId)
         return try JSONEncoder().encode(payload)
     }
 
     private struct UIMessagesPayload: Encodable {
-        struct Part: Encodable {
-            let type: String
-            let text: String
+        enum Part: Encodable {
+            case text(String)
+            case file(mediaType: String, url: String, filename: String)
+
+            private enum CodingKeys: String, CodingKey {
+                case type, text, mediaType, url, filename
+            }
+
+            func encode(to encoder: Encoder) throws {
+                var container = encoder.container(keyedBy: CodingKeys.self)
+                switch self {
+                case .text(let text):
+                    try container.encode("text", forKey: .type)
+                    try container.encode(text, forKey: .text)
+                case .file(let mediaType, let url, let filename):
+                    try container.encode("file", forKey: .type)
+                    try container.encode(mediaType, forKey: .mediaType)
+                    try container.encode(url, forKey: .url)
+                    try container.encode(filename, forKey: .filename)
+                }
+            }
         }
         struct Message: Encodable {
             let id: String

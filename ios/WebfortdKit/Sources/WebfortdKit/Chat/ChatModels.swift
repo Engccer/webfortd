@@ -9,14 +9,31 @@ public struct ChatSourceRef: Codable, Equatable, Sendable {
     public let href: String
 }
 
+/// 채팅 첨부 파일 1건(이미지·PDF, 최대 1건). 서버 계약(웹 `/api/chat` 미러):
+/// UIMessage file part `{type:"file", mediaType, url:"data:<mime>;base64,<...>", filename}`.
+/// HWP류는 v1 iOS 미지원. 클라이언트가 이미지·PDF만 생성한다(선택 UI 단계에서 이미 제한).
+public struct ChatAttachment: Sendable, Equatable {
+    public let mediaType: String   // "image/jpeg" | "application/pdf"
+    public let dataBase64: String
+    public let filename: String
+
+    public init(mediaType: String, dataBase64: String, filename: String) {
+        self.mediaType = mediaType
+        self.dataBase64 = dataBase64
+        self.filename = filename
+    }
+}
+
 /// 클라이언트 → 서버 전송용 메시지 1건. `ChatAPI.stream`이 UIMessage로 인코딩한다.
 public struct ChatOutgoingMessage: Sendable {
     public let role: String      // "user" | "assistant"
     public let text: String
+    public let attachment: ChatAttachment?
 
-    public init(role: String, text: String) {
+    public init(role: String, text: String, attachment: ChatAttachment? = nil) {
         self.role = role
         self.text = text
+        self.attachment = attachment
     }
 }
 

@@ -35,6 +35,14 @@ final class ChatStore {
     /// 이미 전달했으므로 focus 이동까지 겹치면 같은 문구가 두 번 낭독된다. 중복 통지 금지).
     private(set) var lastErrorMessage: String?
 
+    /// 전송 대기 중인 첨부(이미지·PDF 1건, 크기 검증 통과분만). 전송 시 마지막 user 메시지에
+    /// 실려 나가고, 전송 즉시 클리어된다(웹 계약 미러: 1건만).
+    private(set) var pendingAttachment: ChatAttachment?
+    /// 10MB 초과 등 첨부 실패 시 표시 문구. 새 첨부가 성공하거나 clearAttachment()가 호출되면 nil.
+    private(set) var attachmentErrorMessage: String?
+
+    static let maxAttachmentBytes = 10 * 1024 * 1024 // 10MB, 서버 계약(MAX_FILE_SIZE) 미러
+
     private let api: ChatAPI
     private var streamTask: Task<Void, Never>?
     private var threadId: String?
@@ -52,9 +60,17 @@ final class ChatStore {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
 
+        let attachment = pendingAttachment
+        pendingAttachment = nil
+        attachmentErrorMessage = nil
+
         lastErrorMessage = nil
         messages.append(ChatMessage(role: "user", text: trimmed))
-        let outgoing = messages.map { ChatOutgoingMessage(role: $0.role, text: $0.text) }
+        var outgoing = messages.map { ChatOutgoingMessage(role: $0.role, text: $0.text) }
+        if let attachment, let lastIndex = outgoing.indices.last {
+            outgoing[lastIndex] = ChatOutgoingMessage(
+                role: outgoing[lastIndex].role, text: outgoing[lastIndex].text, attachment: attachment)
+        }
         let assistantIndex = messages.count
         messages.append(ChatMessage(role: "assistant", text: ""))
 
@@ -80,6 +96,27 @@ final class ChatStore {
             }
             self.finishStreaming(generation: myGeneration)
         }
+    }
+
+    /// 첨부 스테이징: 10MB 초과면 즉시 오류 문구 설정 + Announcement 후 미첨부, 통과하면 저장.
+    /// 데이터 로드(PhotosPicker 재인코딩·fileImporter 읽기)는 ChatView가 담당하고, 이 메서드는
+    /// 완성된 바이트만 받아 크기 검증 + base64 인코딩만 수행한다.
+    func stageAttachment(mediaType: String, data: Data, filename: String) {
+        guard data.count <= Self.maxAttachmentBytes else {
+            let message = "파일이 너무 커요. 10MB 이하만 첨부할 수 있어요."
+            attachmentErrorMessage = message
+            AccessibilityNotification.Announcement(message).post()
+            return
+        }
+        attachmentErrorMessage = nil
+        pendingAttachment = ChatAttachment(
+            mediaType: mediaType, dataBase64: data.base64EncodedString(), filename: filename)
+    }
+
+    /// 첨부 제거(사용자 명시 조작). 오류 문구도 함께 지운다.
+    func clearAttachment() {
+        pendingAttachment = nil
+        attachmentErrorMessage = nil
     }
 
     /// 스트리밍 중단: Task를 취소하되 지금까지 누적된 부분 답변은 그대로 둔다(접미 없음).
