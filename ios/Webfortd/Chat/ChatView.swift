@@ -8,9 +8,11 @@ import WebfortdKit
 /// 채팅 답변은 문서 제목이 없으므로 별도 처리 없음. 출처 카드는 번들 문서면 즉시 push한다.
 struct ChatView: View {
     let store: KBStore?
+    /// M4: `WebfortdApp`이 소유하고 `SettingsView`와 공유하는 인스턴스. 설정 탭 로그아웃이 이
+    /// 채팅 탭 이력도 함께 리셋해야 하므로(§signOut) 각 화면이 자체 인스턴스를 새로 만들지 않는다.
+    let chatStore: ChatStore
     let authStore: AuthStore
 
-    @State private var chatStore: ChatStore
     @State private var inputText = ""
     @AccessibilityFocusState private var focusedMessageId: UUID?
 
@@ -24,18 +26,6 @@ struct ChatView: View {
     @State private var showAuthSheet = false
     @State private var showThreadListSheet = false
     @State private var showAccountMenu = false
-
-    /// `authStore`(일반 init 파라미터, `@Environment` 아님, 이 View의 `@State` 초기값이
-    /// 커스텀 init 시점에 이미 필요하므로 환경 주입 타이밍 문제를 피한다)로 tokenProvider를
-    /// 연결한 `ChatAPI`·`ThreadsAPI`를 만들어 `ChatStore`에 주입한다.
-    init(store: KBStore?, authStore: AuthStore) {
-        self.store = store
-        self.authStore = authStore
-        let chatAPI = ChatAPI(baseURL: AppConfig.webBaseURL, tokenProvider: { await authStore.accessToken() })
-        let threadsAPI = ThreadsAPI(
-            baseURL: AppConfig.webBaseURL, tokenProvider: { await authStore.accessToken() })
-        _chatStore = State(initialValue: ChatStore(api: chatAPI, threadsAPI: threadsAPI))
-    }
 
     var body: some View {
         VStack(spacing: 0) {
