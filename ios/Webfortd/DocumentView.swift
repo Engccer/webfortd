@@ -23,6 +23,7 @@ struct DocumentView: View {
                             ProgressView("불러오는 중")
                         }
                         sourceFooter(summary)
+                        backlinkSection(store: store)
                     }
                     .padding()
                 }
@@ -61,5 +62,36 @@ struct DocumentView: View {
             }
         }
         .padding(.top, 16)
+    }
+
+    private func backlinkSection(store: KBStore) -> some View {
+        let backlinks = store.backlinks(slug: slug)
+
+        // 백링크가 없으면 섹션을 렌더하지 않음.
+        guard !backlinks.isEmpty else {
+            return AnyView(EmptyView())
+        }
+
+        return AnyView(
+            VStack(alignment: .leading, spacing: 8) {
+                Divider()
+                    .padding(.top, 16)
+                Text("이 문서를 참조하는 문서")
+                    .font(.headline)
+                    .accessibilityAddTraits(.isHeader)
+
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(backlinks, id: \.from) { backlink in
+                        // summary 미해석이면 해당 행 생략.
+                        if let backlikSummary = store.summary(slug: backlink.from) {
+                            NavigationLink(value: AppRoute.document(slug: backlink.from)) {
+                                Text(backlikSummary.frontmatter.title)
+                            }
+                            .frame(minHeight: 44)
+                        }
+                    }
+                }
+            }
+        )
     }
 }
