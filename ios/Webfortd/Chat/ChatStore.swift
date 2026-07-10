@@ -18,7 +18,7 @@ struct ChatMessage: Identifiable, Equatable {
     }
 }
 
-/// 채팅 스트리밍 상태 저장소. M2는 익명 동작 — threadId는 앱 세션 내에서만 재사용하고
+/// 채팅 스트리밍 상태 저장소. M2는 익명 동작: threadId는 앱 세션 내에서만 재사용하고
 /// 영속화(로그인·서버 저장 이력)는 M3 몫이다.
 @MainActor
 @Observable
@@ -32,14 +32,14 @@ final class ChatStore {
     private(set) var phase: Phase = .idle
     /// 마지막 전송이 오류로 끝났으면 오류 문구, 성공(정상 finish)이거나 중단이면 nil.
     /// ChatView가 완료 시 접근성 포커스 이동 여부를 판단하는 데만 쓰인다(오류는 Announcement로
-    /// 이미 전달했으므로 focus 이동까지 겹치면 같은 문구가 두 번 낭독된다 — 중복 통지 금지).
+    /// 이미 전달했으므로 focus 이동까지 겹치면 같은 문구가 두 번 낭독된다. 중복 통지 금지).
     private(set) var lastErrorMessage: String?
 
     private let api: ChatAPI
     private var streamTask: Task<Void, Never>?
     private var threadId: String?
     /// stop() 직후 곧바로 재전송하면 취소된 이전 Task의 완료 처리가 새 Task의 phase를
-    /// 되돌릴 수 있다 — 세대 토큰으로 "내 Task가 아직 최신인가"만 확인한다.
+    /// 되돌릴 수 있다. 세대 토큰으로 "내 Task가 아직 최신인가"만 확인한다.
     private var generation = 0
 
     init(api: ChatAPI = ChatAPI(baseURL: AppConfig.webBaseURL)) {
@@ -73,7 +73,7 @@ final class ChatStore {
                     self.apply(event, at: assistantIndex)
                 }
             } catch {
-                // stop()에 의한 취소는 오류가 아니다 — 부분 답변을 그대로 유지한다.
+                // stop()에 의한 취소는 오류가 아니다. 부분 답변을 그대로 유지한다.
                 if !Task.isCancelled {
                     self.applyError(error, at: assistantIndex)
                 }
@@ -83,10 +83,15 @@ final class ChatStore {
     }
 
     /// 스트리밍 중단: Task를 취소하되 지금까지 누적된 부분 답변은 그대로 둔다(접미 없음).
+    /// 첫 델타 전 중단이면 빈 메시지를 배열에서 제거(ProgressView 영구 잔존 방지).
     func stop() {
         streamTask?.cancel()
         streamTask = nil
         phase = .idle
+        // 마지막 assistant 메시지가 비어있으면 제거(중단 시 텍스트가 없는 경우).
+        if let lastMessage = messages.last, lastMessage.role == "assistant", lastMessage.text.isEmpty {
+            messages.removeLast()
+        }
     }
 
     private func finishStreaming(generation: Int) {

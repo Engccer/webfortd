@@ -1,8 +1,8 @@
 import SwiftUI
 import WebfortdKit
 
-/// RAG 채팅 화면. 답변은 위키 문서와 동일한 BlockRenderer로 렌더링(제목 헤딩 드롭은 미적용 —
-/// 채팅 답변은 문서 제목이 없다), 출처 카드는 번들 문서면 즉시 push한다.
+/// RAG 채팅 화면. 답변은 위키 문서와 동일한 BlockRenderer로 렌더링(제목 헤딩 드롭은 미적용).
+/// 채팅 답변은 문서 제목이 없으므로 별도 처리 없음. 출처 카드는 번들 문서면 즉시 push한다.
 struct ChatView: View {
     let store: KBStore?
 
@@ -27,9 +27,9 @@ struct ChatView: View {
         .navigationTitle("채팅")
         .navigationBarTitleDisplayMode(.inline)
         .onChange(of: chatStore.phase) { oldPhase, newPhase in
-            // 완료 시 답변 첫 부분으로 포커스 이동(별도 완료 통지 없음 — 포커스 이동이 신호).
+            // 완료 시 답변 첫 부분으로 포커스 이동(별도 완료 통지 없음. 포커스 이동이 신호).
             // 오류는 ChatStore가 이미 Announcement로 알렸으므로 여기서 다시 focus를 옮기면
-            // 같은 문구가 두 번 낭독된다 — lastErrorMessage가 있으면 건너뛴다.
+            // 같은 문구가 두 번 낭독된다. lastErrorMessage가 있으면 건너뛴다.
             guard oldPhase == .streaming, newPhase == .idle, chatStore.lastErrorMessage == nil else { return }
             focusedMessageId = chatStore.messages.last?.id
         }
@@ -119,6 +119,7 @@ struct ChatView: View {
             TextField("질문 입력", text: $inputText, axis: .vertical)
                 .textFieldStyle(.roundedBorder)
                 .lineLimit(1...4)
+                .frame(minHeight: 44)
 
             // 전송 중에도 TextField는 disabled 금지(입력은 유지, send가 자체 가드).
             // 전송 버튼만 같은 위치에서 중단 버튼으로 교체.

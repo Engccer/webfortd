@@ -28,7 +28,7 @@ struct WebfortdApp: App {
     var body: some Scene {
         WindowGroup {
             TabView(selection: $selectedTab) {
-                // SF Symbol은 장식(aria-hidden 등가) — 탭 라벨 텍스트가 접근 가능한 이름.
+                // SF Symbol은 장식(aria-hidden 등가)이므로 탭 라벨 텍스트가 접근 가능한 이름.
                 Tab("위키", systemImage: "books.vertical", value: AppTab.wiki) {
                     NavigationStack(path: $wikiPath) {
                         WikiHomeView(store: store)
