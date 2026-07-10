@@ -78,6 +78,23 @@ import Testing
         #expect(blocks.count == 1)
     }
 
+    @Test func 언더스코어_의사_태그는_전처리로_제거된다() {
+        let blocks = MarkdownBlockParser.parse("<page_header>\n장애인교원 인사관리\n</page_header>")
+        guard case let .paragraph(inline) = blocks.first else {
+            Issue.record("paragraph 아님: \(blocks)"); return
+        }
+        #expect(inline.plain == "장애인교원 인사관리")
+        #expect(!inline.plain.contains("<"))
+    }
+
+    @Test func 펜스_코드블록_안의_의사_태그는_보존된다() {
+        let blocks = MarkdownBlockParser.parse("```\n<page_header>\n```")
+        guard case let .codeBlock(code, _) = blocks.first else {
+            Issue.record("codeBlock 아님: \(blocks)"); return
+        }
+        #expect(code.contains("<page_header>"))
+    }
+
     @Test func 번들_전량_파싱_스모크() throws {
         // 파이프라인 미실행 환경(fresh clone)에서는 조용히 통과.
         guard let store = try? KBStore.bundled(), !store.documents.isEmpty else { return }

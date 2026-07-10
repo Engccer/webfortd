@@ -4,8 +4,37 @@ import Markdown
 /// swift-markdown Document → [KBBlock]. GFM 표 지원이 채택 근거(161개 문서가 표 사용).
 public enum MarkdownBlockParser {
     public static func parse(_ markdown: String) -> [KBBlock] {
-        let document = Document(parsing: markdown)
+        let document = Document(parsing: stripUnderscorePseudoTags(markdown))
         return document.children.compactMap { convertBlock($0) }
+    }
+
+    /// CommonMark HTML 태그명 문법(ASCII 문자·숫자·하이픈만 허용, 언더스코어 불가)상
+    /// `<page_header>` 같은 태그는 HTML로 인식되지 않고 Paragraph 안의 리터럴 Text로
+    /// 파싱된다 — 아래 HTMLBlock/InlineHTML 분기를 전혀 타지 않고 plain에 그대로 누출된다
+    /// (코퍼스 실측 42개 태그 쌍/84회 출현, 전부 `page_header` 단일 태그명).
+    /// 언더스코어를 포함한 태그명의 의사 태그(속성 없는 열림/닫힘 토큰)만 제거한다 —
+    /// 유효 HTML 태그명은 언더스코어가 없어 매치하지 않으므로 기존 처리와 회귀 충돌 없음.
+    /// `<개정 2022. 1. 18.>` 같은 한국어 표기는 첫 글자가 ASCII 문자가 아니라 안전.
+    nonisolated(unsafe) private static let underscorePseudoTag = /<\/?[A-Za-z][A-Za-z0-9]*(?:_[A-Za-z0-9]+)+>/
+
+    /// 펜스 코드블록 내부는 전처리하지 않는다(라인 기반 fence 토글).
+    /// `WikilinkRewriter.rewrite`와 같은 방식이지만, 그쪽은 fence 토글과 실제 치환 로직이
+    /// 한 함수에 결합돼 있어 그대로 재사용하면 결합이 더 어색해진다 — 여기서는 독립된
+    /// private 헬퍼로 단순 복제한다(두 벌 다 짧은 라인 순회라 추상화 이득이 크지 않음).
+    /// 제거 후 앞뒤 공백 정리는 하지 않는다 — 태그만 있던 라인은 빈 라인이 되어 cmark가 자연 처리.
+    private static func stripUnderscorePseudoTags(_ markdown: String) -> String {
+        var out: [Substring] = []
+        var inFence = false
+        for line in markdown.split(separator: "\n", omittingEmptySubsequences: false) {
+            if line.trimmingCharacters(in: .whitespaces).hasPrefix("```") {
+                inFence.toggle()
+                out.append(line)
+                continue
+            }
+            guard !inFence else { out.append(line); continue }
+            out.append(Substring(line.replacing(underscorePseudoTag, with: "")))
+        }
+        return out.joined(separator: "\n")
     }
 
     private static func convertBlock(_ markup: Markup) -> KBBlock? {
