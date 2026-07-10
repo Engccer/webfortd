@@ -1,6 +1,6 @@
 import Foundation
 
-/// 자료실 항목 — 웹 src/lib/library-catalog.ts LIBRARY_ITEMS 미러(번들 library.json).
+/// 자료실 항목: 웹 src/lib/library-catalog.ts LIBRARY_ITEMS 미러(번들 library.json).
 public struct LibraryItem: Codable, Equatable, Sendable, Identifiable {
     public let slug: String
     public let title: String
@@ -42,7 +42,7 @@ public struct LibraryItem: Codable, Equatable, Sendable, Identifiable {
     }
 }
 
-/// 미디어 항목 — 웹 src/lib/media-curation.ts MEDIA_ITEMS 미러(번들 media.json).
+/// 미디어 항목: 웹 src/lib/media-curation.ts MEDIA_ITEMS 미러(번들 media.json).
 public struct MediaItem: Codable, Equatable, Sendable, Identifiable {
     public let slug: String
     public let imagePath: String

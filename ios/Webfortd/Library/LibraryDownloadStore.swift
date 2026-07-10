@@ -16,6 +16,11 @@ final class LibraryDownloadStore {
 
     private(set) var states: [String: State] = [:]
     private var tasks: [String: Task<Void, Never>] = [:]
+    /// slug별 세대 토큰. cancelDownload 직후 재시도(startDownload)가 일어나면 취소된 이전
+    /// Task의 뒤늦은 완료 처리가 새 Task의 상태를 덮어쓸 수 있다(ChatStore.generation과 동형
+    /// 패턴). startDownload·cancelDownload가 증가시키고, performDownload는 상태 갱신·tasks
+    /// 정리 직전 캡처한 값과 비교해 불일치하면 no-op한다.
+    private var generations: [String: Int] = [:]
 
     private let fileManager: FileManager
     private let session: URLSession
@@ -48,15 +53,20 @@ final class LibraryDownloadStore {
     func startDownload(item: WebfortdKit.LibraryItem) {
         guard state(for: item.slug) != .downloading else { return }
         states[item.slug] = .downloading
+        generations[item.slug, default: 0] += 1
+        let myGeneration = generations[item.slug] ?? 0
         let task = Task { [weak self] in
             guard let self else { return }
-            await self.performDownload(item: item)
+            await self.performDownload(item: item, generation: myGeneration)
         }
         tasks[item.slug] = task
     }
 
     /// 다운로드 중단(사용자 명시 취소). Task 취소는 진행 중인 URLSession 다운로드도 함께 취소한다.
+    /// 세대도 증가시켜, 취소 직후 재시도로 시작된 새 Task와 취소된 옛 Task의 뒤늦은 완료 처리를
+    /// 구분한다.
     func cancelDownload(slug: String) {
+        generations[slug, default: 0] += 1
         tasks[slug]?.cancel()
         tasks[slug] = nil
         states[slug] = .notCached
@@ -68,9 +78,17 @@ final class LibraryDownloadStore {
         states[slug] = .notCached
     }
 
-    private func performDownload(item: WebfortdKit.LibraryItem) async {
-        defer { tasks[item.slug] = nil }
+    private func performDownload(item: WebfortdKit.LibraryItem, generation: Int) async {
+        // 취소→재시도 레이스 가드: 캡처한 세대가 최신이 아니면(사이에 cancelDownload나 새
+        // startDownload가 있었으면) tasks 정리조차 하지 않는다. 최신 Task의 tasks[slug]
+        // 참조를 지워버리면 이후 startDownload의 "이미 진행 중" 중복 방지 가드가 무력화된다.
+        defer {
+            if generations[item.slug] == generation {
+                tasks[item.slug] = nil
+            }
+        }
         guard let remoteURL = URL(string: item.downloadUrl) else {
+            guard generations[item.slug] == generation else { return }
             states[item.slug] = .notCached
             AccessibilityNotification.Announcement("다운로드 실패: \(item.title)").post()
             return
@@ -92,13 +110,16 @@ final class LibraryDownloadStore {
             // notCached로 되돌린다. cancelDownload가 이미 같은 상태로 되돌렸을 수도 있어 멱등.
             if Task.isCancelled {
                 try? fileManager.removeItem(at: destination)
+                guard generations[item.slug] == generation else { return }
                 states[item.slug] = .notCached
                 return
             }
+            guard generations[item.slug] == generation else { return }
             states[item.slug] = .cached(fileURL: destination)
             AccessibilityNotification.Announcement("다운로드 완료: \(item.title)").post()
         } catch {
             // 사용자가 명시적으로 중단한 경우 실패 알림을 겹쳐 내지 않는다(의도된 취소).
+            guard generations[item.slug] == generation else { return }
             states[item.slug] = .notCached
             if !Task.isCancelled {
                 AccessibilityNotification.Announcement("다운로드 실패: \(item.title)").post()
