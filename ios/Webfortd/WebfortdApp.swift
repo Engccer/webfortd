@@ -29,7 +29,11 @@ struct WebfortdApp: App {
     /// M3: OTP 로그인 + 세션 상태. `ChatView`에 명시적으로 넘겨(기존 `store: KBStore?` 전달과
     /// 동일한 패턴, 이 앱은 아직 `.environment()` DI를 쓰지 않는다) `ChatAPI`·`ThreadsAPI`의
     /// tokenProvider로 연결한다.
-    @State private var authStore = AuthStore()
+    @State private var authStore: AuthStore
+    /// M4: 설정 탭 로그아웃이 ChatView 로그아웃과 동일하게 대화 이력도 리셋해야 하므로, ChatStore를
+    /// 앱 레벨로 끌어올려 ChatView·SettingsView가 같은 인스턴스를 공유한다(이전에는 ChatView가
+    /// 자체 init에서 생성·단독 소유했다).
+    @State private var chatStore: ChatStore
     @Environment(\.scenePhase) private var scenePhase
 
     init() {
@@ -37,6 +41,13 @@ struct WebfortdApp: App {
         store = try? KBStore.bundled()
         libraryItems = try? CatalogStore.libraryItems()
         mediaItems = try? CatalogStore.mediaItems()
+
+        let authStore = AuthStore()
+        _authStore = State(initialValue: authStore)
+        let chatAPI = ChatAPI(baseURL: AppConfig.webBaseURL, tokenProvider: { await authStore.accessToken() })
+        let threadsAPI = ThreadsAPI(
+            baseURL: AppConfig.webBaseURL, tokenProvider: { await authStore.accessToken() })
+        _chatStore = State(initialValue: ChatStore(api: chatAPI, threadsAPI: threadsAPI))
     }
 
     var body: some Scene {
@@ -51,7 +62,7 @@ struct WebfortdApp: App {
                 }
                 Tab("채팅", systemImage: "bubble.left.and.text.bubble.right", value: AppTab.chat) {
                     NavigationStack(path: $chatPath) {
-                        ChatView(store: store, authStore: authStore)
+                        ChatView(store: store, chatStore: chatStore, authStore: authStore)
                             .navigationDestination(for: AppRoute.self) { route in destination(for: route) }
                     }
                 }
@@ -68,7 +79,7 @@ struct WebfortdApp: App {
                 }
                 Tab("설정", systemImage: "gearshape", value: AppTab.settings) {
                     NavigationStack {
-                        SettingsView()
+                        SettingsView(store: store, chatStore: chatStore, authStore: authStore)
                     }
                 }
             }
