@@ -43,5 +43,14 @@ const bundleIndex = {
 }
 fs.writeFileSync(path.join(OUT_DIR, "kb-index.json"), JSON.stringify(bundleIndex, null, 1))
 
+// 자료실·미디어 카탈로그 추출
+import { execSync } from "node:child_process"
+const catalogs = JSON.parse(execSync(
+  `npx tsx -e "import { LIBRARY_ITEMS } from './src/lib/library-catalog'; import { MEDIA_ITEMS } from './src/lib/media-curation'; console.log(JSON.stringify({ library: LIBRARY_ITEMS.filter(i => (i.status ?? 'published') === 'published'), media: MEDIA_ITEMS.filter(i => (i.status ?? 'published') === 'published') }))"`,
+  { cwd: ROOT, encoding: "utf8" },
+))
+fs.writeFileSync(path.join(OUT_DIR, "library.json"), JSON.stringify(catalogs.library, null, 1))
+fs.writeFileSync(path.join(OUT_DIR, "media.json"), JSON.stringify(catalogs.media, null, 1))
+
 console.log(`bundle-content: ${published.length}/${index.documents.length} published 문서, ` +
-  `backlink 대상 ${Object.keys(bundleIndex.wiki_backlinks).length}건 → ${path.relative(ROOT, OUT_DIR)}`)
+  `library ${catalogs.library.length}건, media ${catalogs.media.length}건 → ${path.relative(ROOT, OUT_DIR)}`)
