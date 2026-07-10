@@ -34,4 +34,23 @@ public extension [KBBlock] {
         else { return self }
         return Array(dropFirst())
     }
+
+    /// 블록 트리의 낭독·검색용 순수 텍스트 라인들(코드블록·이미지·구분선 제외).
+    /// 접근성·검색은 plain이 정본, raw 마크다운(`<br/>`·표 파이프·`**`·`\r`)이
+    /// 아니라 이 라인들을 캐시·발췌 대상으로 삼는다.
+    var plainLines: [String] {
+        flatMap { block -> [String] in
+            switch block {
+            case .heading(_, let inline): return [inline.plain]
+            case .paragraph(let inline): return [inline.plain]
+            case .bulletList(let items), .orderedList(let items, _):
+                return items.flatMap(\.plainLines)
+            case .table(let header, let rows):
+                return [header.map(\.plain).joined(separator: ", ")]
+                    + rows.map { $0.map(\.plain).joined(separator: ", ") }
+            case .blockquote(let blocks): return blocks.plainLines
+            case .codeBlock, .image, .thematicBreak: return []
+            }
+        }
+    }
 }

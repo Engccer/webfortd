@@ -99,11 +99,21 @@ import Testing
         // 파이프라인 미실행 환경(fresh clone)에서는 조용히 통과.
         guard let store = try? KBStore.bundled(), !store.documents.isEmpty else { return }
         var emptySlugs: [String] = []
+        var tagsRemaining: [(slug: String, pattern: String)] = []
         for doc in store.documents {
             let blocks = MarkdownBlockParser.parse(try store.loadBody(slug: doc.slug))
             if blocks.isEmpty { emptySlugs.append(doc.slug) }
+
+            // plain 텍스트 전량 수집 후 마크다운 tag 잔존 검사(KBBlock.plainLines가 정본).
+            let allPlain = blocks.plainLines.joined(separator: " ")
+            for pattern in ["<page_header", "<br", "</"] {
+                if allPlain.contains(pattern) {
+                    tagsRemaining.append((slug: doc.slug, pattern: pattern))
+                }
+            }
         }
         #expect(emptySlugs.isEmpty, "빈 파싱 결과: \(emptySlugs)")
+        #expect(tagsRemaining.isEmpty, "마크다운 tag 잔존: \(tagsRemaining)")
     }
 
     @Test func 첫_heading이_제목과_같으면_제거한다() {
