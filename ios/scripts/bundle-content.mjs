@@ -2,6 +2,7 @@
 // 실행: node ios/scripts/bundle-content.mjs  (repo 루트 기준)
 import fs from "node:fs"
 import path from "node:path"
+import { execSync } from "node:child_process"
 
 const ROOT = path.resolve(import.meta.dirname, "..", "..")
 const INDEX_SRC = path.join(ROOT, "src", "lib", "kb-index.generated.json")
@@ -47,7 +48,6 @@ fs.writeFileSync(path.join(OUT_DIR, "kb-index.json"), JSON.stringify(bundleIndex
 // NEXT_PUBLIC_SUPABASE_URL을 필요로 하는데, execSync는 별도 프로세스라 .env.local을 스스로
 // 읽지 않는다(암묵적으로 현재 셸의 process.env에 이미 있어야만 동작한다. direnv 미적용 셸에서
 // 실행하면 조용히 깨진 URL로 번들된다). .env.local에서 직접 읽어 명시 주입한다.
-import { execSync } from "node:child_process"
 
 function readEnvLocalValue(key) {
   const envPath = path.join(ROOT, ".env.local")
@@ -59,7 +59,7 @@ function readEnvLocalValue(key) {
   return line.slice(key.length + 1).trim().replace(/^["']|["']$/g, "")
 }
 
-const supabaseUrl = readEnvLocalValue("NEXT_PUBLIC_SUPABASE_URL") || process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || readEnvLocalValue("NEXT_PUBLIC_SUPABASE_URL")
 if (!supabaseUrl) {
   throw new Error(
     "NEXT_PUBLIC_SUPABASE_URL을 찾을 수 없습니다(.env.local에도, 환경변수에도 없음). " +

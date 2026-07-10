@@ -48,13 +48,24 @@ final class LibraryDownloadStore {
         states[slug] ?? .notCached
     }
 
+    /// 캐시 파일이 실제 존재하는지 확인하고, 없으면 stale 상태를 강등한다.
+    /// "열기" 액션 시점에 호출해 캐시 퍼지 대응(사용자가 다른 앱에서 파일을 삭제한 경우).
+    func cachedURLIfExists(for slug: String) -> URL? {
+        guard case .cached(let fileURL) = states[slug] else { return nil }
+        guard fileManager.fileExists(atPath: fileURL.path) else {
+            states[slug] = .notCached
+            return nil
+        }
+        return fileURL
+    }
+
     /// 다운로드 시작. 이미 진행 중이면 중복 시작하지 않는다.
     // DeveloperToolsSupport(Xcode Preview 라이브러리)에도 동명 타입이 있어 완전 수식 필요.
     func startDownload(item: WebfortdKit.LibraryItem) {
         guard state(for: item.slug) != .downloading else { return }
         states[item.slug] = .downloading
         generations[item.slug, default: 0] += 1
-        let myGeneration = generations[item.slug] ?? 0
+        let myGeneration = generations[item.slug, default: 0]
         let task = Task { [weak self] in
             guard let self else { return }
             await self.performDownload(item: item, generation: myGeneration)
