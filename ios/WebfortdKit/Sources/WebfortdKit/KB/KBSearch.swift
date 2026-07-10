@@ -12,7 +12,7 @@ public final class KBSearch {
     private let store: KBStore
     /// slug → (lower: 소문자 매칭용, original: 원본 대소문자 보존) plain 텍스트 쌍
     /// (파싱 후, 코드블록·이미지·구분선 제외). raw 마크다운이 아니라 이 캐시로
-    /// 검색·발췌한다 — 접근성·검색은 plain이 정본(KBBlock 원칙).
+    /// 검색·발췌한다. 접근성·검색은 plain이 정본(KBBlock 원칙).
     /// 매칭(AND 토큰 포함 여부)은 lower로, snippet 발췌는 original에서 해
     /// 대문자 약어(NEIS 등)가 소문자로 노출되는 것을 막는다.
     /// 첫 검색에서 1회 구축(535건 전량 파싱, 약 1초 소요).

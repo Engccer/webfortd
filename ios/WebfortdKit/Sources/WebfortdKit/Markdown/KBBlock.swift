@@ -36,7 +36,7 @@ public extension [KBBlock] {
     }
 
     /// 블록 트리의 낭독·검색용 순수 텍스트 라인들(코드블록·이미지·구분선 제외).
-    /// 접근성·검색은 plain이 정본 — raw 마크다운(`<br/>`·표 파이프·`**`·`\r`)이
+    /// 접근성·검색은 plain이 정본, raw 마크다운(`<br/>`·표 파이프·`**`·`\r`)이
     /// 아니라 이 라인들을 캐시·발췌 대상으로 삼는다.
     var plainLines: [String] {
         flatMap { block -> [String] in

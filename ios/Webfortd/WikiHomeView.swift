@@ -31,7 +31,7 @@ struct BrowsableAxis {
 struct WikiHomeView: View {
     let store: KBStore?
 
-    /// 검색 3-state: 검색 전(타이핑 중 미제출) ≠ 0건 ≠ 결과 있음 — 화면·통지 모두 구분한다.
+    /// 검색 3-state: 검색 전(타이핑 중 미제출) ≠ 0건 ≠ 결과 있음. 화면·통지 모두 구분한다.
     private enum SearchPhase: Equatable {
         case notSubmitted
         case searching
@@ -61,7 +61,7 @@ struct WikiHomeView: View {
                     performSearch(store: store)
                 }
                 .onChange(of: searchText) { _, newValue in
-                    // 검색어를 지우면 홈 콘텐츠로 복귀 — 다음 검색은 새로 submit해야 실행된다.
+                    // 검색어를 지우면 홈 콘텐츠로 복귀. 다음 검색은 새로 submit해야 실행된다.
                     guard newValue.isEmpty else { return }
                     searchPhase = .notSubmitted
                     searchResults = []
@@ -134,12 +134,16 @@ struct WikiHomeView: View {
         }
     }
 
-    /// 오늘의 위키: day-of-year 기반 결정적 1건 선택(웹은 KST 시드 셔플 5건 — 알고리즘 독립, 목적 동일).
+    /// 오늘의 위키: 기준일로부터 경과 일수 기반 결정적 1건 선택, 534일 주기로 전 문서에 도달한다
+    /// (웹은 KST 시드 셔플 5건, 알고리즘 독립, 목적 동일).
     private func todayDocument(_ store: KBStore) -> KBDocumentSummary? {
         let docs = store.documents.sorted { $0.slug < $1.slug }
         guard !docs.isEmpty else { return nil }
-        let day = Calendar.current.ordinality(of: .day, in: .year, for: Date()) ?? 1
-        return docs[day % docs.count]
+        // 기준일로부터의 경과 일수로 전체 문서를 순환(534일 주기로 전 문서 도달).
+        let days = Calendar.current.dateComponents(
+            [.day], from: Date(timeIntervalSinceReferenceDate: 0), to: Date()).day ?? 0
+        let index = ((days % docs.count) + docs.count) % docs.count
+        return docs[index]
     }
 
     // MARK: - 축 카드

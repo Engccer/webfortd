@@ -5,10 +5,6 @@ struct AxisListView: View {
     let store: KBStore?
     let axis: KBAxis
 
-    private var axisLabel: String {
-        BrowsableAxis.all.first { $0.axis == axis }?.label ?? axis.rawValue
-    }
-
     var body: some View {
         Group {
             if let store {
@@ -25,7 +21,7 @@ struct AxisListView: View {
                     systemImage: "exclamationmark.triangle")
             }
         }
-        .navigationTitle(axisLabel)
+        .navigationTitle(BrowsableAxis.label(for: axis))
         .navigationBarTitleDisplayMode(.inline)
     }
 }

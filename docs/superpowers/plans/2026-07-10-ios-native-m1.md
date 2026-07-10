@@ -17,7 +17,7 @@
 
 ## M0에서 이월된 보강 (Task 1에 포함)
 
-- 전량 파싱 스모크 assertion 강화: plain에 태그 노이즈 잔존 검사(`<page_header`·`<br`·`</` 0건 — `<개정 ...>` 한국어 표기는 오탐 없도록 이 3패턴만).
+- 전량 파싱 스모크 assertion 강화: plain에 태그 노이즈 잔존 검사(`<page_header`·`<br`·`</` 0건, `<개정 ...>` 한국어 표기는 오탐 없도록 이 3패턴만).
 
 ## 파일 구조 (M1 완료 시점 신규/수정)
 
@@ -84,9 +84,9 @@ import Testing
     }
 }
 ```
-주의: fixture 인덱스의 filePath(`content/agreements/2020-ca-1-2.md`)가 Fixtures 평면 구조와 다르므로, 테스트가 도는 fixture 세팅은 KBStoreTests의 기존 방식과 동일하게 body 로드 실패를 허용해야 한다. **KBSearch는 body 로드에 실패한 문서를 제목-만 검색 대상으로 취급한다**(3-state 뭉개기 아님: 검색은 가용 정보 기반 best-effort, 문서 열람은 별도 오류 처리) — 이 동작 자체가 위 테스트의 전제다.
+주의: fixture 인덱스의 filePath(`content/agreements/2020-ca-1-2.md`)가 Fixtures 평면 구조와 다르므로, 테스트가 도는 fixture 세팅은 KBStoreTests의 기존 방식과 동일하게 body 로드 실패를 허용해야 한다. **KBSearch는 body 로드에 실패한 문서를 제목-만 검색 대상으로 취급한다**(3-state 뭉개기 아님: 검색은 가용 정보 기반 best-effort, 문서 열람은 별도 오류 처리). 이 동작 자체가 위 테스트의 전제다.
 
-- [ ] **Step 2: FAIL 확인** — `swift test --package-path ios/WebfortdKit`
+- [ ] **Step 2: FAIL 확인**: `swift test --package-path ios/WebfortdKit`
 
 - [ ] **Step 3: 구현**
 
@@ -181,11 +181,11 @@ public final class KBSearch {
     }
 }
 ```
-주의: `KBSearch`는 `bodyCache` 가변 상태가 있어 Sendable이 아니다 — 앱에서는 MainActor(기본 격리) 위에서만 사용한다. Kit는 main actor 기본이 아니므로 클래스에 `@MainActor` 붙이지 말 것(테스트는 그대로 동작).
+주의: `KBSearch`는 `bodyCache` 가변 상태가 있어 Sendable이 아니다. 앱에서는 MainActor(기본 격리) 위에서만 사용한다. Kit는 main actor 기본이 아니므로 클래스에 `@MainActor` 붙이지 말 것(테스트는 그대로 동작).
 
-- [ ] **Step 4: 스모크 강화** — `MarkdownBlockParserTests.swift`의 `번들_전량_파싱_스모크`에서, 파싱된 모든 블록의 plain을 수집해 다음 3패턴 잔존 0건 assertion 추가: `"<page_header"`, `"<br"`, `"</"`. (paragraph·heading·table 셀·리스트 항목을 재귀 수집하는 private 헬퍼를 테스트 파일 안에 작성.)
+- [ ] **Step 4: 스모크 강화**: `MarkdownBlockParserTests.swift`의 `번들_전량_파싱_스모크`에서, 파싱된 모든 블록의 plain을 수집해 다음 3패턴 잔존 0건 assertion 추가: `"<page_header"`, `"<br"`, `"</"`. (paragraph·heading·table 셀·리스트 항목을 재귀 수집하는 private 헬퍼를 테스트 파일 안에 작성.)
 
-- [ ] **Step 5: PASS 확인** — `node ios/scripts/bundle-content.mjs && swift test --package-path ios/WebfortdKit` (기존 21 + 신규 3 = 24)
+- [ ] **Step 5: PASS 확인**: `node ios/scripts/bundle-content.mjs && swift test --package-path ios/WebfortdKit` (기존 21 + 신규 3 = 24)
 
 - [ ] **Step 6: 커밋**
 
@@ -201,7 +201,7 @@ git commit -m "feat(ios): KBSearch 오프라인 검색 엔진 + 파싱 스모크
 
 **Interfaces:**
 - Consumes: `KBSearch`, `KBSearchResult`, `AppRoute`, `BrowsableAxis.all`, `KBStore`
-- Produces: 홈 화면 최종형 — `.searchable` 검색창, 검색 중엔 결과 목록이 홈 콘텐츠를 대체, 평시엔 "오늘의 위키" 섹션 + 축 카드 목록.
+- Produces: 홈 화면 최종형: `.searchable` 검색창, 검색 중엔 결과 목록이 홈 콘텐츠를 대체, 평시엔 "오늘의 위키" 섹션 + 축 카드 목록.
 
 **동작 명세:**
 - `.searchable(text:prompt: "정책·제도 검색")`을 NavigationStack 안 List에 부착. iOS 표준 검색 UX(취소·클리어 무료 획득).
@@ -213,8 +213,8 @@ git commit -m "feat(ios): KBSearch 오프라인 검색 엔진 + 파싱 스모크
 - `KBSearch` 인스턴스는 `@State private var search: KBSearch?`로 뷰 최초 task에서 생성(본문 캐시가 첫 검색 시 1회 로드).
 
 - [ ] **Step 1: 구현** (위 명세대로. List를 `List { if 검색중 { 결과 섹션 } else { 오늘의위키 섹션; 축카드 섹션 } }` 구조로 재구성)
-- [ ] **Step 2: 빌드 + 시뮬레이터 스모크** — 검색("보조공학" 등 실단어) 결과 표시·문서 이동·검색어 클리어 복귀를 확인, 스크린샷 `/tmp/webfortd-m1-search.png`
-- [ ] **Step 3: 커밋** — `git add ios/Webfortd/WikiHomeView.swift && git commit -m "feat(ios): 홈 검색(.searchable submit) + 오늘의 위키 섹션" -- ios/Webfortd/WikiHomeView.swift`
+- [ ] **Step 2: 빌드 + 시뮬레이터 스모크**: 검색("보조공학" 등 실단어) 결과 표시·문서 이동·검색어 클리어 복귀를 확인, 스크린샷 `/tmp/webfortd-m1-search.png`
+- [ ] **Step 3: 커밋**: `git add ios/Webfortd/WikiHomeView.swift && git commit -m "feat(ios): 홈 검색(.searchable submit) + 오늘의 위키 섹션" -- ios/Webfortd/WikiHomeView.swift`
 
 ### Task 3: 백링크 섹션 (문서 화면)
 
@@ -226,11 +226,11 @@ git commit -m "feat(ios): KBSearch 오프라인 검색 엔진 + 파싱 스모크
 - Produces: 출처 푸터 아래 "이 문서를 참조하는 문서" 섹션.
 
 **동작 명세:**
-- `store.backlinks(slug: slug)`가 비어 있으면 섹션 자체를 렌더하지 않는다(빈 헤딩 금지 — 미니멀).
-- 있으면: `Text("이 문서를 참조하는 문서").font(.headline).accessibilityAddTraits(.isHeader)` + 각 backlink의 `from` slug를 `summary(slug:)`로 해석해 제목 행(NavigationLink → `AppRoute.document`). summary 미해석(이론상 없음 — 번들 필터가 보장)이면 해당 행 생략.
+- `store.backlinks(slug: slug)`가 비어 있으면 섹션 자체를 렌더하지 않는다(빈 헤딩 금지, 미니멀).
+- 있으면: `Text("이 문서를 참조하는 문서").font(.headline).accessibilityAddTraits(.isHeader)` + 각 backlink의 `from` slug를 `summary(slug:)`로 해석해 제목 행(NavigationLink → `AppRoute.document`). summary 미해석(이론상 없음, 번들 필터가 보장)이면 해당 행 생략.
 - 행: 제목 단일 Text, minHeight 44.
 
 - [ ] **Step 1: 구현**
 - [ ] **Step 2: 빌드 + 백링크 보유 문서(예: kb-index의 wiki_backlinks 상위 항목) 시뮬레이터 확인**, 스크린샷 `/tmp/webfortd-m1-backlinks.png`
-- [ ] **Step 3: 전체 검증** — `swift test --package-path ios/WebfortdKit` 24/24 + xcodebuild BUILD SUCCEEDED
-- [ ] **Step 4: 커밋** — `git add ios/Webfortd/DocumentView.swift && git commit -m "feat(ios): 문서 백링크 섹션(참조하는 문서 목록)" -- ios/Webfortd/DocumentView.swift`
+- [ ] **Step 3: 전체 검증**: `swift test --package-path ios/WebfortdKit` 24/24 + xcodebuild BUILD SUCCEEDED
+- [ ] **Step 4: 커밋**: `git add ios/Webfortd/DocumentView.swift && git commit -m "feat(ios): 문서 백링크 섹션(참조하는 문서 목록)" -- ios/Webfortd/DocumentView.swift`
