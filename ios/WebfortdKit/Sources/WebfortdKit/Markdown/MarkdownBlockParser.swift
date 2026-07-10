@@ -52,12 +52,15 @@ public enum MarkdownBlockParser {
     }
 
     /// 인라인 마크업 → AttributedString(+plain). 강조·인라인코드·링크만 반영(미니멀).
-    /// 파라미터 타입은 swift-markdown 0.8.0 실제 API 기준 `any PlainTextConvertibleMarkup`
-    /// (brief 원안의 `Markup`은 `plainText`를 선언하지 않아 컴파일 불가 — Task 5 리포트 참조).
-    private static func inline(of container: any PlainTextConvertibleMarkup) -> KBInline {
+    /// plain은 `container.plainText`(원문 재직렬화, 인라인 HTML 태그 포함)가 아니라
+    /// **완성된 attributed에서 파생**한다 — plain·attributed가 항상 동일한 강등 규칙을
+    /// 거치도록 구성상 보장(예: `<br/>` → 공백 1개가 양쪽에 동일 반영). 파라미터 타입은
+    /// `container.children` 순회만 쓰므로 기저 프로토콜 `Markup`으로 되돌릴 수 있다
+    /// (`plainText` 의존 제거로 `any PlainTextConvertibleMarkup` 좁히기가 불필요해짐).
+    private static func inline(of container: Markup) -> KBInline {
         var attributed = AttributedString()
         appendInlines(container.children, to: &attributed, bold: false, italic: false, link: nil)
-        return KBInline(attributed: attributed, plain: container.plainText)
+        return KBInline(attributed: attributed, plain: String(attributed.characters))
     }
 
     private static func appendInlines(
@@ -84,8 +87,16 @@ public enum MarkdownBlockParser {
                 attributed.append(styled(image.plainText, bold: bold, italic: italic, link: link))
             case is SoftBreak, is LineBreak:
                 attributed.append(AttributedString(" "))
+            case let html as InlineHTML:
+                // 인라인 HTML은 렌더 대상이 아니라 원문 유지 신호(예: 표 셀 줄바꿈 `<br/>`).
+                // `<br`류만 공백 1개로 강등하고, 그 외 태그 토큰(여닫이 포함)은 버린다 —
+                // 여닫이 태그 사이의 실제 텍스트는 별도 Markdown.Text 노드로 들어오므로
+                // 태그 자체를 버려도 정보 손실이 없다(순수 마크업 노이즈만 제거).
+                if html.rawHTML.range(of: "<br", options: [.caseInsensitive]) != nil {
+                    attributed.append(AttributedString(" "))
+                }
             default:
-                // 미지 인라인(Strikethrough·InlineHTML·SymbolLink 등)은 InlineMarkup.plainText로 강등.
+                // 미지 인라인(Strikethrough·SymbolLink 등, InlineHTML은 위에서 별도 처리)은 InlineMarkup.plainText로 강등.
                 // `Markup`(기저 프로토콜) 자체엔 plainText가 없어(swift-markdown 0.8.0 실측) 하위 프로토콜로 캐스팅.
                 let text = (child as? InlineMarkup)?.plainText ?? child.format()
                 attributed.append(styled(text, bold: bold, italic: italic, link: link))

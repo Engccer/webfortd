@@ -55,6 +55,15 @@ import Testing
         #expect(alt == "조직도 설명")
     }
 
+    @Test func 인라인_HTML_br은_공백으로_강등된다() {
+        let blocks = MarkdownBlockParser.parse("| 구분 |\n|---|\n| 장애유형<br/>대분류 |")
+        guard case let .table(_, rows) = blocks[0] else {
+            Issue.record("table 아님: \(blocks)"); return
+        }
+        #expect(rows[0][0].plain == "장애유형 대분류")
+        #expect(!rows[0][0].plain.contains("<"))
+    }
+
     @Test func 번들_전량_파싱_스모크() throws {
         // 파이프라인 미실행 환경(fresh clone)에서는 조용히 통과.
         guard let store = try? KBStore.bundled(), !store.documents.isEmpty else { return }
