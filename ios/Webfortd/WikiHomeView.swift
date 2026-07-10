@@ -1,7 +1,7 @@
 import SwiftUI
 import WebfortdKit
 
-/// 웹 src/lib/kb-axis.ts BROWSABLE_AXES 미러 — 순서·라벨·안내문 동일.
+/// 웹 src/lib/kb-axis.ts BROWSABLE_AXES 미러: 순서·라벨·안내문 동일.
 struct BrowsableAxis {
     let axis: KBAxis
     let label: String

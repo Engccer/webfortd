@@ -10,18 +10,18 @@ public enum MarkdownBlockParser {
 
     /// CommonMark HTML 태그명 문법(ASCII 문자·숫자·하이픈만 허용, 언더스코어 불가)상
     /// `<page_header>` 같은 태그는 HTML로 인식되지 않고 Paragraph 안의 리터럴 Text로
-    /// 파싱된다 — 아래 HTMLBlock/InlineHTML 분기를 전혀 타지 않고 plain에 그대로 누출된다
+    /// 파싱된다. 아래 HTMLBlock/InlineHTML 분기를 전혀 타지 않고 plain에 그대로 누출된다
     /// (코퍼스 실측 42개 태그 쌍/84회 출현, 전부 `page_header` 단일 태그명).
-    /// 언더스코어를 포함한 태그명의 의사 태그(속성 없는 열림/닫힘 토큰)만 제거한다 —
+    /// 언더스코어를 포함한 태그명의 의사 태그(속성 없는 열림/닫힘 토큰)만 제거한다.
     /// 유효 HTML 태그명은 언더스코어가 없어 매치하지 않으므로 기존 처리와 회귀 충돌 없음.
     /// `<개정 2022. 1. 18.>` 같은 한국어 표기는 첫 글자가 ASCII 문자가 아니라 안전.
     nonisolated(unsafe) private static let underscorePseudoTag = /<\/?[A-Za-z][A-Za-z0-9]*(?:_[A-Za-z0-9]+)+>/
 
     /// 펜스 코드블록 내부는 전처리하지 않는다(라인 기반 fence 토글).
     /// `WikilinkRewriter.rewrite`와 같은 방식이지만, 그쪽은 fence 토글과 실제 치환 로직이
-    /// 한 함수에 결합돼 있어 그대로 재사용하면 결합이 더 어색해진다 — 여기서는 독립된
+    /// 한 함수에 결합돼 있어 그대로 재사용하면 결합이 더 어색해진다. 여기서는 독립된
     /// private 헬퍼로 단순 복제한다(두 벌 다 짧은 라인 순회라 추상화 이득이 크지 않음).
-    /// 제거 후 앞뒤 공백 정리는 하지 않는다 — 태그만 있던 라인은 빈 라인이 되어 cmark가 자연 처리.
+    /// 제거 후 앞뒤 공백 정리는 하지 않는다. 태그만 있던 라인은 빈 라인이 되어 cmark가 자연 처리.
     private static func stripUnderscorePseudoTags(_ markdown: String) -> String {
         var out: [Substring] = []
         var inFence = false
@@ -56,7 +56,7 @@ public enum MarkdownBlockParser {
                 list.listItems.map { item in item.children.compactMap { convertBlock($0) } },
                 start: Int(list.startIndex))
         case let table as Markdown.Table:
-            // cells/rows는 LazyMapSequence — .map을 이어붙이면 lazy 체이닝이 지속돼
+            // cells/rows는 LazyMapSequence: .map을 이어붙이면 lazy 체이닝이 지속돼
             // [KBInline]/[[KBInline]]로 바로 대입되지 않는다(swift-markdown 0.8.0 실측). Array(...)로 즉시 평가.
             let header = Array(table.head.cells.map { inline(of: $0) })
             let rows = Array(table.body.rows.map { row in Array(row.cells.map { inline(of: $0) }) })
@@ -69,7 +69,7 @@ public enum MarkdownBlockParser {
         case is ThematicBreak:
             return .thematicBreak
         case let html as HTMLBlock:
-            // 블록 레벨 HTML은 태그를 제거하고 내부 텍스트만 보존한다 —
+            // 블록 레벨 HTML은 태그를 제거하고 내부 텍스트만 보존한다.
             // 웹 브라우저가 미지 태그를 무시하고 내부 텍스트만 렌더링하는 동작과 등가이며,
             // 태그 토큰(`<aside>`·`<page_header>` 등)은 스크린리더 낭독 노이즈일 뿐이다.
             // 태그만 있고 내부 텍스트가 없으면 블록 자체를 생략(빈 문단 방지).
@@ -87,7 +87,7 @@ public enum MarkdownBlockParser {
 
     /// 인라인 마크업 → AttributedString(+plain). 강조·인라인코드·링크만 반영(미니멀).
     /// plain은 `container.plainText`(원문 재직렬화, 인라인 HTML 태그 포함)가 아니라
-    /// **완성된 attributed에서 파생**한다 — plain·attributed가 항상 동일한 강등 규칙을
+    /// **완성된 attributed에서 파생**한다. plain·attributed가 항상 동일한 강등 규칙을
     /// 거치도록 구성상 보장(예: `<br/>` → 공백 1개가 양쪽에 동일 반영). 파라미터 타입은
     /// `container.children` 순회만 쓰므로 기저 프로토콜 `Markup`으로 되돌릴 수 있다
     /// (`plainText` 의존 제거로 `any PlainTextConvertibleMarkup` 좁히기가 불필요해짐).
@@ -123,7 +123,7 @@ public enum MarkdownBlockParser {
                 attributed.append(AttributedString(" "))
             case let html as InlineHTML:
                 // 인라인 HTML은 렌더 대상이 아니라 원문 유지 신호(예: 표 셀 줄바꿈 `<br/>`).
-                // `<br`류만 공백 1개로 강등하고, 그 외 태그 토큰(여닫이 포함)은 버린다 —
+                // `<br`류만 공백 1개로 강등하고, 그 외 태그 토큰(여닫이 포함)은 버린다.
                 // 여닫이 태그 사이의 실제 텍스트는 별도 Markdown.Text 노드로 들어오므로
                 // 태그 자체를 버려도 정보 손실이 없다(순수 마크업 노이즈만 제거).
                 if html.rawHTML.range(of: "<br", options: [.caseInsensitive]) != nil {

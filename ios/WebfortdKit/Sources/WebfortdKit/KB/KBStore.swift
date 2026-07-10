@@ -1,6 +1,6 @@
 import Foundation
 
-/// 번들 KB 스토어 — 인덱스 로드·조회·본문 로드. UI 비의존.
+/// 번들 KB 스토어: 인덱스 로드·조회·본문 로드. UI 비의존.
 public final class KBStore: Sendable {
     public let index: KBIndex
     private let contentRootURL: URL
@@ -51,7 +51,7 @@ public final class KBStore: Sendable {
         return try loadBody(atRelativePath: filePath)
     }
 
-    /// contentRoot 기준 상대 경로 로드 — 테스트 주입용 공개.
+    /// contentRoot 기준 상대 경로 로드: 테스트 주입용 공개.
     public func loadBody(atRelativePath relativePath: String) throws -> String {
         let url = contentRootURL.appendingPathComponent(relativePath)
         let raw = try String(contentsOf: url, encoding: .utf8)

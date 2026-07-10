@@ -4,9 +4,9 @@
 
 **Goal:** `ios/` 신규 트리에 WebfortdKit(SPM, UI 비의존)과 SwiftUI 앱 골격을 세우고, 오프라인 번들 위키(축 목록 → 문서 목록 → 문서 렌더링, 표 포함)를 실기기 비행기 모드에서 동작시킨다(M0). M1~M5는 로드맵으로 고정하고 각 마일스톤 경계에서 상세 plan을 새로 쓴다.
 
-**Architecture:** 순수 API 클라이언트 + 오프라인 콘텐츠 번들. M0은 네트워크 코드가 전혀 없다 — 빌드 파이프라인이 `content/` 마크다운(published만)과 kb-index를 WebfortdKit SPM 리소스로 복사하고, Kit가 인덱스 디코딩·문서 스토어·위키링크 전처리·마크다운 블록 AST를 제공하며, 앱 타깃은 SwiftUI 렌더러·화면만 얹는다. spec: `docs/superpowers/specs/2026-07-10-ios-native-app-design.md`.
+**Architecture:** 순수 API 클라이언트 + 오프라인 콘텐츠 번들. M0은 네트워크 코드가 전혀 없다. 빌드 파이프라인이 `content/` 마크다운(published만)과 kb-index를 WebfortdKit SPM 리소스로 복사하고, Kit가 인덱스 디코딩·문서 스토어·위키링크 전처리·마크다운 블록 AST를 제공하며, 앱 타깃은 SwiftUI 렌더러·화면만 얹는다. spec: `docs/superpowers/specs/2026-07-10-ios-native-app-design.md`.
 
-**Tech Stack:** Swift 6 + SwiftUI + `@Observable` + `NavigationStack` + Swift Testing. 의존성: `swift-markdown` 0.8.0(Apple 공식, 표 렌더링 필수 — 161개 문서가 표 사용)만. supabase-swift는 M3에서 추가.
+**Tech Stack:** Swift 6 + SwiftUI + `@Observable` + `NavigationStack` + Swift Testing. 의존성: `swift-markdown` 0.8.0(Apple 공식, 표 렌더링 필수: 161개 문서가 표 사용)만. supabase-swift는 M3에서 추가.
 
 ## Global Constraints (spec §2 전사)
 
@@ -64,7 +64,7 @@ ios/
 | M2 | RAG 채팅(익명): AI SDK v6 UIMessage SSE 파서 + 출처 카드(번들 문서 연결) + 첨부 |
 | M3 | 인증(supabase-swift OTP) + 서버 Bearer 승격 + 이력(신규 `GET /api/chat/threads/[id]`) |
 | M4 | 자료실·미디어(카탈로그 JSON 추출 확장) + 설정·About + TestFlight 준비(**Developer Program $99 = 비용 하드 스톱 상신**) |
-| M5 (보류) | 라이브 음성 채팅(dodo-planet `Core/Live/` 이식 + `search_policy` 배선) — dodo-planet Live 오류 수정·검증 후 이식(위원장 지시 2026-07-10) |
+| M5 (보류) | 라이브 음성 채팅(dodo-planet `Core/Live/` 이식 + `search_policy` 배선). dodo-planet Live 오류 수정·검증 후 이식(위원장 지시 2026-07-10) |
 
 ---
 
@@ -157,7 +157,7 @@ Expected: FAIL (`KBAxis` 미정의 컴파일 오류)
 
 `ios/WebfortdKit/Sources/WebfortdKit/KB/KBIndex.swift`:
 ```swift
-/// KB 콘텐츠 축 — 웹 `src/types/kb.ts` CONTENT_AXES 미러.
+/// KB 콘텐츠 축: 웹 `src/types/kb.ts` CONTENT_AXES 미러.
 public enum KBAxis: String, Codable, CaseIterable, Sendable {
     case disabilityTypes = "disability-types"
     case domains, regions, policies, agreements, faq, stories, resources, uncategorized
@@ -182,7 +182,7 @@ git commit -m "feat(ios): WebfortdKit SPM 골격 + KBAxis" -- ios/.gitignore ios
 - Create: `ios/scripts/bundle-content.mjs`
 
 **Interfaces:**
-- Produces: `ios/WebfortdKit/Sources/WebfortdKit/Resources/KB/kb-index.json`(축소·published만) + `Resources/KB/content/<axis>/<slug>.md`(published만). 산출 인덱스 스키마: `{ generated_at, source_count, documents: [{slug, axis, filePath, frontmatter}], wiki_backlinks: {slug: [{from, anchor?, link_text?}]}, slug_index: {slug: filePath} }` — `body_excerpt`·`broken_wikilinks`·`wikilink_adjacency`·`content_hash`는 앱 미사용이라 제외.
+- Produces: `ios/WebfortdKit/Sources/WebfortdKit/Resources/KB/kb-index.json`(축소·published만) + `Resources/KB/content/<axis>/<slug>.md`(published만). 산출 인덱스 스키마: `{ generated_at, source_count, documents: [{slug, axis, filePath, frontmatter}], wiki_backlinks: {slug: [{from, anchor?, link_text?}]}, slug_index: {slug: filePath} }`. `body_excerpt`·`broken_wikilinks`·`wikilink_adjacency`·`content_hash`는 앱 미사용이라 제외.
 
 - [ ] **Step 1: 파이프라인 스크립트 작성**
 
@@ -264,7 +264,7 @@ git commit -m "feat(ios): 콘텐츠 번들 파이프라인(published만, 축소 
 **Interfaces:**
 - Produces: `KBIndex`(Decodable: `generatedAt`·`sourceCount`·`documents`·`wikiBacklinks`·`slugIndex`), `KBDocumentSummary`(`slug`·`axis`·`filePath`·`frontmatter`), `KBFrontmatter`(`title`·`type`·`year`·`status`·`source: KBSource{organization, citation, url?}`), `KBBacklink`(`from`·`anchor?`·`linkText?`)
 
-- [ ] **Step 1: fixture 캡처 (프로드 정본 축소 — 계약의 근거)**
+- [ ] **Step 1: fixture 캡처 (프로드 정본 축소: 계약의 근거)**
 
 ```bash
 node -e '
@@ -324,13 +324,13 @@ Expected: FAIL (`KBIndex` 미정의)
 ```swift
 import Foundation
 
-/// KB 콘텐츠 축 — 웹 `src/types/kb.ts` CONTENT_AXES 미러.
+/// KB 콘텐츠 축: 웹 `src/types/kb.ts` CONTENT_AXES 미러.
 public enum KBAxis: String, Codable, CaseIterable, Sendable {
     case disabilityTypes = "disability-types"
     case domains, regions, policies, agreements, faq, stories, resources, uncategorized
 }
 
-/// 문서 상태 — 웹 StatusSchema 미러. 번들에는 published만 오지만 방어적으로 전체 수용.
+/// 문서 상태: 웹 StatusSchema 미러. 번들에는 published만 오지만 방어적으로 전체 수용.
 public enum KBStatus: String, Codable, Sendable {
     case draft, inReview = "in_review", published, archived, deprecated
 }
@@ -368,7 +368,7 @@ public struct KBBacklink: Codable, Equatable, Sendable {
     }
 }
 
-/// 번들 축소 인덱스 — ios/scripts/bundle-content.mjs 산출 스키마.
+/// 번들 축소 인덱스: ios/scripts/bundle-content.mjs 산출 스키마.
 public struct KBIndex: Codable, Sendable {
     public let generatedAt: String?
     public let sourceCount: Int
@@ -408,8 +408,8 @@ git commit -m "feat(ios): KB 인덱스 디코딩 모델 + 실캡처 fixture" -- 
 **Interfaces:**
 - Consumes: `KBIndex`, `KBAxis`, `KBDocumentSummary` (Task 3)
 - Produces:
-  - `WikilinkRewriter.rewrite(_ markdown: String, isKnownSlug: (String) -> Bool) -> String` — `[[slug]]`·`[[slug#anchor]]`·`[[slug|라벨]]` → `[라벨](webfortd-wiki://slug)`, 미지 slug는 라벨 평문, 펜스 코드블록 내부는 불변.
-  - `KBStore`(final class, Sendable): `init(indexURL: URL, contentRootURL: URL) throws`, `static func bundled() throws -> KBStore`, `var documents: [KBDocumentSummary]`, `func documents(in axis: KBAxis) -> [KBDocumentSummary]`(제목 가나다·slug 안정 정렬 — 웹 `sortDocsForList` 미러), `func summary(slug: String) -> KBDocumentSummary?`, `func loadBody(slug: String) throws -> String`(frontmatter 제거 + 위키링크 전처리 완료).
+  - `WikilinkRewriter.rewrite(_ markdown: String, isKnownSlug: (String) -> Bool) -> String`: `[[slug]]`·`[[slug#anchor]]`·`[[slug|라벨]]` → `[라벨](webfortd-wiki://slug)`, 미지 slug는 라벨 평문, 펜스 코드블록 내부는 불변.
+  - `KBStore`(final class, Sendable): `init(indexURL: URL, contentRootURL: URL) throws`, `static func bundled() throws -> KBStore`, `var documents: [KBDocumentSummary]`, `func documents(in axis: KBAxis) -> [KBDocumentSummary]`(제목 가나다·slug 안정 정렬: 웹 `sortDocsForList` 미러), `func summary(slug: String) -> KBDocumentSummary?`, `func loadBody(slug: String) throws -> String`(frontmatter 제거 + 위키링크 전처리 완료).
   - 내부 링크 스킴 상수: `public enum KBLink { public static let scheme = "webfortd-wiki" }`
 
 - [ ] **Step 1: 실문서 fixture 캡처**
@@ -535,7 +535,7 @@ public enum KBLink {
 ```swift
 import Foundation
 
-/// 번들 KB 스토어 — 인덱스 로드·조회·본문 로드. UI 비의존.
+/// 번들 KB 스토어: 인덱스 로드·조회·본문 로드. UI 비의존.
 public final class KBStore: Sendable {
     public let index: KBIndex
     private let contentRootURL: URL
@@ -586,7 +586,7 @@ public final class KBStore: Sendable {
         return try loadBody(atRelativePath: filePath)
     }
 
-    /// contentRoot 기준 상대 경로 로드 — 테스트 주입용 공개.
+    /// contentRoot 기준 상대 경로 로드: 테스트 주입용 공개.
     public func loadBody(atRelativePath relativePath: String) throws -> String {
         let url = contentRootURL.appendingPathComponent(relativePath)
         let raw = try String(contentsOf: url, encoding: .utf8)
@@ -710,7 +710,7 @@ Expected: FAIL (타입 미정의)
 ```swift
 import Foundation
 
-/// 인라인 콘텐츠 — 시각 강조는 attributed, 접근성·검색은 plain이 정본.
+/// 인라인 콘텐츠: 시각 강조는 attributed, 접근성·검색은 plain이 정본.
 public struct KBInline: Equatable, Sendable {
     public let attributed: AttributedString
     public let plain: String
@@ -720,7 +720,7 @@ public struct KBInline: Equatable, Sendable {
     }
 }
 
-/// 문서 블록 AST — 렌더링(SwiftUI)은 앱 몫, Kit는 값만 제공.
+/// 문서 블록 AST: 렌더링(SwiftUI)은 앱 몫, Kit는 값만 제공.
 public indirect enum KBBlock: Equatable, Sendable {
     case heading(level: Int, content: KBInline)
     case paragraph(KBInline)
@@ -847,7 +847,7 @@ Expected: PASS 전부. 표 파싱이 실패하면(Document가 table을 인식 �
 
 - [ ] **Step 5: 실데이터 전량 파싱 스모크 테스트**
 
-`MarkdownBlockParserTests.swift`에 추가(번들 리소스가 파이프라인 산출물일 때만 실행 — fixture green ≠ 실데이터 검증이라는 spec §9 원칙의 M0 적용):
+`MarkdownBlockParserTests.swift`에 추가(번들 리소스가 파이프라인 산출물일 때만 실행: fixture green ≠ 실데이터 검증이라는 spec §9 원칙의 M0 적용):
 ```swift
     @Test func 번들_전량_파싱_스모크() throws {
         // 파이프라인 미실행 환경(fresh clone)에서는 조용히 통과.
@@ -879,7 +879,7 @@ git commit -m "feat(ios): 마크다운 블록 AST 파서(표·리스트·내부�
 
 **Interfaces:**
 - Consumes: `KBStore.bundled()` (Task 4)
-- Produces: 시뮬레이터에서 빌드되는 앱 타깃 `Webfortd`, `AppRoute` enum(`.axis(KBAxis)` `.document(slug: String)`) — Task 7 화면들이 사용.
+- Produces: 시뮬레이터에서 빌드되는 앱 타깃 `Webfortd`, `AppRoute` enum(`.axis(KBAxis)` `.document(slug: String)`). Task 7 화면들이 사용.
 
 - [ ] **Step 1: pbxproj 작성** (gildongmu 검증 최소 구조 이식, objectVersion 77)
 
@@ -1151,7 +1151,7 @@ enum AppConfig {
 import SwiftUI
 import WebfortdKit
 
-/// 내비게이션 목적지 — 위키 축 목록과 문서.
+/// 내비게이션 목적지: 위키 축 목록과 문서.
 enum AppRoute: Hashable {
     case axis(KBAxis)
     case document(slug: String)
@@ -1260,14 +1260,14 @@ git commit -m "feat(ios): Xcode 프로젝트(폴더 동기화 그룹) + 앱 진�
 - Consumes: `KBStore`, `KBAxis`, `KBBlock`, `KBInline`, `MarkdownBlockParser.parse`, `AppRoute`, `AppConfig.webBaseURL`
 - Produces: M0 완성 화면. 축 라벨·설명은 웹 `src/lib/kb-axis.ts` BROWSABLE_AXES 미러(아래 상수).
 
-- [ ] **Step 1: 홈 — 축 카드 목록**
+- [ ] **Step 1: 홈 축 카드 목록**
 
 `WikiHomeView.swift` 교체:
 ```swift
 import SwiftUI
 import WebfortdKit
 
-/// 웹 src/lib/kb-axis.ts BROWSABLE_AXES 미러 — 순서·라벨·안내문 동일.
+/// 웹 src/lib/kb-axis.ts BROWSABLE_AXES 미러: 순서·라벨·안내문 동일.
 struct BrowsableAxis {
     let axis: KBAxis
     let label: String
@@ -1584,14 +1584,14 @@ git commit -m "feat(ios): 위키 3화면(홈 축카드·목록·문서 렌더러
 
 **Files:** 없음 (검증·배포 절차)
 
-- [ ] **Step 1: 실기기 빌드 안내** (사용자 iPhone 연결, Personal Team 자동 서명 — gildongmu와 동일 팀)
+- [ ] **Step 1: 실기기 빌드 안내** (사용자 iPhone 연결, Personal Team 자동 서명, gildongmu와 동일 팀)
 
 Xcode에서 기기 선택 후 Run, 또는:
 ```bash
 xcodebuild -project ios/Webfortd.xcodeproj -scheme Webfortd \
   -destination 'platform=iOS,name=<기기명>' -allowProvisioningUpdates build
 ```
-주의: 무료 Personal Team 동시 설치 3개 제한 — dodo·gildongmu·webfortd로 정확히 임계 도달(spec §10).
+주의: 무료 Personal Team 동시 설치 3개 제한: dodo·gildongmu·webfortd로 정확히 임계 도달(spec §10).
 
 - [ ] **Step 2: 비행기 모드 게이트** (M0 완료 조건)
 
@@ -1599,13 +1599,19 @@ xcodebuild -project ios/Webfortd.xcodeproj -scheme Webfortd \
 
 - [ ] **Step 3: VoiceOver 게이트** (M0 완료 조건)
 
-VoiceOver 켜고: 로터 "헤딩"으로 문서 내 조항 점프, 축 카드가 "라벨, N개 문서, 설명" 한 객체로 낭독, 표가 행 단위로 "헤더 값" 낭독되는지. 발견 문제는 fix 커밋 후 재검증.
+VoiceOver 켜고 확인:
+- 로터 "헤딩"으로 문서 내 조항 점프
+- 축 카드가 "라벨, N개 문서, 설명" 한 객체로 낭독
+- 표가 행 단위로 "헤더 값, 헤더 값" 낭독되는지. 실패 시 `GridRow`의 `.combine`이 셀별로 분배된 것이므로 행 대표 요소(`accessibilityRepresentation` 또는 행 `HStack`) 방식으로 교체
+- 문서 제목이 화면에 1회만 표시되고 로터 헤딩에도 1회만 나오는지(제목 중복 fix `c0313af` 검증)
+
+발견 문제는 fix 커밋 후 재검증.
 
 - [ ] **Step 4: PR 생성**
 
 ```bash
 git push -u origin ios-native-app
-gh pr create --title "feat(ios): iOS 네이티브 M0 — 오프라인 위키(WebfortdKit + 3화면)" --body "..."
+gh pr create --title "feat(ios): iOS 네이티브 M0, 오프라인 위키(WebfortdKit + 3화면)" --body "..."
 ```
 PR body에 spec·plan 링크, 게이트 결과(비행기 모드·VoiceOver), 테스트 수 명시. 마지막에:
 ```

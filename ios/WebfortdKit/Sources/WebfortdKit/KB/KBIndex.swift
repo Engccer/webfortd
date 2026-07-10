@@ -1,12 +1,12 @@
 import Foundation
 
-/// KB 콘텐츠 축 — 웹 `src/types/kb.ts` CONTENT_AXES 미러.
+/// KB 콘텐츠 축: 웹 `src/types/kb.ts` CONTENT_AXES 미러.
 public enum KBAxis: String, Codable, CaseIterable, Sendable {
     case disabilityTypes = "disability-types"
     case domains, regions, policies, agreements, faq, stories, resources, uncategorized
 }
 
-/// 문서 상태 — 웹 StatusSchema 미러. 번들에는 published만 오지만 방어적으로 전체 수용.
+/// 문서 상태: 웹 StatusSchema 미러. 번들에는 published만 오지만 방어적으로 전체 수용.
 public enum KBStatus: String, Codable, Sendable {
     case draft, inReview = "in_review", published, archived, deprecated
 }
@@ -44,7 +44,7 @@ public struct KBBacklink: Codable, Equatable, Sendable {
     }
 }
 
-/// 번들 축소 인덱스 — ios/scripts/bundle-content.mjs 산출 스키마.
+/// 번들 축소 인덱스: ios/scripts/bundle-content.mjs 산출 스키마.
 public struct KBIndex: Codable, Sendable {
     public let generatedAt: String?
     public let sourceCount: Int

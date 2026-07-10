@@ -1,7 +1,7 @@
 import SwiftUI
 import WebfortdKit
 
-/// 내비게이션 목적지 — 위키 축 목록과 문서.
+/// 내비게이션 목적지: 위키 축 목록과 문서.
 enum AppRoute: Hashable {
     case axis(KBAxis)
     case document(slug: String)

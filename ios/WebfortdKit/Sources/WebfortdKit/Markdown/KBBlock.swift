@@ -1,6 +1,6 @@
 import Foundation
 
-/// 인라인 콘텐츠 — 시각 강조는 attributed, 접근성·검색은 plain이 정본.
+/// 인라인 콘텐츠: 시각 강조는 attributed, 접근성·검색은 plain이 정본.
 public struct KBInline: Equatable, Sendable {
     public let attributed: AttributedString
     public let plain: String
@@ -10,7 +10,7 @@ public struct KBInline: Equatable, Sendable {
     }
 }
 
-/// 문서 블록 AST — 렌더링(SwiftUI)은 앱 몫, Kit는 값만 제공.
+/// 문서 블록 AST: 렌더링(SwiftUI)은 앱 몫, Kit는 값만 제공.
 public indirect enum KBBlock: Equatable, Sendable {
     case heading(level: Int, content: KBInline)
     case paragraph(KBInline)

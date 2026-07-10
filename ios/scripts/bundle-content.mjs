@@ -29,16 +29,16 @@ const bundleIndex = {
   source_count: published.length,
   documents: published
     .map(({ slug, axis, filePath, frontmatter }) => ({ slug, axis, filePath, frontmatter }))
-    .sort((a, b) => a.slug.localeCompare(b.slug)),
+    .sort((a, b) => a.slug.localeCompare(b.slug, "en")),
   wiki_backlinks: Object.fromEntries(
     Object.entries(index.wiki_backlinks)
       .filter(([target]) => publishedSlugs.has(target))
       .map(([target, links]) => [target, links.filter((l) => publishedSlugs.has(l.from))])
       .filter(([, links]) => links.length > 0)
-      .sort(([a], [b]) => a.localeCompare(b)),
+      .sort(([a], [b]) => a.localeCompare(b, "en")),
   ),
   slug_index: Object.fromEntries(
-    published.map((d) => [d.slug, d.filePath]).sort(([a], [b]) => a.localeCompare(b)),
+    published.map((d) => [d.slug, d.filePath]).sort(([a], [b]) => a.localeCompare(b, "en")),
   ),
 }
 fs.writeFileSync(path.join(OUT_DIR, "kb-index.json"), JSON.stringify(bundleIndex, null, 1))
