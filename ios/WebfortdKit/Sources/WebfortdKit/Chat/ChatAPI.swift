@@ -1,6 +1,6 @@
 import Foundation
 
-/// Webfortd `/api/chat` 스트리밍 호출. dodo-planet `ChatAPI` 패턴을 따른다 —
+/// Webfortd `/api/chat` 스트리밍 호출: dodo-planet `ChatAPI` 패턴을 따른다.
 /// `URLSession.bytes(for:)` + `bytes.lines`로 SSE를 줄 단위 소비하고,
 /// 소비자 `Task` 취소가 `onTermination`을 통해 내부 네트워크 `Task`까지 전파된다.
 public struct ChatAPI: Sendable {

@@ -9,6 +9,7 @@ struct ChatMessage: Identifiable, Equatable {
     let role: String
     var text: String
     var sourceRefs: [ChatSourceRef]
+    var isError: Bool = false
 
     init(role: String, text: String, sourceRefs: [ChatSourceRef] = []) {
         id = UUID()
@@ -66,7 +67,10 @@ final class ChatStore {
 
         lastErrorMessage = nil
         messages.append(ChatMessage(role: "user", text: trimmed))
-        var outgoing = messages.map { ChatOutgoingMessage(role: $0.role, text: $0.text) }
+        // outgoing: 오류 메시지(isError == true) + 빈 텍스트 메시지 제외.
+        // 모델 컨텍스트 오염 방지: 오류는 사용자에게 로컬로만 표시하고 다음 요청에 재전송하지 않음.
+        var outgoing = messages.filter { !$0.isError && !$0.text.isEmpty }
+            .map { ChatOutgoingMessage(role: $0.role, text: $0.text) }
         if let attachment, let lastIndex = outgoing.indices.last {
             outgoing[lastIndex] = ChatOutgoingMessage(
                 role: outgoing[lastIndex].role, text: outgoing[lastIndex].text, attachment: attachment)
@@ -167,6 +171,7 @@ final class ChatStore {
         }
         // 오류는 assistant 자리 메시지 text로 표시(답변 위치 한 군데 원칙).
         messages[index].text = message
+        messages[index].isError = true
         lastErrorMessage = message
         AccessibilityNotification.Announcement(message).post()
     }
