@@ -1,0 +1,210 @@
+import Foundation
+import Observation
+import SwiftUI
+import WebfortdKit
+
+/// 채팅 메시지 1건. `role`은 `ChatOutgoingMessage`와 동일 표기("user" | "assistant").
+struct ChatMessage: Identifiable, Equatable {
+    let id: UUID
+    let role: String
+    var text: String
+    var sourceRefs: [ChatSourceRef]
+    var isError: Bool = false
+
+    init(role: String, text: String, sourceRefs: [ChatSourceRef] = []) {
+        id = UUID()
+        self.role = role
+        self.text = text
+        self.sourceRefs = sourceRefs
+    }
+}
+
+/// 채팅 스트리밍 상태 저장소. M2는 익명 동작: threadId는 앱 세션 내에서만 재사용하고
+/// 영속화(로그인·서버 저장 이력)는 M3 몫이다.
+@MainActor
+@Observable
+final class ChatStore {
+    enum Phase: Equatable {
+        case idle
+        case streaming
+    }
+
+    private(set) var messages: [ChatMessage] = []
+    private(set) var phase: Phase = .idle
+    /// 마지막 전송이 오류로 끝났으면 오류 문구, 성공(정상 finish)이거나 중단이면 nil.
+    /// ChatView가 완료 시 접근성 포커스 이동 여부를 판단하는 데만 쓰인다(오류는 Announcement로
+    /// 이미 전달했으므로 focus 이동까지 겹치면 같은 문구가 두 번 낭독된다. 중복 통지 금지).
+    private(set) var lastErrorMessage: String?
+
+    /// 전송 대기 중인 첨부(이미지·PDF 1건, 크기 검증 통과분만). 전송 시 마지막 user 메시지에
+    /// 실려 나가고, 전송 즉시 클리어된다(웹 계약 미러: 1건만).
+    private(set) var pendingAttachment: ChatAttachment?
+    /// 10MB 초과 등 첨부 실패 시 표시 문구. 새 첨부가 성공하거나 clearAttachment()가 호출되면 nil.
+    private(set) var attachmentErrorMessage: String?
+    /// 첨부 데이터 로드(사진 디코드·PDF 읽기) 진행 중 여부. ChatView가 non-main에서 로드하는 동안
+    /// true로 두어 send()가 완성 전 첨부를 실어 보내는 race를 막고, 로드 중임을 사용자에게 알린다.
+    private(set) var isAttachmentLoading = false
+    /// 스트리밍 델타가 반영될 때마다 증가하는 tick. ChatView가 이 값 변화를 관찰해 자동 스크롤을
+    /// 트리거한다(시각 사용자용 추적 — VoiceOver 포커스 이동은 완료 시 1회만 별도로 처리하므로 영향 없음).
+    private(set) var streamTick = 0
+
+    static let maxAttachmentBytes = 10 * 1024 * 1024 // 10MB, 서버 계약(MAX_FILE_SIZE) 미러
+    private static let oversizeAttachmentMessage = "파일이 너무 커요. 10MB 이하만 첨부할 수 있어요."
+
+    private let api: ChatAPI
+    private var streamTask: Task<Void, Never>?
+    private var threadId: String?
+    /// stop() 직후 곧바로 재전송하면 취소된 이전 Task의 완료 처리가 새 Task의 phase를
+    /// 되돌릴 수 있다. 세대 토큰으로 "내 Task가 아직 최신인가"만 확인한다.
+    private var generation = 0
+
+    init(api: ChatAPI = ChatAPI(baseURL: AppConfig.webBaseURL)) {
+        self.api = api
+    }
+
+    /// 사용자 질문 전송. 스트리밍 중 재진입, 첨부 로드 중 전송은 가드로 거부한다.
+    /// 반환값 true면 실제로 전송을 시작했다는 뜻 — ChatView가 이 값으로 입력 텍스트를 비울지
+    /// 판단해 가드 거부 시 입력 텍스트가 유실되지 않도록 한다.
+    @discardableResult
+    func send(_ text: String) -> Bool {
+        guard phase == .idle else { return false }
+        guard !isAttachmentLoading else {
+            AccessibilityNotification.Announcement("첨부를 준비하고 있어요. 잠시 후 전송해 주세요.").post()
+            return false
+        }
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return false }
+
+        let attachment = pendingAttachment
+        pendingAttachment = nil
+        attachmentErrorMessage = nil
+
+        lastErrorMessage = nil
+        messages.append(ChatMessage(role: "user", text: trimmed))
+        // outgoing: 오류 메시지(isError == true) + 빈 텍스트 메시지 제외.
+        // 모델 컨텍스트 오염 방지: 오류는 사용자에게 로컬로만 표시하고 다음 요청에 재전송하지 않음.
+        var outgoing = messages.filter { !$0.isError && !$0.text.isEmpty }
+            .map { ChatOutgoingMessage(role: $0.role, text: $0.text) }
+        if let attachment, let lastIndex = outgoing.indices.last {
+            outgoing[lastIndex] = ChatOutgoingMessage(
+                role: outgoing[lastIndex].role, text: outgoing[lastIndex].text, attachment: attachment)
+        }
+        let assistantIndex = messages.count
+        messages.append(ChatMessage(role: "assistant", text: ""))
+
+        phase = .streaming
+        generation += 1
+        let myGeneration = generation
+        let requestThreadId = threadId
+
+        AccessibilityNotification.Announcement("답변 작성 중").post()
+
+        streamTask = Task { @MainActor [weak self, api] in
+            guard let self else { return }
+            do {
+                for try await event in api.stream(messages: outgoing, threadId: requestThreadId) {
+                    guard !Task.isCancelled else { break }
+                    self.apply(event, at: assistantIndex)
+                }
+            } catch {
+                // stop()에 의한 취소는 오류가 아니다. 부분 답변을 그대로 유지한다.
+                if !Task.isCancelled {
+                    self.applyError(error, at: assistantIndex)
+                }
+            }
+            self.finishStreaming(generation: myGeneration)
+        }
+        return true
+    }
+
+    /// 첨부 로드 시작 통지: ChatView가 PhotosPicker/fileImporter 로드에 착수할 때 호출한다.
+    /// 로드 완료(성공·실패 불문)는 stageAttachment/notifyAttachmentLoadFailure/notifyAttachmentTooLarge가
+    /// isAttachmentLoading을 false로 되돌린다.
+    func beginAttachmentLoad() {
+        isAttachmentLoading = true
+        AccessibilityNotification.Announcement("첨부 준비 중").post()
+    }
+
+    /// 첨부 스테이징: 10MB 초과면 즉시 오류 문구 설정 + Announcement 후 미첨부, 통과하면 저장.
+    /// 데이터 로드(PhotosPicker 재인코딩·fileImporter 읽기)는 ChatView가 담당하고, 이 메서드는
+    /// 완성된 바이트만 받아 크기 검증 + base64 인코딩만 수행한다.
+    func stageAttachment(mediaType: String, data: Data, filename: String) {
+        guard data.count <= Self.maxAttachmentBytes else {
+            notifyAttachmentTooLarge()
+            return
+        }
+        isAttachmentLoading = false
+        attachmentErrorMessage = nil
+        pendingAttachment = ChatAttachment(
+            mediaType: mediaType, dataBase64: data.base64EncodedString(), filename: filename)
+    }
+
+    /// 첨부 제거(사용자 명시 조작). 오류 문구도 함께 지운다.
+    func clearAttachment() {
+        pendingAttachment = nil
+        attachmentErrorMessage = nil
+    }
+
+    /// 첨부 로드 실패 시 호출: attachmentErrorMessage 설정 + Announcement로 사용자 통지.
+    /// 10MB 초과와 동일한 채널 사용 (stageAttachment 패턴 미러).
+    func notifyAttachmentLoadFailure() {
+        isAttachmentLoading = false
+        let message = "파일을 불러오지 못했습니다. 다른 파일을 선택해 주세요."
+        attachmentErrorMessage = message
+        AccessibilityNotification.Announcement(message).post()
+    }
+
+    /// 첨부 크기 초과 통지: 로드 후 검증(stageAttachment)과 ChatView의 PDF 사전 크기 검증
+    /// 양쪽에서 공용으로 쓴다(같은 문구를 두 곳에서 재구현하지 않도록).
+    func notifyAttachmentTooLarge() {
+        isAttachmentLoading = false
+        attachmentErrorMessage = Self.oversizeAttachmentMessage
+        AccessibilityNotification.Announcement(Self.oversizeAttachmentMessage).post()
+    }
+
+    /// 스트리밍 중단: Task를 취소하되 지금까지 누적된 부분 답변은 그대로 둔다(접미 없음).
+    /// 첫 델타 전 중단이면 빈 메시지를 배열에서 제거(ProgressView 영구 잔존 방지).
+    func stop() {
+        streamTask?.cancel()
+        streamTask = nil
+        phase = .idle
+        // 마지막 assistant 메시지가 비어있으면 제거(중단 시 텍스트가 없는 경우).
+        if let lastMessage = messages.last, lastMessage.role == "assistant", lastMessage.text.isEmpty {
+            messages.removeLast()
+        }
+    }
+
+    private func finishStreaming(generation: Int) {
+        guard self.generation == generation else { return }
+        phase = .idle
+    }
+
+    private func apply(_ event: ChatStreamEvent, at index: Int) {
+        switch event {
+        case .textDelta(let delta):
+            messages[index].text += delta
+            streamTick += 1
+        case .metadata(let sourceRefs, let newThreadId):
+            messages[index].sourceRefs = sourceRefs
+            if let newThreadId {
+                threadId = newThreadId
+            }
+        case .finish:
+            break
+        }
+    }
+
+    private func applyError(_ error: Error, at index: Int) {
+        let message: String
+        if let apiError = error as? ChatAPIError, apiError == .rateLimited {
+            message = "요청이 많아요. 1분 뒤 다시 시도해 주세요."
+        } else {
+            message = "답변을 가져오지 못했습니다. 네트워크를 확인해 주세요."
+        }
+        // 오류는 assistant 자리 메시지 text로 표시(답변 위치 한 군데 원칙).
+        messages[index].text = message
+        messages[index].isError = true
+        lastErrorMessage = message
+        AccessibilityNotification.Announcement(message).post()
+    }
+}
