@@ -66,6 +66,8 @@ App Store에 공개 배포하려면 Apple Developer Program 가입이 필요하�
     기능), 비로그인 시 저장하지 않음(§ChatStore.startNewThread 익명 휘발 모드).
   - 위치·마이크·카메라 데이터는 수집하지 않는다(앱이 해당 권한을 아예 요청하지 않음,
     §5 참고). 광고·트래킹 SDK가 없으므로 App Tracking Transparency 프롬프트도 불필요.
+    단, 보류 중인 M5(라이브 음성 채팅)를 이식하는 시점에는 마이크 권한(Info.plist usage
+    description)과 음성 데이터 항목이 추가되므로 이 신고 내용을 반드시 갱신한다.
 - **Accessibility Nutrition Labels**: VoiceOver 지원을 실기기 검증 후에만 선언한다(검증
   전 항목을 임의로 주장하지 않는다. gildongmu spec과 동일 원칙, §5).
 - **로그인 필요 기능의 심사용 안내**: 채팅 이력 저장·대화 목록 등은 로그인(OTP) 후에만
