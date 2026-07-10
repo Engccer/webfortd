@@ -27,4 +27,17 @@ import Testing
         #expect(search.search("").isEmpty)
         #expect(search.search("   ").isEmpty)
     }
+
+    @Test func plainLines가_표를_쉼표_행으로_편다() {
+        let blocks = MarkdownBlockParser.parse("| 구분 | 내용 |\n|---|---|\n| 기간<br/>비고 | 2년 |")
+        let lines = blocks.plainLines
+        #expect(lines[0] == "구분, 내용")
+        #expect(lines[1] == "기간 비고, 2년")
+    }
+
+    @Test func snippet은_라인_발췌_80자_규칙을_지킨다() {
+        let body = "첫 줄\n중요한 단어가 있는 줄\n셋째 줄"
+        #expect(KBSearch.snippet(around: "중요한", in: body) == "중요한 단어가 있는 줄")
+        #expect(KBSearch.snippet(around: "없는토큰", in: body) == nil)
+    }
 }

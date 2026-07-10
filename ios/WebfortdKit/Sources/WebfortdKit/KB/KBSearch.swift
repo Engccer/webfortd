@@ -10,7 +10,9 @@ public struct KBSearchResult: Equatable, Sendable {
 /// 번들 published 문서 전용 오프라인 검색. 모든 토큰 AND 매치, 제목 가중 정렬.
 public final class KBSearch {
     private let store: KBStore
-    /// slug → 소문자 본문. 첫 검색에서 1회 구축(535건 약 4MB 수용).
+    /// slug → 소문자 plain 텍스트(파싱 후, 코드블록·이미지·구분선 제외).
+    /// raw 마크다운이 아니라 이 캐시로 검색·발췌한다 — 접근성·검색은 plain이 정본(KBBlock 원칙).
+    /// 첫 검색에서 1회 구축(535건 전량 파싱, 약 1초 소요·4MB 수용).
     private var bodyCache: [String: String]?
 
     public init(store: KBStore) {
@@ -36,10 +38,10 @@ public final class KBSearch {
                 let inBody = body.contains(token)
                 if inTitle { titleHits += 1 }
                 if !inTitle && !inBody { allMatch = false; break }
-                if !inTitle && inBody && firstBodyToken == nil { firstBodyToken = token }
+                if inBody && firstBodyToken == nil { firstBodyToken = token }
             }
             guard allMatch else { continue }
-            let snippet = firstBodyToken.flatMap { Self.snippet(around: $0, in: bodies[doc.slug] ?? "") }
+            let snippet = firstBodyToken.flatMap { Self.snippet(around: $0, in: body) }
             scored.append((doc, titleHits, snippet))
         }
 
@@ -62,13 +64,20 @@ public final class KBSearch {
         var cache: [String: String] = [:]
         for doc in store.documents {
             // 로드 실패 문서는 제목-만 검색 대상(best-effort).
-            cache[doc.slug] = (try? store.loadBody(slug: doc.slug))?.lowercased() ?? ""
+            guard let raw = try? store.loadBody(slug: doc.slug) else {
+                cache[doc.slug] = ""
+                continue
+            }
+            cache[doc.slug] = MarkdownBlockParser.parse(raw).plainLines
+                .joined(separator: "\n")
+                .lowercased()
         }
         bodyCache = cache
         return cache
     }
 
-    /// 첫 매치가 포함된 라인을 80자 내로 발췌.
+    /// 첫 매치가 포함된 라인을 80자 내로 발췌. `lowerBody`는 plain 캐시라
+    /// 마크다운 마커(`<br/>`·파이프·`**`·`\r`)가 이미 제거된 상태다.
     static func snippet(around token: String, in lowerBody: String) -> String? {
         guard let range = lowerBody.range(of: token) else { return nil }
         let lineStart = lowerBody[..<range.lowerBound].lastIndex(of: "\n")
@@ -76,10 +85,6 @@ public final class KBSearch {
         let lineEnd = lowerBody[range.upperBound...].firstIndex(of: "\n") ?? lowerBody.endIndex
         var line = String(lowerBody[lineStart..<lineEnd])
             .trimmingCharacters(in: .whitespaces)
-        // 마크다운 잔재 최소 정리(발췌 가독): 리스트 마커·헤딩 마커 제거
-        while line.hasPrefix("#") || line.hasPrefix("-") || line.hasPrefix("*") {
-            line = String(line.dropFirst()).trimmingCharacters(in: .whitespaces)
-        }
         if line.count > 80 {
             line = String(line.prefix(80)) + "…"
         }
