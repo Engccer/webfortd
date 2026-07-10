@@ -3,12 +3,12 @@ import { createClient } from '@supabase/supabase-js'
 import type { SupabaseClient, User } from '@supabase/supabase-js'
 import { getServerClient } from '@/lib/supabase/server'
 
-/** Authorization 헤더에서 Bearer JWT 추출. 없으면 null. */
+/** Authorization 헤더에서 Bearer JWT 추출. 없으면 null. RFC 7235 스킴 대소문자 무관. */
 export function getBearerJwt(request: Request): string | null {
   const header = request.headers.get('authorization')
-  if (!header?.startsWith('Bearer ')) return null
-  const token = header.slice('Bearer '.length).trim()
-  return token.length > 0 ? token : null
+  if (!header) return null
+  const match = header.match(/^Bearer\s+(.+)$/i)
+  return match ? match[1].trim() || null : null
 }
 
 /** anon key 클라이언트에 Bearer를 심어 PostgREST가 auth.uid() RLS 의미론을 갖게 한다. */

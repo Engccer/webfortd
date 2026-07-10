@@ -8,7 +8,7 @@ export const runtime = 'nodejs'
 
 // uuid 형식 사전 검증 — 잘못된 형식이 supabase까지 가면 22P02 오류로 500이 되므로,
 // 여기서 걸러 404(조용한 미존재 취급)로 통일한다.
-const UUID_RE = /^[0-9a-f-]{36}$/i
+export const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 export async function GET(
   request: Request,
