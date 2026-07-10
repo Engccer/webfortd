@@ -1,0 +1,26 @@
+---
+title: "제1조【유효기간】"
+type: 지침
+disability_types: ["전체"]
+domains: ["정책법령"]
+regions: ["전국"]
+year: 2020
+status: published
+source:
+  organization: "교육부·함께하는장애인교원노동조합"
+  citation: "교육부와 함께하는장애인교원노동조합 간 2020 단체협약 (2023.6.2. 개정)"
+source_origin: "2020-collective-agreement"
+parent_headings: ["2020 교육부-함께하는장애인교원노동조합 단체교섭 협약", "부칙"]
+reviewed_by: ["1차 검토(김헌용)"]
+references: []
+accessibility:
+  alt_text_complete: true
+  captions_available: false
+  reading_level: standard
+  audio_tts_ready: false
+---
+
+# 제1조【유효기간】
+
+① 본 단체협약의 유효기간은 협약 체결일로부터 3년으로 한다.
+② 본 협약의 유효기간이 만료되더라도 새로운 단체협약의 체결 시까지 본 협약의 효력은 지속된다.
