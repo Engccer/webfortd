@@ -48,8 +48,11 @@ final class AuthStore {
     }
 
     /// 앱 시작 시 1회 호출: 기기에 저장된 세션 복원(SDK가 만료 시 자동 refresh). 세션 부재만
-    /// signedOut으로 전환하고, 네트워크 등 그 외 오류는 state를 바꾸지 않는다(유효한 로그인
-    /// 사용자를 일시적 오류로 로그아웃 취급하지 않기 위함).
+    /// signedOut으로 전환하고, 네트워크 오류 등 그 외 오류는 현재 state를 판정 기준으로 삼는다:
+    /// - 현재 signedIn 상태면 유지(이미 유효한 세션이므로 일시 오류로 로그아웃 취급하지 않음)
+    /// - 현재 loading/signedOut이면 signedOut 확정(보수적 표시, 다만 accessToken()은 여전히
+    ///   세션 복구 시도). UI 부트스트랩 이후 로딩 상태에서 벗어나려면 호출부에서 foreground
+    ///   복귀 시(scenePhase .active) 재부트스트랩 필요.
     func bootstrap() async {
         do {
             let session = try await client.auth.session
@@ -57,6 +60,13 @@ final class AuthStore {
         } catch {
             if Self.isSessionAbsence(error) {
                 state = .signedOut
+            } else {
+                // 네트워크 오류: 현재 상태에 따라 판정.
+                if case .signedIn = state {
+                    // 이전 세션이 유효했으면 유지.
+                } else {
+                    state = .signedOut
+                }
             }
         }
     }

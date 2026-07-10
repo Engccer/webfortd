@@ -10,6 +10,7 @@ struct ThreadListSheet: View {
 
     @Environment(\.dismiss) private var dismiss
     @State private var phase: Phase = .loading
+    @State private var isSelecting = false
 
     /// 3-state + 성공 케이스: "확인 중"(loading) ≠ "0건"(empty) ≠ "조회 실패"(failed)를
     /// 뭉개지 않는다.
@@ -91,6 +92,10 @@ struct ThreadListSheet: View {
     }
 
     private func select(_ thread: ChatThreadSummary) async {
+        guard !isSelecting else { return }
+        isSelecting = true
+        defer { isSelecting = false }
+
         do {
             try await chatStore.loadThread(id: thread.id)
             dismiss()
