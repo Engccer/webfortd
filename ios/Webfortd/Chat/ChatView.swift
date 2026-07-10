@@ -178,6 +178,16 @@ struct ChatView: View {
 
     private var attachmentButton: some View {
         Button("파일 첨부") {
+            // 스트리밍 중이면 가드 + Announcement (disabled 금지, 포커스 유지 원칙).
+            if chatStore.phase == .streaming {
+                AccessibilityNotification.Announcement("답변 작성 중에는 첨부할 수 없어요").post()
+                return
+            }
+            // 이미 첨부가 있으면 가드 + Announcement.
+            if chatStore.pendingAttachment != nil {
+                AccessibilityNotification.Announcement("첨부는 한 건만 가능해요. 기존 첨부를 제거해 주세요.").post()
+                return
+            }
             showAttachmentSourceDialog = true
         }
         .frame(minWidth: 44, minHeight: 44)
@@ -204,21 +214,40 @@ struct ChatView: View {
 
     /// PhotosPicker 선택물은 원본 포맷(HEIC 등 다양)을 UIImage로 로드 후 JPEG(quality 0.8)로
     /// 재인코딩한다. 서버 허용 MIME이 image/png·jpeg·webp뿐이라 HEIC 호환 문제를 클라이언트에서 회피.
+    /// 로드 실패 시 attachmentErrorMessage 설정 + Announcement로 사용자에게 알린다(무신호 해소).
     @MainActor
     private func loadImageAttachment(_ item: PhotosPickerItem) async {
-        guard let data = try? await item.loadTransferable(type: Data.self),
-              let uiImage = UIImage(data: data),
-              let jpegData = uiImage.jpegData(compressionQuality: 0.8)
-        else { return }
+        guard let data = try? await item.loadTransferable(type: Data.self) else {
+            chatStore.notifyAttachmentLoadFailure()
+            return
+        }
+        guard let uiImage = UIImage(data: data) else {
+            chatStore.notifyAttachmentLoadFailure()
+            return
+        }
+        guard let jpegData = uiImage.jpegData(compressionQuality: 0.8) else {
+            chatStore.notifyAttachmentLoadFailure()
+            return
+        }
         chatStore.stageAttachment(mediaType: "image/jpeg", data: jpegData, filename: "photo.jpg")
     }
 
     /// fileImporter는 보안 스코프 URL을 돌려주므로 접근 시작/종료를 명시적으로 감싼다.
+    /// 각 단계에서 실패 시 attachmentErrorMessage 설정 + Announcement로 사용자에게 알린다(무신호 해소).
     private func handleFileImportResult(_ result: Result<URL, Error>) {
-        guard case .success(let url) = result else { return }
-        guard url.startAccessingSecurityScopedResource() else { return }
+        guard case .success(let url) = result else {
+            chatStore.notifyAttachmentLoadFailure()
+            return
+        }
+        guard url.startAccessingSecurityScopedResource() else {
+            chatStore.notifyAttachmentLoadFailure()
+            return
+        }
         defer { url.stopAccessingSecurityScopedResource() }
-        guard let data = try? Data(contentsOf: url) else { return }
+        guard let data = try? Data(contentsOf: url) else {
+            chatStore.notifyAttachmentLoadFailure()
+            return
+        }
         chatStore.stageAttachment(mediaType: "application/pdf", data: data, filename: url.lastPathComponent)
     }
 }

@@ -119,6 +119,14 @@ final class ChatStore {
         attachmentErrorMessage = nil
     }
 
+    /// 첨부 로드 실패 시 호출: attachmentErrorMessage 설정 + Announcement로 사용자 통지.
+    /// 10MB 초과와 동일한 채널 사용 (stageAttachment 패턴 미러).
+    func notifyAttachmentLoadFailure() {
+        let message = "파일을 불러오지 못했습니다. 다른 파일을 선택해 주세요."
+        attachmentErrorMessage = message
+        AccessibilityNotification.Announcement(message).post()
+    }
+
     /// 스트리밍 중단: Task를 취소하되 지금까지 누적된 부분 답변은 그대로 둔다(접미 없음).
     /// 첫 델타 전 중단이면 빈 메시지를 배열에서 제거(ProgressView 영구 잔존 방지).
     func stop() {
