@@ -2,33 +2,12 @@ import Foundation
 import Testing
 @testable import WebfortdKit
 
-/// 전역 stub 핸들러. gildongmu `StubURLProtocol` 관례(전역 handler + `nonisolated(unsafe)`)를 따른다.
-/// `startLoading()`은 세션 delegate 큐에서 실행되므로 handler를 공유하는 테스트는 직렬 실행이 필요하다.
-final class ChatStubURLProtocol: URLProtocol {
-    struct Stub {
-        let statusCode: Int
-        let chunks: [Data]
-    }
-
-    nonisolated(unsafe) static var handler: ((URLRequest) -> Stub)?
-
-    override class func canInit(with request: URLRequest) -> Bool { true }
-    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
-
-    override func startLoading() {
-        let stub = Self.handler!(request)
-        let response = HTTPURLResponse(
-            url: request.url!, statusCode: stub.statusCode, httpVersion: nil, headerFields: nil)!
-        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
-        // 실캡처 SSE를 고정 크기 청크로 분할 전달해 bytes.lines가 청크 경계를 넘나드는
-        // 개행을 재조립하는 경로를 실제로 태운다(응답 전체를 한 번에 didLoad 하지 않음).
-        for chunk in stub.chunks {
-            client?.urlProtocol(self, didLoad: chunk)
-        }
-        client?.urlProtocolDidFinishLoading(self)
-    }
-
-    override func stopLoading() {}
+// StubURLProtocolBase · CapturedRequestBox · requestBodyData는
+// Helpers/ChatStubURLProtocol.swift 공용 헬퍼로 승격됨(ThreadsAPITests와 공유, 중복 제거).
+// handler는 Suite별 독립 static var(교차-Suite 경합 회피, 헬퍼 파일 주석 판단 기록 참고).
+final class ChatStubURLProtocol: StubURLProtocolBase {
+    nonisolated(unsafe) static var handler: ((URLRequest) -> APIStub)?
+    override class func stubHandler(for request: URLRequest) -> APIStub { handler!(request) }
 }
 
 private func chunked(_ data: Data, size: Int = 48) -> [Data] {
@@ -38,39 +17,15 @@ private func chunked(_ data: Data, size: Int = 48) -> [Data] {
     }
 }
 
-/// 요청 본문 읽기 헬퍼. `URLSession.bytes(for:)` 경로는 작은 `httpBody` Data도 내부적으로
-/// `httpBodyStream`으로 변환해 URLProtocol에 전달하므로(실측), 두 경로 모두 대비한다.
-private func requestBodyData(_ request: URLRequest) -> Data {
-    if let body = request.httpBody { return body }
-    guard let stream = request.httpBodyStream else { return Data() }
-    stream.open()
-    defer { stream.close() }
-    var data = Data()
-    let bufferSize = 4096
-    var buffer = [UInt8](repeating: 0, count: bufferSize)
-    while stream.hasBytesAvailable {
-        let read = stream.read(&buffer, maxLength: bufferSize)
-        guard read > 0 else { break }
-        data.append(buffer, count: read)
-    }
-    return data
-}
-
-/// 스텁 handler는 URLSession 내부 큐에서 실행되어 `#expect`가 실행 중인 테스트에 귀속되지
-/// 않는다(실측: 실패해도 테스트가 그대로 통과 처리됨). 요청을 캡처만 해 두고, 검증은
-/// 테스트 본문(async 컨텍스트)에서 수행한다.
-private final class CapturedRequestBox: @unchecked Sendable {
-    var request: URLRequest?
-}
-
 /// ChatStubURLProtocol.handler가 전역 공유 상태라 스텁 사용 테스트는 이 스위트에서 직렬 실행한다.
 @Suite(.serialized) struct ChatAPITests {
     private let baseURL = URL(string: "https://example.test")!
 
-    private func stubbedAPI() -> ChatAPI {
+    private func stubbedAPI(tokenProvider: (@Sendable () async -> String?)? = nil) -> ChatAPI {
         let config = URLSessionConfiguration.ephemeral
         config.protocolClasses = [ChatStubURLProtocol.self]
-        return ChatAPI(baseURL: baseURL, session: URLSession(configuration: config))
+        return ChatAPI(
+            baseURL: baseURL, session: URLSession(configuration: config), tokenProvider: tokenProvider)
     }
 
     private func fixtureData() throws -> Data {
@@ -152,6 +107,37 @@ private final class CapturedRequestBox: @unchecked Sendable {
         let parts = try #require(messages.first?["parts"] as? [[String: Any]])
         #expect(parts.count == 1)
         #expect(parts[0]["type"] as? String == "text")
+    }
+
+    @Test func tokenProvider가_있으면_Authorization_헤더를_부착한다() async throws {
+        let box = CapturedRequestBox()
+        ChatStubURLProtocol.handler = { request in
+            box.request = request
+            return .init(statusCode: 200, chunks: [])
+        }
+
+        let api = stubbedAPI(tokenProvider: { "jwt-abc" })
+        for try await _ in api.stream(
+            messages: [ChatOutgoingMessage(role: "user", text: "질문")], threadId: nil
+        ) {}
+
+        let request = try #require(box.request)
+        #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer jwt-abc")
+    }
+
+    @Test func tokenProvider가_없으면_Authorization_헤더를_부착하지_않는다() async throws {
+        let box = CapturedRequestBox()
+        ChatStubURLProtocol.handler = { request in
+            box.request = request
+            return .init(statusCode: 200, chunks: [])
+        }
+
+        for try await _ in stubbedAPI().stream(
+            messages: [ChatOutgoingMessage(role: "user", text: "질문")], threadId: nil
+        ) {}
+
+        let request = try #require(box.request)
+        #expect(request.value(forHTTPHeaderField: "Authorization") == nil)
     }
 
     @Test func rate_limit_429_응답은_rateLimited_오류를_던진다() async throws {

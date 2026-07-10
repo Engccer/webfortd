@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		AA0001 /* WebfortdKit in Frameworks */ = {isa = PBXBuildFile; productRef = AC0001 /* WebfortdKit */; };
+		AA0002 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = AC0002; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -28,6 +29,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA0001 /* WebfortdKit in Frameworks */,
+				AA0002 /* Supabase in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -71,6 +73,7 @@
 			name = Webfortd;
 			packageProductDependencies = (
 				AC0001 /* WebfortdKit */,
+				AC0002 /* Supabase */,
 			);
 			productName = Webfortd;
 			productReference = AB0001 /* Webfortd.app */;
@@ -95,6 +98,7 @@
 			mainGroup = AF0001;
 			packageReferences = (
 				B50001 /* XCLocalSwiftPackageReference "WebfortdKit" */,
+				B70001 /* XCRemoteSwiftPackageReference "supabase-swift" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = AF0002 /* Products */;
@@ -231,10 +235,26 @@
 		};
 /* End XCLocalSwiftPackageReference section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		B70001 /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/supabase/supabase-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.50.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
 		AC0001 /* WebfortdKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = WebfortdKit;
+		};
+		AC0002 /* Supabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B70001;
+			productName = Supabase;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

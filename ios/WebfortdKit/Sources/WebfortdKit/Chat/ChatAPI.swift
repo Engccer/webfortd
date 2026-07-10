@@ -6,10 +6,15 @@ import Foundation
 public struct ChatAPI: Sendable {
     private let baseURL: URL
     private let session: URLSession
+    private let tokenProvider: (@Sendable () async -> String?)?
 
-    public init(baseURL: URL, session: URLSession = .shared) {
+    /// `tokenProvider`가 nil이면(기본값) 익명 요청 그대로, 기존 M2 호출부 무변경.
+    /// 값이 있고 토큰을 반환하면 `Authorization: Bearer <token>` 헤더를 부착한다(M3, RFC 7235 표준 대문자 스킴).
+    public init(baseURL: URL, session: URLSession = .shared,
+                tokenProvider: (@Sendable () async -> String?)? = nil) {
         self.baseURL = baseURL
         self.session = session
+        self.tokenProvider = tokenProvider
     }
 
     /// `messages` 전체(대화 이력 포함)를 UIMessage JSON으로 인코딩해 POST, 이벤트 스트림 반환.
@@ -21,7 +26,8 @@ public struct ChatAPI: Sendable {
                 do {
                     try await Self.run(
                         messages: messages, threadId: threadId,
-                        baseURL: baseURL, session: session, continuation: continuation)
+                        baseURL: baseURL, session: session, tokenProvider: tokenProvider,
+                        continuation: continuation)
                     continuation.finish()
                 } catch {
                     continuation.finish(throwing: error)
@@ -36,11 +42,15 @@ public struct ChatAPI: Sendable {
         threadId: String?,
         baseURL: URL,
         session: URLSession,
+        tokenProvider: (@Sendable () async -> String?)?,
         continuation: AsyncThrowingStream<ChatStreamEvent, Error>.Continuation
     ) async throws {
         var request = URLRequest(url: baseURL.appendingPathComponent("api/chat"))
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if let provider = tokenProvider, let token = await provider() {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
         request.httpBody = try encodeBody(messages: messages, threadId: threadId)
         request.timeoutInterval = 60
 
