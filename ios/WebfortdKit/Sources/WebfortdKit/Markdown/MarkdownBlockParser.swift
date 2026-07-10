@@ -122,11 +122,8 @@ public enum MarkdownBlockParser {
             case is SoftBreak, is LineBreak:
                 attributed.append(AttributedString(" "))
             case let html as InlineHTML:
-                // 인라인 HTML은 렌더 대상이 아니라 원문 유지 신호(예: 표 셀 줄바꿈 `<br/>`).
-                // `<br`류만 공백 1개로 강등하고, 그 외 태그 토큰(여닫이 포함)은 버린다.
-                // 여닫이 태그 사이의 실제 텍스트는 별도 Markdown.Text 노드로 들어오므로
-                // 태그 자체를 버려도 정보 손실이 없다(순수 마크업 노이즈만 제거).
-                if html.rawHTML.range(of: "<br", options: [.caseInsensitive]) != nil {
+                // <br>·<br/>·<br >만 공백으로 강등, 그 외 태그 토큰은 버린다(사이 텍스트는 별도 노드).
+                if html.rawHTML.lowercased().hasPrefix("<br") {
                     attributed.append(AttributedString(" "))
                 }
             default:

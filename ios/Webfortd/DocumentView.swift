@@ -34,6 +34,8 @@ struct DocumentView: View {
         }
         .navigationBarTitleDisplayMode(.inline)
         .task(id: slug) {
+            blocks = nil
+            loadFailed = false
             guard let store, let summary = store.summary(slug: slug) else { return }
             do {
                 let body = try store.loadBody(slug: slug)
