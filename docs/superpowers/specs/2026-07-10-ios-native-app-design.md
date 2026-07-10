@@ -30,7 +30,7 @@
 | 의존성 | **2개만**: `supabase-swift`(인증 전용, dodo 2.50.0 검증) + `swift-markdown`(Apple 공식, 위키 렌더링) | 완전 무의존(B안) 대비: 토큰 refresh 수제 구현 회피 + 표 렌더링(161개 문서가 표 사용 → `AttributedString(markdown:)` 불가) |
 | Xcode 프로젝트 | 수동 최소 pbxproj, objectVersion 77 폴더 동기화 그룹(파일 추가 시 pbxproj 무변경) | gildongmu 검증. 병렬 편집 지뢰 구조 회피 |
 | 서명 | Personal Team 자동 서명(개발) → Developer Program(배포 시점, §10 하드 스톱) | 비용 0으로 개발 완주 가능 |
-| Bundle ID / 표시명 | `kr.khudt.webfortd` / **"장애인교원 위키 베타"** | 위키 브랜드 영구 결정(2026-05-24) + gildongmu "길동무 베타" 관례 |
+| Bundle ID / 표시명 | `kr.khudt.webfortd` / **"Webfortd Beta"** | 위원장 지시(2026-07-10, 실기기 설치 시점 — 초기안 "장애인교원 위키 베타"에서 변경). 위키 브랜드는 앱 내부 카피에 유지 |
 | base URL | 릴리스 `https://webfortd.vercel.app`(2026-07-10 실측 200), 디버그 주입 가능 | KHUDT URL은 결제 락 402. 복귀 시 Config 상수 1곳 수정 |
 | 지원 기기 | iPhone 세로 고정(TARGETED_DEVICE_FAMILY 1) | gildongmu 동일. iPad는 장기 과제 |
 

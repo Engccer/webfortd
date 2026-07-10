@@ -168,7 +168,7 @@
 				DEVELOPMENT_TEAM = 72JQ7VD4V5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "장애인교원 위키 베타";
+				INFOPLIST_KEY_CFBundleDisplayName = "Webfortd Beta";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -191,7 +191,7 @@
 				DEVELOPMENT_TEAM = 72JQ7VD4V5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "장애인교원 위키 베타";
+				INFOPLIST_KEY_CFBundleDisplayName = "Webfortd Beta";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				LD_RUNPATH_SEARCH_PATHS = (
