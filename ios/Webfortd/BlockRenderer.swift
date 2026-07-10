@@ -102,21 +102,6 @@ private struct BlockView: View {
     }
 
     private func documentImage(source: String, alt: String) -> some View {
-        let url = URL(string: source, relativeTo: AppConfig.webBaseURL)
-        return AsyncImage(url: url) { phase in
-            switch phase {
-            case .success(let image):
-                image.resizable().scaledToFit()
-            default:
-                // 오프라인·로드 실패: alt 텍스트가 정본(멀티미디어 작성 원칙).
-                Text(alt.isEmpty ? "이미지" : alt)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .padding(8)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(.quaternary.opacity(0.4), in: RoundedRectangle(cornerRadius: 8))
-            }
-        }
-        .accessibilityLabel(alt.isEmpty ? "이미지" : alt)
+        RemoteImageView(url: URL(string: source, relativeTo: AppConfig.webBaseURL), alt: alt)
     }
 }
