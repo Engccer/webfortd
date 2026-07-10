@@ -3,18 +3,16 @@
  *
  * GET only. RLS가 본인 thread만 반환 보장 (auth.uid() 매칭 + deleted_at is null).
  * 비로그인: 빈 배열 + 200 (UI가 분기 없이 안전하게 사용 가능).
+ * M3(iOS): Bearer JWT가 있으면 우선 사용, 없으면 기존 쿠키 SSR 경로(웹 무회귀).
  */
-import { getServerClient } from '@/lib/supabase/server'
+import { getRequestAuth } from '@/lib/supabase/request-auth'
 
 export const runtime = 'nodejs'
 
 const MAX_THREADS = 20 // spec §2 D6 — 시범 단계 절대 다수 사용자가 < 20 threads
 
-export async function GET(): Promise<Response> {
-  const supabase = await getServerClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+export async function GET(request: Request): Promise<Response> {
+  const { supabase, user } = await getRequestAuth(request)
 
   if (!user) {
     return new Response(JSON.stringify({ threads: [] }), {

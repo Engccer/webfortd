@@ -27,7 +27,7 @@ import {
 import { checkRateLimit, getClientIp, json429 } from '@/lib/rate-limit'
 import { retrieveChunks } from '@/lib/rag/retrieval.ts'
 import { buildSystemPrompt, clampHistory } from '@/lib/rag/prompt-builder.ts'
-import { getServerClient } from '@/lib/supabase/server'
+import { getRequestAuth } from '@/lib/supabase/request-auth'
 import { getAdminClient } from '@/lib/supabase/admin'
 import { parseHwpToMarkdown } from '@/lib/chat/upstage-parse.ts'
 import { ALLOWED_MIMES, MAX_FILE_SIZE } from '@/lib/chat/file-validation.ts'
@@ -200,10 +200,8 @@ export async function POST(req: Request): Promise<Response> {
 
   // M5: 서버측 user 검증 (cookies 기반 SSR auth, 클라이언트 hint 신뢰 X).
   // 비로그인 사용자는 user=null → onFinish DB 저장 분기 skip.
-  const supabaseSSR = await getServerClient()
-  const {
-    data: { user },
-  } = await supabaseSSR.auth.getUser()
+  // M3(iOS): Bearer JWT가 있으면 우선 사용, 없으면 기존 쿠키 SSR 경로(웹 무회귀).
+  const { user } = await getRequestAuth(req)
 
   // 8. streaming 응답
   const result = streamText({
