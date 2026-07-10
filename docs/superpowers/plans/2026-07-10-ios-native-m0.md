@@ -63,8 +63,8 @@ ios/
 | M1 | 오프라인 검색(제목 가중+전문) + 백링크 섹션 + FAQ 홈 노출 + 위키 홈 완성(오늘의 위키 등가) |
 | M2 | RAG 채팅(익명): AI SDK v6 UIMessage SSE 파서 + 출처 카드(번들 문서 연결) + 첨부 |
 | M3 | 인증(supabase-swift OTP) + 서버 Bearer 승격 + 이력(신규 `GET /api/chat/threads/[id]`) |
-| M4 | 라이브 음성 채팅(dodo-planet `Core/Live/` 이식 + `search_policy` 배선) |
-| M5 | 자료실·미디어(카탈로그 JSON 추출 확장) + 설정·About + TestFlight 준비(**Developer Program $99 = 비용 하드 스톱 상신**) |
+| M4 | 자료실·미디어(카탈로그 JSON 추출 확장) + 설정·About + TestFlight 준비(**Developer Program $99 = 비용 하드 스톱 상신**) |
+| M5 (보류) | 라이브 음성 채팅(dodo-planet `Core/Live/` 이식 + `search_policy` 배선) — dodo-planet Live 오류 수정·검증 후 이식(위원장 지시 2026-07-10) |
 
 ---
 

@@ -102,7 +102,9 @@ dodo-planet `src/lib/supabase/server.ts`의 Bearer 이중 지원 패턴을 이�
 - 목록: `GET /api/chat/threads`(Bearer). 복원: 신규 `GET /api/chat/threads/[id]`. 이어가기: body에 `threadId`.
 - 웹에 없는 복원 UX가 iOS에 먼저 생긴다(웹은 목록만). 서버 자산은 공용.
 
-### 4.4 라이브 음성 채팅 (dodo Live 스택 직이식)
+### 4.4 라이브 음성 채팅 (dodo Live 스택 직이식 — 보류, M5)
+
+> **2026-07-10 위원장 지시**: dodo-planet 앱의 Live 구현에 오류가 있어 이 축은 보류. dodo-planet에서 먼저 수정하고 검증된 상태로 이식한다. 아래 설계는 이식 시점의 정본으로 유지.
 
 - dodo-planet `Core/Live/` 검증 구현을 이식: `LiveSocket`(URLSessionWebSocketTask, `BidiGenerateContentConstrained` + ephemeral token) · `LiveAudioEngine`(AVAudioEngine, 16kHz 캡처/24kHz 재생, `.voiceChat` 하드웨어 AEC) · `LiveSessionController`.
 - webfortd 고유 배선: `POST /api/voice/session` → `{ token, model(gemini-3.1-flash-live-preview), voiceConfig(Puck·ko-KR) }`. functionCall `search_policy` → `POST /api/voice/execute` 프록시 → `sendToolResponse` 회신.
@@ -143,8 +145,8 @@ dodo-planet `src/lib/supabase/server.ts`의 Bearer 이중 지원 패턴을 이�
 | M1 | 오프라인 검색 + 위키링크·백링크 내비 + FAQ + 위키 홈 완성 | 비행기 모드 검색 완주 |
 | M2 | RAG 채팅(익명): SSE 파서 + 출처 카드(번들 문서 연결) + 첨부 | 실호출 스트리밍 + VoiceOver 채팅 완주 |
 | M3 | 인증(OTP) + 서버 Bearer 승격 + 이력(신규 API 포함) | 로그인 → 이력 저장·복원 실증 |
-| M4 | 라이브 음성 채팅(dodo Live 이식 + search_policy 배선) | 실기기 음성 대화 + 출처 확인 |
-| M5 | 자료실·미디어 + 설정·About + TestFlight 준비 문서 | PDF 오프라인 캐시 + 전 기능 회귀 |
+| M4 | 자료실·미디어 + 설정·About + TestFlight 준비 문서 | PDF 오프라인 캐시 + 전 기능 회귀 |
+| M5 (보류) | 라이브 음성 채팅(dodo Live 이식 + search_policy 배선) — **dodo-planet Live 구현에 오류가 있어 위원장 지시(2026-07-10)로 보류. dodo-planet에서 먼저 수정·검증 후 이식** | dodo-planet 수정 완료 + 위원장 재개 신호 |
 
 ## 8. 실행 전략
 
