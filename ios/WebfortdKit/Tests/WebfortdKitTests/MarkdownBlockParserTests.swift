@@ -105,4 +105,19 @@ import Testing
         }
         #expect(emptySlugs.isEmpty, "빈 파싱 결과: \(emptySlugs)")
     }
+
+    @Test func 첫_heading이_제목과_같으면_제거한다() {
+        let blocks = MarkdownBlockParser.parse("# 제1조【유효기간】\n\n본문.")
+            .droppingLeadingTitleHeading(title: "제1조【유효기간】")
+        guard case .paragraph = blocks.first else {
+            Issue.record("첫 블록이 paragraph가 아님: \(blocks)"); return
+        }
+        #expect(blocks.count == 1)
+    }
+
+    @Test func 첫_heading이_제목과_다르면_유지한다() {
+        let blocks = MarkdownBlockParser.parse("# 다른 제목\n\n본문.")
+            .droppingLeadingTitleHeading(title: "제1조【유효기간】")
+        #expect(blocks.count == 2)
+    }
 }

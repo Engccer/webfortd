@@ -22,3 +22,16 @@ public indirect enum KBBlock: Equatable, Sendable {
     case image(source: String, alt: String)
     case thematicBreak
 }
+
+public extension [KBBlock] {
+    /// 본문 첫 블록이 문서 제목과 동일한 heading이면 제거한다.
+    /// 코퍼스 98.3%가 "첫 heading == frontmatter title"이라 그대로 두면
+    /// 화면과 VoiceOver 헤딩 로터에 같은 제목이 두 번 나온다(같은 정보 반복 금지).
+    func droppingLeadingTitleHeading(title: String) -> [KBBlock] {
+        guard case let .heading(_, content) = first,
+              content.plain.trimmingCharacters(in: .whitespaces)
+                == title.trimmingCharacters(in: .whitespaces)
+        else { return self }
+        return Array(dropFirst())
+    }
+}

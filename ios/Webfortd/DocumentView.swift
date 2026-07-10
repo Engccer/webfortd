@@ -34,10 +34,11 @@ struct DocumentView: View {
         }
         .navigationBarTitleDisplayMode(.inline)
         .task(id: slug) {
-            guard let store else { return }
+            guard let store, let summary = store.summary(slug: slug) else { return }
             do {
                 let body = try store.loadBody(slug: slug)
                 blocks = MarkdownBlockParser.parse(body)
+                    .droppingLeadingTitleHeading(title: summary.frontmatter.title)
             } catch {
                 loadFailed = true
             }
