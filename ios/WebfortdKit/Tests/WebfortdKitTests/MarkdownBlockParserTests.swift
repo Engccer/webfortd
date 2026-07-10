@@ -99,11 +99,65 @@ import Testing
         // 파이프라인 미실행 환경(fresh clone)에서는 조용히 통과.
         guard let store = try? KBStore.bundled(), !store.documents.isEmpty else { return }
         var emptySlugs: [String] = []
+        var tagsRemaining: [(slug: String, pattern: String)] = []
         for doc in store.documents {
             let blocks = MarkdownBlockParser.parse(try store.loadBody(slug: doc.slug))
             if blocks.isEmpty { emptySlugs.append(doc.slug) }
+
+            // plain 텍스트 전량 수집 후 마크다운 tag 잔존 검사
+            let allPlain = collectPlainText(from: blocks)
+            for pattern in ["<page_header", "<br", "</"] {
+                if allPlain.contains(pattern) {
+                    tagsRemaining.append((slug: doc.slug, pattern: pattern))
+                }
+            }
         }
         #expect(emptySlugs.isEmpty, "빈 파싱 결과: \(emptySlugs)")
+        #expect(tagsRemaining.isEmpty, "마크다운 tag 잔존: \(tagsRemaining)")
+    }
+
+    /// KBBlock 재귀 순회로 모든 plain 텍스트 수집.
+    /// 9종 케이스: heading/paragraph는 inline.plain, table은 header+rows inline.plain,
+    /// bulletList/orderedList/blockquote는 재귀. codeBlock/image/thematicBreak는 plain 없음.
+    private func collectPlainText(from blocks: [KBBlock]) -> String {
+        var result = ""
+        for block in blocks {
+            switch block {
+            case .heading(_, let content):
+                result += content.plain + " "
+            case .paragraph(let content):
+                result += content.plain + " "
+            case .bulletList(let items):
+                for item in items {
+                    result += collectPlainText(from: item) + " "
+                }
+            case .orderedList(let items, _):
+                for item in items {
+                    result += collectPlainText(from: item) + " "
+                }
+            case .table(let header, let rows):
+                for cell in header {
+                    result += cell.plain + " "
+                }
+                for row in rows {
+                    for cell in row {
+                        result += cell.plain + " "
+                    }
+                }
+            case .codeBlock:
+                // 코드 원문은 검사 제외
+                break
+            case .blockquote(let content):
+                result += collectPlainText(from: content) + " "
+            case .image:
+                // 이미지는 plain 없음
+                break
+            case .thematicBreak:
+                // 구분선은 plain 없음
+                break
+            }
+        }
+        return result
     }
 
     @Test func 첫_heading이_제목과_같으면_제거한다() {
