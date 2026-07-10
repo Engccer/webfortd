@@ -8,8 +8,9 @@ import WebfortdKit
 /// 채팅 답변은 문서 제목이 없으므로 별도 처리 없음. 출처 카드는 번들 문서면 즉시 push한다.
 struct ChatView: View {
     let store: KBStore?
+    let authStore: AuthStore
 
-    @State private var chatStore = ChatStore()
+    @State private var chatStore: ChatStore
     @State private var inputText = ""
     @AccessibilityFocusState private var focusedMessageId: UUID?
 
@@ -18,6 +19,23 @@ struct ChatView: View {
     @State private var showPhotosPicker = false
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var showFileImporter = false
+
+    // M3 인증 흐름: 로그인 시트 · 대화 목록 시트 · 계정 confirmationDialog.
+    @State private var showAuthSheet = false
+    @State private var showThreadListSheet = false
+    @State private var showAccountMenu = false
+
+    /// `authStore`(일반 init 파라미터, `@Environment` 아님 — 이 View의 `@State` 초기값이
+    /// 커스텀 init 시점에 이미 필요하므로 환경 주입 타이밍 문제를 피한다)로 tokenProvider를
+    /// 연결한 `ChatAPI`·`ThreadsAPI`를 만들어 `ChatStore`에 주입한다.
+    init(store: KBStore?, authStore: AuthStore) {
+        self.store = store
+        self.authStore = authStore
+        let chatAPI = ChatAPI(baseURL: AppConfig.webBaseURL, tokenProvider: { await authStore.accessToken() })
+        let threadsAPI = ThreadsAPI(
+            baseURL: AppConfig.webBaseURL, tokenProvider: { await authStore.accessToken() })
+        _chatStore = State(initialValue: ChatStore(api: chatAPI, threadsAPI: threadsAPI))
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -35,6 +53,18 @@ struct ChatView: View {
         }
         .navigationTitle("채팅")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar { toolbarContent }
+        .sheet(isPresented: $showAuthSheet) {
+            AuthSheet(authStore: authStore)
+        }
+        .sheet(isPresented: $showThreadListSheet) {
+            ThreadListSheet(authStore: authStore, chatStore: chatStore)
+        }
+        .confirmationDialog(authStore.email ?? "계정", isPresented: $showAccountMenu, titleVisibility: .visible) {
+            Button("로그아웃", role: .destructive) {
+                Task { await signOut() }
+            }
+        }
         .onChange(of: chatStore.phase) { oldPhase, newPhase in
             // 완료 시 답변 첫 부분으로 포커스 이동(별도 완료 통지 없음. 포커스 이동이 신호).
             // 오류는 ChatStore가 이미 Announcement로 알렸으므로 여기서 다시 focus를 옮기면
@@ -42,6 +72,44 @@ struct ChatView: View {
             guard oldPhase == .streaming, newPhase == .idle, chatStore.lastErrorMessage == nil else { return }
             focusedMessageId = chatStore.messages.last?.id
         }
+        .onChange(of: chatStore.threadLoadTick) { _, _ in
+            // 대화 목록에서 스레드를 불러오면 첫 메시지로 포커스 이동(§동적 콘텐츠 등장 시
+            // 포커스 이동). streamTick과 별개 tick으로 원인(전송 완료 vs 이력 로드)을 구분한다.
+            focusedMessageId = chatStore.messages.first?.id
+        }
+    }
+
+    @ToolbarContentBuilder
+    private var toolbarContent: some ToolbarContent {
+        ToolbarItem(placement: .navigationBarLeading) {
+            Button("새 대화") {
+                chatStore.startNewThread()
+            }
+            .frame(minWidth: 44, minHeight: 44)
+        }
+        ToolbarItemGroup(placement: .navigationBarTrailing) {
+            if authStore.isSignedIn {
+                Button("대화 목록") {
+                    showThreadListSheet = true
+                }
+                .frame(minWidth: 44, minHeight: 44)
+                Button("계정") {
+                    showAccountMenu = true
+                }
+                .frame(minWidth: 44, minHeight: 44)
+            } else {
+                Button("로그인") {
+                    showAuthSheet = true
+                }
+                .frame(minWidth: 44, minHeight: 44)
+            }
+        }
+    }
+
+    /// 로그아웃 + 이력 리셋(로그아웃 후 서버 저장 없는 익명 휘발 모드로 복귀).
+    private func signOut() async {
+        await authStore.signOut()
+        chatStore.startNewThread()
     }
 
     private var messageList: some View {
