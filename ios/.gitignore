@@ -1,0 +1,8 @@
+DerivedData/
+*.xcuserdatad/
+xcuserdata/
+.swiftpm/
+.build/
+# 번들 산출물은 파이프라인 생성물 (ios/scripts/bundle-content.mjs)
+WebfortdKit/Sources/WebfortdKit/Resources/KB/*
+!WebfortdKit/Sources/WebfortdKit/Resources/KB/.gitkeep
