@@ -40,4 +40,9 @@ import Testing
         #expect(KBSearch.snippet(around: "중요한", in: body) == "중요한 단어가 있는 줄")
         #expect(KBSearch.snippet(around: "없는토큰", in: body) == nil)
     }
+
+    @Test func snippet은_원본_대소문자를_보존한다() {
+        let body = "첫 줄\nNEIS 시스템 접근성 안내\n셋째 줄"
+        #expect(KBSearch.snippet(around: "neis", in: body) == "NEIS 시스템 접근성 안내")
+    }
 }

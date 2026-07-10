@@ -134,7 +134,7 @@ struct WikiHomeView: View {
         }
     }
 
-    /// 연중 일수 % 문서수로 매일 다른 문서 1건을 노출한다(웹 "오늘의 위키" 미러).
+    /// 오늘의 위키: day-of-year 기반 결정적 1건 선택(웹은 KST 시드 셔플 5건 — 알고리즘 독립, 목적 동일).
     private func todayDocument(_ store: KBStore) -> KBDocumentSummary? {
         let docs = store.documents.sorted { $0.slug < $1.slug }
         guard !docs.isEmpty else { return nil }
