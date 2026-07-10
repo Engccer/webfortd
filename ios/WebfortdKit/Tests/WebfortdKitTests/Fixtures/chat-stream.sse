@@ -1,0 +1,26 @@
+data: {"type":"start","messageId":"8ewSwufG13saXMEg"}
+
+data: {"type":"start-step"}
+
+data: {"type":"text-start","id":"0","providerMetadata":{"gateway":{"generationId":"gen_01KX55QFM80G3SQQ1VZTF49XRW"}}}
+
+data: {"type":"text-delta","id":"0","delta":"한국장"}
+
+data: {"type":"text-delta","id":"0","delta":"애인고용공단을 통해 보조공학기기 지원을 신청하거나"}
+
+data: {"type":"text-delta","id":"0","delta":" 소속 시·도교육청 및 학교의 수요조사를 통해 신청할 수 있으므로, 구체적인 신청 절차는"}
+
+data: {"type":"text-delta","id":"0","delta":" 소속 교육청에 문의하여 주시기 바랍니다.\n\n본 답변은 참고용이에요. 실제 적용 절차는"}
+
+data: {"type":"text-delta","id":"0","delta":" 소속 교육청·관할 기관에 확인해 주세요."}
+
+data: {"type":"text-end","id":"0"}
+
+data: {"type":"finish-step"}
+
+data: {"type":"message-metadata","messageMetadata":{"sourceRefs":[{"slug":"2024-jbu-p-016","title":"나) 지원 내용","axis":"policies","type":"안내서","href":"/policies/2024-jbu-p-016"},{"slug":"2024-jbu-p-015","title":"가) 지원 근거","axis":"policies","type":"안내서","href":"/policies/2024-jbu-p-015"},{"slug":"2023-hr-2-5","title":"2) 의사소통 지원","axis":"policies","type":"안내서","href":"/policies/2023-hr-2-5"}]}}
+
+data: {"type":"finish"}
+
+data: [DONE]
+
