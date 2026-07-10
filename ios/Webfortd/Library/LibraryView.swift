@@ -105,7 +105,11 @@ struct LibraryView: View {
             }
         case .cached(let fileURL):
             Button("열기") {
-                previewItem = PreviewItem(url: fileURL)
+                if let cachedURL = downloadStore.cachedURLIfExists(for: item.slug) {
+                    previewItem = PreviewItem(url: cachedURL)
+                } else {
+                    AccessibilityNotification.Announcement("받은 파일이 삭제되어 다시 받아야 해요").post()
+                }
             }
             .frame(minWidth: 44, minHeight: 44)
         }
