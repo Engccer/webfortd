@@ -40,8 +40,13 @@ public enum MarkdownBlockParser {
         case is ThematicBreak:
             return .thematicBreak
         case let html as HTMLBlock:
-            // 원문 md의 드문 HTML은 평문으로 강등(렌더 불능보다 정보 보존).
-            let text = html.rawHTML.trimmingCharacters(in: .whitespacesAndNewlines)
+            // 블록 레벨 HTML은 태그를 제거하고 내부 텍스트만 보존한다 —
+            // 웹 브라우저가 미지 태그를 무시하고 내부 텍스트만 렌더링하는 동작과 등가이며,
+            // 태그 토큰(`<aside>`·`<page_header>` 등)은 스크린리더 낭독 노이즈일 뿐이다.
+            // 태그만 있고 내부 텍스트가 없으면 블록 자체를 생략(빈 문단 방지).
+            let text = html.rawHTML.replacing(/<[^>]+>/, with: "")
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !text.isEmpty else { return nil }
             return .paragraph(KBInline(attributed: AttributedString(text), plain: text))
         default:
             // 미지 블록은 평문 폴백(전방 호환).

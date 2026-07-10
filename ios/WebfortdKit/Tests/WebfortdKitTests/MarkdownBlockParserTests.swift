@@ -64,6 +64,20 @@ import Testing
         #expect(!rows[0][0].plain.contains("<"))
     }
 
+    @Test func 블록_HTML은_태그를_벗기고_내부_텍스트만_남긴다() {
+        let blocks = MarkdownBlockParser.parse("<aside>\n중요 안내\n</aside>")
+        guard case let .paragraph(inline) = blocks.first else {
+            Issue.record("paragraph 아님: \(blocks)"); return
+        }
+        #expect(inline.plain == "중요 안내")
+        #expect(!inline.plain.contains("<"))
+    }
+
+    @Test func 태그만_있는_블록_HTML은_생략된다() {
+        let blocks = MarkdownBlockParser.parse("문단\n\n</div>")
+        #expect(blocks.count == 1)
+    }
+
     @Test func 번들_전량_파싱_스모크() throws {
         // 파이프라인 미실행 환경(fresh clone)에서는 조용히 통과.
         guard let store = try? KBStore.bundled(), !store.documents.isEmpty else { return }
