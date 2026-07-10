@@ -31,6 +31,7 @@ final class AuthStore {
     private(set) var state: AuthState = .loading
 
     private let client: SupabaseClient
+    private var isBootstrapping = false
 
     init(client: SupabaseClient = SupabaseClientProvider.shared) {
         self.client = client
@@ -69,6 +70,15 @@ final class AuthStore {
                 }
             }
         }
+    }
+
+    /// 포그라운드 복귀 시 세션 상태 재확인. 이미 로그인 화면 표시 중(signedOut)이어도
+    /// 로컬 세션이 살아 있으면 signedIn으로 정정한다(표시-실인증 불일치 해소).
+    func bootstrapIfNeeded() async {
+        guard !isBootstrapping else { return }
+        isBootstrapping = true
+        defer { isBootstrapping = false }
+        await bootstrap()
     }
 
     /// `error`가 "세션이 아예 없음"(`AuthError.sessionMissing`)인지 판별. 순수 함수라 실

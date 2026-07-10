@@ -23,6 +23,7 @@ struct WebfortdApp: App {
     /// 동일한 패턴, 이 앱은 아직 `.environment()` DI를 쓰지 않는다) `ChatAPI`·`ThreadsAPI`의
     /// tokenProvider로 연결한다.
     @State private var authStore = AuthStore()
+    @Environment(\.scenePhase) private var scenePhase
 
     init() {
         // 파이프라인 미실행 등 번들 결함은 홈에서 안내(3-state: 실패를 빈 목록과 뭉개지 않음).
@@ -61,6 +62,13 @@ struct WebfortdApp: App {
                 // 앱 시작 1회: 기기에 저장된 세션 복원. 세션 없으면 signedOut, 그 외 오류는
                 // AuthStore.bootstrap()이 이전 state를 유지한다.
                 await authStore.bootstrap()
+            }
+            .onChange(of: scenePhase) { _, newPhase in
+                if newPhase == .active {
+                    Task {
+                        await authStore.bootstrapIfNeeded()
+                    }
+                }
             }
         }
     }
