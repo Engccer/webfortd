@@ -25,7 +25,7 @@ struct ChatView: View {
     @State private var showThreadListSheet = false
     @State private var showAccountMenu = false
 
-    /// `authStore`(일반 init 파라미터, `@Environment` 아님 — 이 View의 `@State` 초기값이
+    /// `authStore`(일반 init 파라미터, `@Environment` 아님, 이 View의 `@State` 초기값이
     /// 커스텀 init 시점에 이미 필요하므로 환경 주입 타이밍 문제를 피한다)로 tokenProvider를
     /// 연결한 `ChatAPI`·`ThreadsAPI`를 만들어 `ChatStore`에 주입한다.
     init(store: KBStore?, authStore: AuthStore) {
@@ -328,7 +328,7 @@ struct ChatView: View {
             chatStore.notifyAttachmentLoadFailure()
             return
         }
-        // 파악 가능한 경우에만 사전 차단(§2) — fileSize를 알 수 없으면 로드 후 stageAttachment의
+        // 파악 가능한 경우에만 사전 차단(§2), fileSize를 알 수 없으면 로드 후 stageAttachment의
         // 크기 검증이 안전망으로 남는다.
         let fileSize = (try? url.resourceValues(forKeys: [.fileSizeKey]))?.fileSize
         if let fileSize, fileSize > ChatStore.maxAttachmentBytes {

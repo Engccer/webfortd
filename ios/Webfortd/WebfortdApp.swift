@@ -20,7 +20,7 @@ struct WebfortdApp: App {
     @State private var wikiPath: [AppRoute] = []
     @State private var chatPath: [AppRoute] = []
     /// M3: OTP 로그인 + 세션 상태. `ChatView`에 명시적으로 넘겨(기존 `store: KBStore?` 전달과
-    /// 동일한 패턴 — 이 앱은 아직 `.environment()` DI를 쓰지 않는다) `ChatAPI`·`ThreadsAPI`의
+    /// 동일한 패턴, 이 앱은 아직 `.environment()` DI를 쓰지 않는다) `ChatAPI`·`ThreadsAPI`의
     /// tokenProvider로 연결한다.
     @State private var authStore = AuthStore()
 

@@ -4,7 +4,7 @@ import Testing
 
 // StubURLProtocolBase · CapturedRequestBox · requestBodyData는
 // Helpers/ChatStubURLProtocol.swift 공용 헬퍼(ChatAPITests와 공유, 중복 제거).
-// handler는 Suite별 독립 static var(교차-Suite 경합 회피 — 헬퍼 파일 주석 판단 기록 참고).
+// handler는 Suite별 독립 static var(교차-Suite 경합 회피, 헬퍼 파일 주석 판단 기록 참고).
 final class ThreadsStubURLProtocol: StubURLProtocolBase {
     nonisolated(unsafe) static var handler: ((URLRequest) -> APIStub)?
     override class func stubHandler(for request: URLRequest) -> APIStub { handler!(request) }
@@ -26,7 +26,7 @@ final class ThreadsStubURLProtocol: StubURLProtocolBase {
         APIStub(statusCode: statusCode, chunks: [Data(json.utf8)])
     }
 
-    // 근거: src/app/api/chat/threads/route.ts — `.select('id, title, updated_at')` →
+    // 근거: src/app/api/chat/threads/route.ts, `.select('id, title, updated_at')` →
     // `Response.json({ threads: data ?? [] })` shape을 손으로 옮겨 적음(2026-07-10 Task 1 기준).
     @Test func list가_threads_배열을_updated_at_필드로_디코딩한다() async throws {
         let json = """
@@ -44,7 +44,7 @@ final class ThreadsStubURLProtocol: StubURLProtocolBase {
         #expect(threads.first?.updatedAt == "2026-07-10T01:02:03.000Z")
     }
 
-    // 근거: route.ts — 비로그인이면 `user`가 null이라도 `{ threads: [] }` 200으로 응답한다
+    // 근거: route.ts, 비로그인이면 `user`가 null이라도 `{ threads: [] }` 200으로 응답한다
     // (무효 토큰도 마찬가지: `getRequestAuth`가 무효 Bearer를 user=null로 처리). 클라이언트는
     // 상태코드 분기 없이 그대로 디코딩하면 되므로, 빈 배열 응답이 정상 디코딩되는지만 확인한다.
     @Test func list_응답이_빈_배열이면_빈_배열을_반환한다() async throws {
@@ -68,7 +68,7 @@ final class ThreadsStubURLProtocol: StubURLProtocolBase {
         #expect(request.url?.path == "/api/chat/threads")
     }
 
-    // 근거: src/app/api/chat/threads/[id]/route.ts — thread `.select('id, title')`,
+    // 근거: src/app/api/chat/threads/[id]/route.ts, thread `.select('id, title')`,
     // messages `.select('id, role, content, source_refs, created_at')` →
     // `Response.json({ thread, messages: messages ?? [] })`. `id`·`created_at`은
     // Kit 인터페이스(ChatThreadMessage)에 없는 필드라 Codable이 무시함을 함께 확인한다.
@@ -112,7 +112,7 @@ final class ThreadsStubURLProtocol: StubURLProtocolBase {
         #expect(result.messages.first?.sourceRefs == [])
     }
 
-    // 근거: route.ts — 비로그인(user == null)이면 401.
+    // 근거: route.ts, 비로그인(user == null)이면 401.
     @Test func messages_401_응답은_unauthorized_오류를_던진다() async throws {
         ThreadsStubURLProtocol.handler = { _ in
             self.stub(statusCode: 401, json: #"{"error":"로그인이 필요해요."}"#)
@@ -126,7 +126,7 @@ final class ThreadsStubURLProtocol: StubURLProtocolBase {
         }
     }
 
-    // 근거: route.ts — UUID 형식 불일치·미존재·타인 소유(RLS)는 모두 404로 통일.
+    // 근거: route.ts, UUID 형식 불일치·미존재·타인 소유(RLS)는 모두 404로 통일.
     @Test func messages_404_응답은_notFound_오류를_던진다() async throws {
         ThreadsStubURLProtocol.handler = { _ in
             self.stub(statusCode: 404, json: #"{"error":"대화를 찾을 수 없어요."}"#)

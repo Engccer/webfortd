@@ -10,7 +10,6 @@ struct ThreadListSheet: View {
 
     @Environment(\.dismiss) private var dismiss
     @State private var phase: Phase = .loading
-    private let threadsAPI: ThreadsAPI
 
     /// 3-state + 성공 케이스: "확인 중"(loading) ≠ "0건"(empty) ≠ "조회 실패"(failed)를
     /// 뭉개지 않는다.
@@ -19,12 +18,6 @@ struct ThreadListSheet: View {
         case loaded([ChatThreadSummary])
         case empty
         case failed(String)
-    }
-
-    init(authStore: AuthStore, chatStore: ChatStore) {
-        self.authStore = authStore
-        self.chatStore = chatStore
-        self.threadsAPI = ThreadsAPI(baseURL: AppConfig.webBaseURL, tokenProvider: { await authStore.accessToken() })
     }
 
     var body: some View {
@@ -80,8 +73,8 @@ struct ThreadListSheet: View {
     private func load() async {
         phase = .loading
         do {
-            let threads = try await threadsAPI.list()
-            // 서버는 무효 토큰도 200 빈 배열로 정규화한다(route.ts 주석 — user == null이면
+            let threads = try await chatStore.threadsAPI.list()
+            // 서버는 무효 토큰도 200 빈 배열로 정규화한다(route.ts 주석, user == null이면
             // 별도 401 없이 { threads: [] }). "정말 0건"과 "세션이 만료되어 조용히 빈 배열"이
             // 뭉개지지 않도록, 결과가 비었을 때만 토큰 유효성을 별도 확인해 3-state를 분리한다
             // (Task 2 보고서가 남긴 고려사항).

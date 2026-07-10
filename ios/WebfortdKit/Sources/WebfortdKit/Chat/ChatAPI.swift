@@ -8,7 +8,7 @@ public struct ChatAPI: Sendable {
     private let session: URLSession
     private let tokenProvider: (@Sendable () async -> String?)?
 
-    /// `tokenProvider`가 nil이면(기본값) 익명 요청 그대로 — 기존 M2 호출부 무변경.
+    /// `tokenProvider`가 nil이면(기본값) 익명 요청 그대로, 기존 M2 호출부 무변경.
     /// 값이 있고 토큰을 반환하면 `Authorization: Bearer <token>` 헤더를 부착한다(M3, RFC 7235 표준 대문자 스킴).
     public init(baseURL: URL, session: URLSession = .shared,
                 tokenProvider: (@Sendable () async -> String?)? = nil) {

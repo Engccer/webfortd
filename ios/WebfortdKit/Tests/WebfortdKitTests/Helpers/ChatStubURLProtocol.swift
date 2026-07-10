@@ -11,7 +11,7 @@ struct APIStub {
 /// 참조해 오버라이드한다(gildongmu `StubURLProtocol` 관례 확장).
 ///
 /// **판단 기록(Task 2, 2026-07-10)**: `handler`를 이 베이스 클래스의 공용 단일 static var로
-/// 두지 않고 서브클래스마다 독립 선언하는 이유 — Swift Testing은 기본적으로 서로 다른
+/// 두지 않고 서브클래스마다 독립 선언하는 이유: Swift Testing은 기본적으로 서로 다른
 /// top-level `@Suite`를 병렬 실행한다(`.serialized` trait은 같은 Suite 내부만 직렬화하지
 /// 다른 Suite와의 동시 실행까지 막지 않는다). `ChatAPITests`·`ThreadsAPITests`가 전역 handler
 /// 하나를 공유하면, 두 Suite가 동시에 실행될 때 한 테스트가 설정한 handler를 다른 테스트가

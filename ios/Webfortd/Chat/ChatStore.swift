@@ -45,10 +45,10 @@ final class ChatStore {
     /// true로 두어 send()가 완성 전 첨부를 실어 보내는 race를 막고, 로드 중임을 사용자에게 알린다.
     private(set) var isAttachmentLoading = false
     /// 스트리밍 델타가 반영될 때마다 증가하는 tick. ChatView가 이 값 변화를 관찰해 자동 스크롤을
-    /// 트리거한다(시각 사용자용 추적 — VoiceOver 포커스 이동은 완료 시 1회만 별도로 처리하므로 영향 없음).
+    /// 트리거한다(시각 사용자용 추적, VoiceOver 포커스 이동은 완료 시 1회만 별도로 처리하므로 영향 없음).
     private(set) var streamTick = 0
     /// `loadThread(id:)`가 messages를 통째로 교체할 때마다 증가하는 tick. ChatView가 이 값
-    /// 변화를 관찰해 첫 메시지로 접근성 포커스를 이동한다(streamTick과 동형 — 별개 원인의 messages
+    /// 변화를 관찰해 첫 메시지로 접근성 포커스를 이동한다(streamTick과 동형, 별개 원인의 messages
     /// 변경을 구분해야 하므로 messages.count 변화만으로는 판별할 수 없다).
     private(set) var threadLoadTick = 0
 
@@ -56,7 +56,9 @@ final class ChatStore {
     private static let oversizeAttachmentMessage = "파일이 너무 커요. 10MB 이하만 첨부할 수 있어요."
 
     private let api: ChatAPI
-    private let threadsAPI: ThreadsAPI
+    /// internal(비-private): `ThreadListSheet`가 별도 `ThreadsAPI` 인스턴스를 새로 만들지 않고
+    /// 이 인스턴스를 재사용한다(같은 tokenProvider를 중복 구성하지 않기 위함).
+    let threadsAPI: ThreadsAPI
     private var streamTask: Task<Void, Never>?
     private(set) var threadId: String?
     /// stop() 직후 곧바로 재전송하면 취소된 이전 Task의 완료 처리가 새 Task의 phase를
@@ -72,7 +74,7 @@ final class ChatStore {
     }
 
     /// 사용자 질문 전송. 스트리밍 중 재진입, 첨부 로드 중 전송은 가드로 거부한다.
-    /// 반환값 true면 실제로 전송을 시작했다는 뜻 — ChatView가 이 값으로 입력 텍스트를 비울지
+    /// 반환값 true면 실제로 전송을 시작했다는 뜻: ChatView가 이 값으로 입력 텍스트를 비울지
     /// 판단해 가드 거부 시 입력 텍스트가 유실되지 않도록 한다.
     @discardableResult
     func send(_ text: String) -> Bool {
@@ -184,7 +186,7 @@ final class ChatStore {
     }
 
     /// 로그인 사용자의 저장된 대화 이력을 불러와 현재 세션의 messages를 통째로 교체한다.
-    /// `ThreadListSheet`가 스레드 선택 시 호출한다. 스트리밍 중이면 먼저 중단한다 — 진행 중이던
+    /// `ThreadListSheet`가 스레드 선택 시 호출한다. 스트리밍 중이면 먼저 중단한다. 진행 중이던
     /// Task가 초기화된 배열에 옛 인덱스로 접근해 범위 오류를 내는 것을 막기 위함(MainActor
     /// 직렬 실행이라 이 stop() 호출과 messages 교체 사이에 다른 코드가 끼어들 수 없다).
     func loadThread(id: String) async throws {

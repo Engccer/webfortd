@@ -1,5 +1,5 @@
 /**
- * M3(iOS) — request-auth 헬퍼 단위 테스트.
+ * M3(iOS): request-auth 헬퍼 단위 테스트.
  *
  * getRequestAuth(getUser 실호출 포함)는 통합 영역이라 제외(기존 관례).
  * getBearerJwt(순수 함수)·createBearerClient(env 미설정 시 throw)·UUID_RE만 단위 검증.
@@ -7,7 +7,7 @@
 import { test, describe } from 'node:test'
 import assert from 'node:assert/strict'
 import { getBearerJwt, createBearerClient } from '../../src/lib/supabase/request-auth.ts'
-import { UUID_RE } from '../../src/app/api/chat/threads/[id]/route.ts'
+import { UUID_RE, normalizeSourceRefs } from '../../src/app/api/chat/threads/[id]/route.ts'
 
 describe('getBearerJwt', () => {
   test('정상 Bearer 헤더 → 토큰 추출', () => {
@@ -104,5 +104,40 @@ describe('UUID_RE', () => {
 
   test('비-hex 문자 포함 → 불일치', () => {
     assert.ok(!UUID_RE.test('550e8400-e29b-41d4-a716-44665544000g'))
+  })
+})
+
+// Finding(critical) 재발 방지: RPC 인자에 JSON.stringify를 실수로 다시 넣으면 jsonb 컬럼에
+// "이스케이프된 문자열"이 저장되는 이중 인코딩이 재발한다. 이 3케이스(배열/문자열/null)가
+// [id] 라우트의 방어적 정규화가 세 형태 모두를 배열로 통일함을 고정한다.
+describe('normalizeSourceRefs', () => {
+  test('정상 배열 → 그대로 반환', () => {
+    const refs = [{ slug: 'a', title: 'A' }]
+    assert.deepStrictEqual(normalizeSourceRefs(refs), refs)
+  })
+
+  test('빈 배열 → 그대로 반환', () => {
+    assert.deepStrictEqual(normalizeSourceRefs([]), [])
+  })
+
+  test('이중 인코딩된 배열 JSON 문자열 → 파싱해 배열로 복원', () => {
+    const refs = [{ slug: 'a', title: 'A' }]
+    assert.deepStrictEqual(normalizeSourceRefs(JSON.stringify(refs)), refs)
+  })
+
+  test('파싱 불가능한 문자열 → 빈 배열로 폴백', () => {
+    assert.deepStrictEqual(normalizeSourceRefs('not json'), [])
+  })
+
+  test('JSON이지만 배열이 아닌 문자열(객체) → 빈 배열로 폴백', () => {
+    assert.deepStrictEqual(normalizeSourceRefs(JSON.stringify({ slug: 'a' })), [])
+  })
+
+  test('null → 빈 배열로 폴백', () => {
+    assert.deepStrictEqual(normalizeSourceRefs(null), [])
+  })
+
+  test('undefined → 빈 배열로 폴백', () => {
+    assert.deepStrictEqual(normalizeSourceRefs(undefined), [])
   })
 })

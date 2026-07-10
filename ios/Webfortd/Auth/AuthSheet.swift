@@ -4,7 +4,7 @@ import SwiftUI
 /// 이메일 입력 → 인증 코드 발송 → 코드 입력 → 확인. 코드를 입력한 그 기기에 즉시 세션이
 /// 생기므로(매직링크의 "다른 컨텍스트에서 열림" 문제 없음) 별도 딥링크 처리가 필요 없다.
 ///
-/// 진행 중에도 버튼을 `.disabled`로 잠그지 않는다 — 대신 액션 내부에서 재진입을 가드하고
+/// 진행 중에도 버튼을 `.disabled`로 잠그지 않는다. 대신 액션 내부에서 재진입을 가드하고
 /// 라벨만 바꾼다(§동적 콘텐츠 패턴: 포커스를 쥔 컨트롤을 disabled로 바꾸면 포커스가 body로
 /// 이탈한다). 오류·성공 모두 단일 채널(Announcement + 화면에 보이는 문구)로 통지한다.
 struct AuthSheet: View {
@@ -147,7 +147,7 @@ struct AuthSheet: View {
     }
 
     /// 오류 문구를 화면에 표시함과 동시에 단일 채널(Announcement)로 통지한다
-    /// (ChatStore.applyError와 동일 패턴 — 표시 문구와 낭독 문구를 별도로 관리하지 않는다).
+    /// (ChatStore.applyError와 동일 패턴, 표시 문구와 낭독 문구를 별도로 관리하지 않는다).
     private func show(error message: String) {
         errorMessage = message
         AccessibilityNotification.Announcement(message).post()

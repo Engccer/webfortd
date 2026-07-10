@@ -3,7 +3,7 @@ import Observation
 import Supabase
 
 /// 인증 상태(3-state). "확인 중"(loading) ≠ "로그인 안 됨"(signedOut) ≠ "로그인 됨"(signedIn)을
-/// 뭉개지 않는다 — 세션 조회 실패(네트워크 등)를 signedOut으로 오인해 로그인된 사용자를
+/// 뭉개지 않는다. 세션 조회 실패(네트워크 등)를 signedOut으로 오인해 로그인된 사용자를
 /// 갑자기 로그아웃 화면으로 되돌리지 않기 위함이다.
 enum AuthState: Equatable {
     case loading
@@ -23,7 +23,7 @@ enum SupabaseClientProvider {
 /// OTP(인증 코드) 로그인 + 세션 상태 저장소. dodo-planet `AuthStore`의 4-state
 /// (loading/signedOut/signedIn/bootstrapFailed)를 3-state로 슬림화했다: webfortd는 로그인이
 /// 선택 사항(익명 채팅이 기본 동작)이라 세션 갱신 실패를 별도 재시도 화면으로 분리할 필요가
-/// 없다 — 부재만 signedOut으로 확정하고, 그 외 오류는 이전 state를 그대로 둔 채 다음 부트스트랩·
+/// 없다. 부재만 signedOut으로 확정하고, 그 외 오류는 이전 state를 그대로 둔 채 다음 부트스트랩·
 /// 요청에 맡긴다.
 @MainActor
 @Observable
@@ -75,13 +75,13 @@ final class AuthStore {
 
     /// 인증 코드 검증. 성공하면 그 즉시 이 기기에 세션이 생성되어 signedIn으로 전환한다
     /// (코드를 입력한 그 브라우저·기기에 바로 세션이 생기므로, 매직링크가 다른 컨텍스트에서
-    /// 열려 세션이 유실되는 문제가 없다 — 웹 `AuthContext.verifyOtp`와 동일 원칙).
+    /// 열려 세션이 유실되는 문제가 없다, 웹 `AuthContext.verifyOtp`와 동일 원칙).
     func verifyOtp(email: String, code: String) async throws {
         let response = try await client.auth.verifyOTP(email: email, token: code, type: .email)
         state = .signedIn(email: response.user.email ?? email)
     }
 
-    /// 로그아웃. 서버 호출 실패(네트워크 단절 등)여도 로컬 state는 signedOut으로 정리한다 —
+    /// 로그아웃. 서버 호출 실패(네트워크 단절 등)여도 로컬 state는 signedOut으로 정리한다.
     /// 사용자가 "로그아웃" 버튼을 누른 의도가 화면에는 반드시 반영되어야 한다.
     func signOut() async {
         try? await client.auth.signOut()

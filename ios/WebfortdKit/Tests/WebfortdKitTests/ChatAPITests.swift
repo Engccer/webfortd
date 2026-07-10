@@ -4,7 +4,7 @@ import Testing
 
 // StubURLProtocolBase · CapturedRequestBox · requestBodyData는
 // Helpers/ChatStubURLProtocol.swift 공용 헬퍼로 승격됨(ThreadsAPITests와 공유, 중복 제거).
-// handler는 Suite별 독립 static var(교차-Suite 경합 회피 — 헬퍼 파일 주석 판단 기록 참고).
+// handler는 Suite별 독립 static var(교차-Suite 경합 회피, 헬퍼 파일 주석 판단 기록 참고).
 final class ChatStubURLProtocol: StubURLProtocolBase {
     nonisolated(unsafe) static var handler: ((URLRequest) -> APIStub)?
     override class func stubHandler(for request: URLRequest) -> APIStub { handler!(request) }

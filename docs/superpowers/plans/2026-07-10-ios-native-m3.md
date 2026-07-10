@@ -11,11 +11,11 @@
 ## Global Constraints
 
 - 기존 전 항목(iOS 26·Kit 순수·이모지·em dash 금지·주석 한국어·pathspec·44pt) + 브랜치 `ios-native-m3`.
-- **Kit는 supabase-swift를 import하지 않는다** — 토큰은 `tokenProvider: (() async -> String?)?` 주입.
-- 서버: Bearer 무효 토큰은 **쿠키로 폴백하지 않고 거부**(dodo 원칙 — 잘못된 토큰이 조용히 성공하는 혼동 차단). 헤더 없으면 쿠키 경로.
+- **Kit는 supabase-swift를 import하지 않는다**: 토큰은 `tokenProvider: (() async -> String?)?` 주입.
+- 서버: Bearer 무효 토큰은 **쿠키로 폴백하지 않고 거부**(dodo 원칙, 잘못된 토큰이 조용히 성공하는 혼동 차단). 헤더 없으면 쿠키 경로.
 - 웹 기존 동작 무회귀: 쿠키 사용자 흐름(웹 UI)은 변경 없음. `npm test` 게이트.
 - 익명 iOS 흐름 무회귀: 로그인 없이 위키·검색·채팅 전부 기존대로.
-- 매직링크 재도입 금지(2026-06-04 영구 결정) — OTP 코드 방식만.
+- 매직링크 재도입 금지(2026-06-04 영구 결정): OTP 코드 방식만.
 
 ## 파일 구조 (M3 신규/수정)
 
@@ -100,12 +100,12 @@ export async function getRequestAuth(
 ```
 
 **라우트 수정:**
-- `src/app/api/chat/route.ts`: 기존 `const supabaseSSR = await getServerClient(); ... auth.getUser()` 부분(약 203행)을 `const { user } = await getRequestAuth(request)`로 교체(이후 로직의 user 사용은 동일 — admin RPC 저장 경로 무변경). request 객체는 핸들러 인자로 이미 존재.
-- `src/app/api/chat/threads/route.ts`: `GET(request: Request)`로 시그니처 변경, `const { supabase, user } = await getRequestAuth(request)` 사용(이후 select는 동일 — bearer 클라이언트도 RLS로 본인 것만).
+- `src/app/api/chat/route.ts`: 기존 `const supabaseSSR = await getServerClient(); ... auth.getUser()` 부분(약 203행)을 `const { user } = await getRequestAuth(request)`로 교체(이후 로직의 user 사용은 동일, admin RPC 저장 경로 무변경). request 객체는 핸들러 인자로 이미 존재.
+- `src/app/api/chat/threads/route.ts`: `GET(request: Request)`로 시그니처 변경, `const { supabase, user } = await getRequestAuth(request)` 사용(이후 select는 동일, bearer 클라이언트도 RLS로 본인 것만).
 - 신규 `src/app/api/chat/threads/[id]/route.ts`:
 ```ts
 /**
- * M3(iOS) — thread 메시지 복원. 웹 이력 복원 UX에도 재사용될 공용 자산.
+ * M3(iOS): thread 메시지 복원. 웹 이력 복원 UX에도 재사용될 공용 자산.
  * RLS가 본인 thread·메시지만 반환 보장. 비로그인 401, 남의 thread는 RLS로 404.
  */
 import { getRequestAuth } from '@/lib/supabase/request-auth'
@@ -145,15 +145,15 @@ export async function GET(
   return Response.json({ thread, messages: messages ?? [] })
 }
 ```
-(uuid 형식 검증: 잘못된 형식은 supabase가 22P02 오류를 내므로 threadError 경로에서 500이 아니라 404로 처리하고 싶으면 `id` 정규식 사전 검증을 추가 — 구현 시 `/^[0-9a-f-]{36}$/i` 불일치 시 404 반환.)
+(uuid 형식 검증: 잘못된 형식은 supabase가 22P02 오류를 내므로 threadError 경로에서 500이 아니라 404로 처리하고 싶으면 `id` 정규식 사전 검증을 추가: 구현 시 `/^[0-9a-f-]{36}$/i` 불일치 시 404 반환.)
 
-**테스트** (`tests/chat/request-auth.test.ts`, node:test): `getBearerJwt` 4케이스(정상/없음/비Bearer/빈 토큰). `createBearerClient`는 env 없을 때 throw. (getUser 실호출은 통합 영역이라 제외 — 기존 관례.)
+**테스트** (`tests/chat/request-auth.test.ts`, node:test): `getBearerJwt` 4케이스(정상/없음/비Bearer/빈 토큰). `createBearerClient`는 env 없을 때 throw. (getUser 실호출은 통합 영역이라 제외, 기존 관례.)
 
 - [ ] Step 1: 테스트 작성 → FAIL → 헬퍼 구현 → PASS
 - [ ] Step 2: 라우트 3개 수정·신설, `npm test` 전체 green + `npm run build` 성공(정적 라우트 회귀 확인)
 - [ ] Step 3: 커밋 `feat(api): Bearer 이중 인증 + thread 메시지 복원 API(iOS 정식 클라이언트 지원)` (pathspec: src/lib/supabase/request-auth.ts src/app/api/chat tests/chat)
 
-### Task 2: Kit — tokenProvider + ThreadsAPI
+### Task 2: Kit: tokenProvider + ThreadsAPI
 
 **Files:**
 - Modify: `ios/WebfortdKit/Sources/WebfortdKit/Chat/ChatAPI.swift`
@@ -190,19 +190,19 @@ public enum ThreadsAPIError: Error, Equatable {
     case server(status: Int)
 }
 ```
-- 테스트: ChatStubURLProtocol 재사용(필요 시 공용 헬퍼 파일로 승격) — (a) tokenProvider 있으면 Authorization 헤더 부착·없으면 미부착, (b) threads 목록 디코딩(fixture는 서버 응답 shape 손작성 — 서버 코드가 정본이므로 shape을 Task 1 라우트 코드와 대조해 작성, 주석에 근거 명시), (c) 401→unauthorized.
+- 테스트: ChatStubURLProtocol 재사용(필요 시 공용 헬퍼 파일로 승격): (a) tokenProvider 있으면 Authorization 헤더 부착·없으면 미부착, (b) threads 목록 디코딩(fixture는 서버 응답 shape 손작성, 서버 코드가 정본이므로 shape을 Task 1 라우트 코드와 대조해 작성, 주석에 근거 명시), (c) 401→unauthorized.
 
 - [ ] Step 1: 실패 테스트 → 구현 → 전체 swift test green(36 + 신규 ≥4)
 - [ ] Step 2: 커밋 `feat(ios): ThreadsAPI + ChatAPI Bearer 토큰 주입(Kit는 supabase 무의존)` (pathspec: ios/WebfortdKit)
 
-### Task 3: 앱 — supabase-swift 인증 + 이력 UI
+### Task 3: 앱: supabase-swift 인증 + 이력 UI
 
 **Files:**
 - Modify: `ios/Webfortd.xcodeproj/project.pbxproj` (remote package 추가)
 - Create: `ios/Webfortd/Auth/AuthStore.swift`, `ios/Webfortd/Auth/AuthSheet.swift`, `ios/Webfortd/Chat/ThreadListSheet.swift`
 - Modify: `ios/Webfortd/WebfortdApp.swift`, `ios/Webfortd/Chat/ChatStore.swift`, `ios/Webfortd/Chat/ChatView.swift`
 
-**pbxproj 변경(정확히 이 3곳 — 폴더 동기화 그룹 구조라 파일 추가는 무변경):**
+**pbxproj 변경(정확히 이 3곳, 폴더 동기화 그룹 구조라 파일 추가는 무변경):**
 1. `XCRemoteSwiftPackageReference` 섹션 신설:
 ```text
 /* Begin XCRemoteSwiftPackageReference section */
@@ -223,10 +223,10 @@ public enum ThreadsAPIError: Error, Equatable {
 ```swift
 enum AuthState { case loading, signedOut, signedIn(email: String) }
 ```
-- `SupabaseClientProvider`(enum, static let shared = SupabaseClient(url:key:)) — URL·anon key는 AppConfig에 상수 추가(`NEXT_PUBLIC_*` 공개값: url `https://<웹과 동일 ref>.supabase.co`, anon key는 `src/lib/supabase/client.ts`가 읽는 `.env.local`/Vercel 값 — **구현 시 `.env.local`의 NEXT_PUBLIC_SUPABASE_URL·NEXT_PUBLIC_SUPABASE_ANON_KEY 실값을 읽어 상수로 박는다**. anon key는 공개 배포값이라 하드코딩 허용).
+- `SupabaseClientProvider`(enum, static let shared = SupabaseClient(url:key:)): URL·anon key는 AppConfig에 상수 추가(`NEXT_PUBLIC_*` 공개값: url `https://<웹과 동일 ref>.supabase.co`, anon key는 `src/lib/supabase/client.ts`가 읽는 `.env.local`/Vercel 값. **구현 시 `.env.local`의 NEXT_PUBLIC_SUPABASE_URL·NEXT_PUBLIC_SUPABASE_ANON_KEY 실값을 읽어 상수로 박는다**. anon key는 공개 배포값이라 하드코딩 허용).
 - `bootstrap()`: `try await client.auth.session` 복원 → signedIn/signedOut(세션 부재만 signedOut, 네트워크 오류는 기존 세션 유지).
 - `requestOtp(email:)` → `client.auth.signInWithOTP(email:)`. `verifyOtp(email:code:)` → `client.auth.verifyOTP(email:token:type:.email)`. `signOut()`.
-- `accessToken() async -> String?` — `try? await client.auth.session.accessToken`(SDK 자동 refresh). 이것이 ChatAPI·ThreadsAPI의 tokenProvider.
+- `accessToken() async -> String?`: `try? await client.auth.session.accessToken`(SDK 자동 refresh). 이것이 ChatAPI·ThreadsAPI의 tokenProvider.
 
 **AuthSheet** (웹 AuthModal 2단계 미러): 이메일 입력 → "인증 코드 받기" → 코드 입력(숫자 키패드) → "확인". 오류 한국어 표시, 진행 중 disabled 금지(가드+라벨 변화), 성공 시 시트 닫힘 + Announcement("로그인했습니다"). 취소 가능.
 
@@ -234,12 +234,12 @@ enum AuthState { case loading, signedOut, signedIn(email: String) }
 - `WebfortdApp`: `@State authStore` 생성, 환경 주입. ChatAPI·ThreadsAPI 생성 시 tokenProvider = `{ await authStore.accessToken() }`.
 - `ChatView` 툴바: 비로그인 → "로그인" 버튼(AuthSheet). 로그인 → "대화 목록" 버튼(ThreadListSheet) + 계정 메뉴(이메일 표시·로그아웃, confirmationDialog).
 - `ThreadListSheet`: `ThreadsAPI.list()` 목록(제목+상대시간 combine), 선택 → `ChatStore.loadThread(id:)`(messages 교체 + threadId 설정 + 시트 닫힘 + 첫 메시지로 포커스), 오류·빈 목록 3-state 분리.
-- `ChatStore`: `threadId: String?` — metadata 이벤트의 threadId 채택, send 시 body에 포함. `loadThread`는 ThreadsAPI.messages → ChatMessage 배열로 변환(sourceRefs 포함). "새 대화" 버튼(threadId·messages 리셋) 툴바 추가.
+- `ChatStore`: `threadId: String?`: metadata 이벤트의 threadId 채택, send 시 body에 포함. `loadThread`는 ThreadsAPI.messages → ChatMessage 배열로 변환(sourceRefs 포함). "새 대화" 버튼(threadId·messages 리셋) 툴바 추가.
 - 로그아웃 시 threadId·이력 리셋(익명 휘발 모드 복귀).
 
 **검증:**
 - swift test 전체 green + xcodebuild BUILD SUCCEEDED(첫 빌드는 supabase-swift SPM 해석 수 분).
-- 시뮬 스모크: 익명 회귀(위키·검색·채팅 동작) + 로그인 시트 열림·이메일 검증 문구까지(실제 OTP 수신은 위원장 실기기 게이트로 이월 — 명시 기록).
+- 시뮬 스모크: 익명 회귀(위키·검색·채팅 동작) + 로그인 시트 열림·이메일 검증 문구까지(실제 OTP 수신은 위원장 실기기 게이트로 이월, 명시 기록).
 - 서버 신규 라우트 실계약: production 배포 전이므로 로컬 `npm run dev` + curl로 401 경로만 확인(비로그인 401, 형식 오류 404).
 
 - [ ] Step 1: pbxproj + AppConfig 상수 + AuthStore/Provider, 빌드 성공
