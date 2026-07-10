@@ -56,11 +56,16 @@ struct ChatView: View {
                 }
                 .padding()
             }
-            .onChange(of: chatStore.messages.count) { _, _ in
-                guard let lastId = chatStore.messages.last?.id else { return }
-                proxy.scrollTo(lastId, anchor: .bottom)
-            }
+            .onChange(of: chatStore.messages.count) { _, _ in scrollToLastMessage(proxy) }
+            // 스트리밍 델타마다 하단으로 추적 스크롤(시각 사용자용). VoiceOver 포커스 이동은
+            // 완료 시 1회(위 onChange(of: chatStore.phase))만 처리하므로 이 스크롤과 무관하다.
+            .onChange(of: chatStore.streamTick) { _, _ in scrollToLastMessage(proxy) }
         }
+    }
+
+    private func scrollToLastMessage(_ proxy: ScrollViewProxy) {
+        guard let lastId = chatStore.messages.last?.id else { return }
+        proxy.scrollTo(lastId, anchor: .bottom)
     }
 
     @ViewBuilder
@@ -166,6 +171,7 @@ struct ChatView: View {
         .photosPicker(isPresented: $showPhotosPicker, selection: $selectedPhotoItem, matching: .images)
         .onChange(of: selectedPhotoItem) { _, newItem in
             guard let newItem else { return }
+            chatStore.beginAttachmentLoad()
             Task {
                 await loadImageAttachment(newItem)
                 selectedPhotoItem = nil
@@ -206,14 +212,17 @@ struct ChatView: View {
         }
     }
 
+    // 가드로 전송이 거부되면(ChatStore.send가 false 반환) 입력 텍스트를 비우지 않고 보존한다.
     private func send() {
         let text = inputText
-        inputText = ""
-        chatStore.send(text)
+        if chatStore.send(text) {
+            inputText = ""
+        }
     }
 
     /// PhotosPicker 선택물은 원본 포맷(HEIC 등 다양)을 UIImage로 로드 후 JPEG(quality 0.8)로
     /// 재인코딩한다. 서버 허용 MIME이 image/png·jpeg·webp뿐이라 HEIC 호환 문제를 클라이언트에서 회피.
+    /// 디코드·재인코딩은 non-main(Task.detached)에서 수행해 메인 스레드 블로킹을 막는다.
     /// 로드 실패 시 attachmentErrorMessage 설정 + Announcement로 사용자에게 알린다(무신호 해소).
     @MainActor
     private func loadImageAttachment(_ item: PhotosPickerItem) async {
@@ -221,19 +230,27 @@ struct ChatView: View {
             chatStore.notifyAttachmentLoadFailure()
             return
         }
-        guard let uiImage = UIImage(data: data) else {
-            chatStore.notifyAttachmentLoadFailure()
-            return
-        }
-        guard let jpegData = uiImage.jpegData(compressionQuality: 0.8) else {
+        let jpegData = await Task.detached(priority: .userInitiated) {
+            Self.encodeJPEG(from: data)
+        }.value
+        guard let jpegData else {
             chatStore.notifyAttachmentLoadFailure()
             return
         }
         chatStore.stageAttachment(mediaType: "image/jpeg", data: jpegData, filename: "photo.jpg")
     }
 
+    /// UIImage 디코드 + JPEG 재인코딩 순수 헬퍼. self를 캡처하지 않는 `nonisolated static`으로 둬
+    /// Task.detached에서 안전하게 실행한다(렌더링이 아닌 디코드는 non-main에서도 안전).
+    private nonisolated static func encodeJPEG(from data: Data) -> Data? {
+        guard let uiImage = UIImage(data: data) else { return nil }
+        return uiImage.jpegData(compressionQuality: 0.8)
+    }
+
     /// fileImporter는 보안 스코프 URL을 돌려주므로 접근 시작/종료를 명시적으로 감싼다.
-    /// 각 단계에서 실패 시 attachmentErrorMessage 설정 + Announcement로 사용자에게 알린다(무신호 해소).
+    /// 대용량 파일은 실제 로드 전 파일 크기부터 검증해(§2) 불필요한 메모리 로드를 막고,
+    /// Data 읽기 자체도 non-main(Task.detached)에서 수행한다.
+    /// 각 단계 실패 시 attachmentErrorMessage 설정 + Announcement로 사용자에게 알린다(무신호 해소).
     private func handleFileImportResult(_ result: Result<URL, Error>) {
         guard case .success(let url) = result else {
             chatStore.notifyAttachmentLoadFailure()
@@ -243,11 +260,31 @@ struct ChatView: View {
             chatStore.notifyAttachmentLoadFailure()
             return
         }
-        defer { url.stopAccessingSecurityScopedResource() }
-        guard let data = try? Data(contentsOf: url) else {
-            chatStore.notifyAttachmentLoadFailure()
+        // 파악 가능한 경우에만 사전 차단(§2) — fileSize를 알 수 없으면 로드 후 stageAttachment의
+        // 크기 검증이 안전망으로 남는다.
+        let fileSize = (try? url.resourceValues(forKeys: [.fileSizeKey]))?.fileSize
+        if let fileSize, fileSize > ChatStore.maxAttachmentBytes {
+            url.stopAccessingSecurityScopedResource()
+            chatStore.notifyAttachmentTooLarge()
             return
         }
-        chatStore.stageAttachment(mediaType: "application/pdf", data: data, filename: url.lastPathComponent)
+        chatStore.beginAttachmentLoad()
+        let filename = url.lastPathComponent
+        Task {
+            defer { url.stopAccessingSecurityScopedResource() }
+            let data = await Task.detached(priority: .userInitiated) {
+                Self.readPDFData(from: url)
+            }.value
+            guard let data else {
+                chatStore.notifyAttachmentLoadFailure()
+                return
+            }
+            chatStore.stageAttachment(mediaType: "application/pdf", data: data, filename: filename)
+        }
+    }
+
+    /// PDF 파일 읽기 순수 헬퍼. url은 Sendable이라 액터 경계를 안전하게 넘나든다.
+    private nonisolated static func readPDFData(from url: URL) -> Data? {
+        try? Data(contentsOf: url)
     }
 }

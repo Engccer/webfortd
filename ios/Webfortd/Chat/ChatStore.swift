@@ -41,8 +41,15 @@ final class ChatStore {
     private(set) var pendingAttachment: ChatAttachment?
     /// 10MB 초과 등 첨부 실패 시 표시 문구. 새 첨부가 성공하거나 clearAttachment()가 호출되면 nil.
     private(set) var attachmentErrorMessage: String?
+    /// 첨부 데이터 로드(사진 디코드·PDF 읽기) 진행 중 여부. ChatView가 non-main에서 로드하는 동안
+    /// true로 두어 send()가 완성 전 첨부를 실어 보내는 race를 막고, 로드 중임을 사용자에게 알린다.
+    private(set) var isAttachmentLoading = false
+    /// 스트리밍 델타가 반영될 때마다 증가하는 tick. ChatView가 이 값 변화를 관찰해 자동 스크롤을
+    /// 트리거한다(시각 사용자용 추적 — VoiceOver 포커스 이동은 완료 시 1회만 별도로 처리하므로 영향 없음).
+    private(set) var streamTick = 0
 
     static let maxAttachmentBytes = 10 * 1024 * 1024 // 10MB, 서버 계약(MAX_FILE_SIZE) 미러
+    private static let oversizeAttachmentMessage = "파일이 너무 커요. 10MB 이하만 첨부할 수 있어요."
 
     private let api: ChatAPI
     private var streamTask: Task<Void, Never>?
@@ -55,11 +62,18 @@ final class ChatStore {
         self.api = api
     }
 
-    /// 사용자 질문 전송. 스트리밍 중 재진입은 무시(가드).
-    func send(_ text: String) {
-        guard phase == .idle else { return }
+    /// 사용자 질문 전송. 스트리밍 중 재진입, 첨부 로드 중 전송은 가드로 거부한다.
+    /// 반환값 true면 실제로 전송을 시작했다는 뜻 — ChatView가 이 값으로 입력 텍스트를 비울지
+    /// 판단해 가드 거부 시 입력 텍스트가 유실되지 않도록 한다.
+    @discardableResult
+    func send(_ text: String) -> Bool {
+        guard phase == .idle else { return false }
+        guard !isAttachmentLoading else {
+            AccessibilityNotification.Announcement("첨부를 준비하고 있어요. 잠시 후 전송해 주세요.").post()
+            return false
+        }
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
+        guard !trimmed.isEmpty else { return false }
 
         let attachment = pendingAttachment
         pendingAttachment = nil
@@ -100,6 +114,15 @@ final class ChatStore {
             }
             self.finishStreaming(generation: myGeneration)
         }
+        return true
+    }
+
+    /// 첨부 로드 시작 통지: ChatView가 PhotosPicker/fileImporter 로드에 착수할 때 호출한다.
+    /// 로드 완료(성공·실패 불문)는 stageAttachment/notifyAttachmentLoadFailure/notifyAttachmentTooLarge가
+    /// isAttachmentLoading을 false로 되돌린다.
+    func beginAttachmentLoad() {
+        isAttachmentLoading = true
+        AccessibilityNotification.Announcement("첨부 준비 중").post()
     }
 
     /// 첨부 스테이징: 10MB 초과면 즉시 오류 문구 설정 + Announcement 후 미첨부, 통과하면 저장.
@@ -107,11 +130,10 @@ final class ChatStore {
     /// 완성된 바이트만 받아 크기 검증 + base64 인코딩만 수행한다.
     func stageAttachment(mediaType: String, data: Data, filename: String) {
         guard data.count <= Self.maxAttachmentBytes else {
-            let message = "파일이 너무 커요. 10MB 이하만 첨부할 수 있어요."
-            attachmentErrorMessage = message
-            AccessibilityNotification.Announcement(message).post()
+            notifyAttachmentTooLarge()
             return
         }
+        isAttachmentLoading = false
         attachmentErrorMessage = nil
         pendingAttachment = ChatAttachment(
             mediaType: mediaType, dataBase64: data.base64EncodedString(), filename: filename)
@@ -126,9 +148,18 @@ final class ChatStore {
     /// 첨부 로드 실패 시 호출: attachmentErrorMessage 설정 + Announcement로 사용자 통지.
     /// 10MB 초과와 동일한 채널 사용 (stageAttachment 패턴 미러).
     func notifyAttachmentLoadFailure() {
+        isAttachmentLoading = false
         let message = "파일을 불러오지 못했습니다. 다른 파일을 선택해 주세요."
         attachmentErrorMessage = message
         AccessibilityNotification.Announcement(message).post()
+    }
+
+    /// 첨부 크기 초과 통지: 로드 후 검증(stageAttachment)과 ChatView의 PDF 사전 크기 검증
+    /// 양쪽에서 공용으로 쓴다(같은 문구를 두 곳에서 재구현하지 않도록).
+    func notifyAttachmentTooLarge() {
+        isAttachmentLoading = false
+        attachmentErrorMessage = Self.oversizeAttachmentMessage
+        AccessibilityNotification.Announcement(Self.oversizeAttachmentMessage).post()
     }
 
     /// 스트리밍 중단: Task를 취소하되 지금까지 누적된 부분 답변은 그대로 둔다(접미 없음).
@@ -152,6 +183,7 @@ final class ChatStore {
         switch event {
         case .textDelta(let delta):
             messages[index].text += delta
+            streamTick += 1
         case .metadata(let sourceRefs, let newThreadId):
             messages[index].sourceRefs = sourceRefs
             if let newThreadId {
