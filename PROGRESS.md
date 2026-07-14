@@ -2,9 +2,10 @@
 
 > 현재 상태·다음 단계·미결 결정만 담는다(자율성 헌장 §문서화 규율). 항구 원칙은 CLAUDE.md, 날짜별 이력은 CHANGELOG.md, PR 단위 상세는 git log.
 
-## 현재 상태 (2026-07-10)
+## 현재 상태 (2026-07-14)
 
 - **웹**: Phase 1~4·A·B·7 전 완료. 최근 FAQ 코너 신설(#86, axis faq 9건 draft — 위원장 검수 대기). production https://webfortd.vercel.app (engccer Hobby 임시, KHUDT Pro 결제 락).
+- **공식 사업 트랙**(2026-07-14): 과업요청서 최종본 중부대 전달 완료 — 수행사 공고·비교 견적·계약은 중부대 주관. 공식 웹앱 올해 범위에서 일반 이용자 로그인·대화 기록 저장·고충상담 제외(교육부 개인정보 협의). webfortd는 독립 트랙이라 영향 없음. 상세: `docs/DIRECTION_2026.md` §11 진행 상태.
 - **iOS 네이티브 v1 코딩 완료**: M0~M4 전부 머지(PR #87~#91, master `14334b2`). 5탭(위키·채팅·자료실·미디어·설정), 오프라인 위키 535건·검색·RAG 채팅·OTP 인증·이력·PDF 캐시. Kit 단위 테스트 49개 green.
   - 정본: spec `docs/superpowers/specs/2026-07-10-ios-native-app-design.md`, plan M0~M4 `docs/superpowers/plans/2026-07-10-ios-native-m*.md`, 배포 절차 `docs/IOS_DISTRIBUTION.md`.
 - **서버 신규 공용 자산**(M3): Bearer 이중 인증(`src/lib/supabase/request-auth.ts`) + `GET /api/chat/threads/[id]`(이력 복원 — 웹 이력 복원 UX에도 재사용 가능).
