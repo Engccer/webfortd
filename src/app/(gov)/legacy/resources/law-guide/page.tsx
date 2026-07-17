@@ -110,7 +110,7 @@ export default async function LawPage() {
                 {docs.map((doc) => (
                   <article
                     key={doc.slug}
-                    className="rounded-lg border border-gray-200 p-5 transition-all hover:border-blue-300 hover:bg-blue-50"
+                    className="rounded-lg border border-gray-200 p-5 transition-colors hover:border-blue-300 hover:bg-blue-50"
                   >
                     <div className="flex items-start gap-3">
                       <FileText className="mt-0.5 h-5 w-5 shrink-0 text-blue-600" aria-hidden="true" />

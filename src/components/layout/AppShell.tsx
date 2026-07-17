@@ -145,7 +145,8 @@ function AppShellInner({ children, topBar }: { children: ReactNode; topBar?: Rea
       <AccessibilityToolbar open={a11yOpen} onOpenChange={setA11yOpen} hideTrigger />
       <div
         className={cn(
-          "flex flex-col min-h-screen transition-[padding-left] duration-200 ease-out motion-reduce:transition-none",
+          // 사이드바 토글과 짝 — 키보드 고빈도 액션이라 무애니메이션 유지
+          "flex flex-col min-h-screen",
           !isMobile && isExpanded ? "xl:pl-72" : "pl-0",
         )}
         inert={contentInert}

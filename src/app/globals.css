@@ -76,6 +76,8 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  /* 모션: UI 진입·퇴장용 강한 ease-out (내장 곡선은 의도적 모션에 약함) */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 /* Line height from accessibility settings */

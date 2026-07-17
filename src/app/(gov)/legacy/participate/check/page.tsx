@@ -107,10 +107,11 @@ export default function CheckPage() {
                 <span className="text-sm text-gray-500">
                   {answeredCount} / {questions.length} 응답 완료
                 </span>
-                <div className="h-2 flex-1 mx-4 rounded-full bg-gray-200">
+                <div className="h-2 flex-1 mx-4 overflow-hidden rounded-full bg-gray-200">
+                  {/* width tween은 매 프레임 layout을 태우므로 GPU 합성되는 scaleX로 채운다 */}
                   <div
-                    className="h-full rounded-full bg-blue-500 transition-all"
-                    style={{ width: `${(answeredCount / questions.length) * 100}%` }}
+                    className="h-full w-full origin-left rounded-full bg-blue-500 transition-transform duration-200 ease-out"
+                    style={{ transform: `scaleX(${answeredCount / questions.length})` }}
                   />
                 </div>
               </div>

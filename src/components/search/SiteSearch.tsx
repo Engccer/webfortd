@@ -267,7 +267,7 @@ export function SiteSearch({
           role="listbox"
           aria-label="검색 결과"
           className={cn(
-            "absolute top-full z-50 mt-1 max-h-96 overflow-auto rounded-md border border-border bg-popover p-1 shadow-lg",
+            "absolute top-full z-50 mt-1 max-h-96 overflow-auto rounded-md border border-border bg-popover p-1 shadow-lg ease-out animate-in fade-in-0 slide-in-from-top-2",
             isHero ? "inset-x-0 w-full" : "right-0 w-[min(28rem,90vw)]",
           )}
         >

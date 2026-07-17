@@ -97,7 +97,8 @@ export function AppSidebar({ onOpenAccessibility }: AppSidebarProps) {
           isOpen ? "translate-x-0" : "-translate-x-full",
         )
       : cn(
-          "fixed top-0 left-0 z-30 h-[100dvh] transition-[width] duration-200 ease-out motion-reduce:transition-none",
+          // Cmd+B 키보드 토글(고빈도)은 무애니메이션 — transition을 다시 걸지 말 것
+          "fixed top-0 left-0 z-30 h-[100dvh]",
           isOpen ? "w-72" : "w-0 overflow-hidden",
         ),
   )

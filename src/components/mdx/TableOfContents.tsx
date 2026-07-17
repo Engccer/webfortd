@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { motionScrollBehavior } from "@/lib/motion"
 import { cn } from "@/lib/utils"
 
 interface Heading {
@@ -67,7 +68,7 @@ export function TableOfContents({ headings }: TableOfContentsProps) {
                 e.preventDefault()
                 const target = document.getElementById(heading.id)
                 if (!target) return
-                target.scrollIntoView({ behavior: "smooth" })
+                target.scrollIntoView({ behavior: motionScrollBehavior() })
                 // 스크린리더 읽기 위치도 함께 이동 (WCAG 2.4.3):
                 // 대상 헤딩에 프로그래매틱 포커스를 부여한다.
                 target.tabIndex = -1
