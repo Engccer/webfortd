@@ -49,6 +49,7 @@ import { VoiceRecordButton } from '@/components/chat/VoiceRecordButton'
 import { useAuth } from '@/contexts/AuthContext'
 import { useChatCompletionFocus } from '@/hooks/useChatCompletionFocus'
 import { isStaleThread } from '@/lib/chat/session-timeout'
+import { motionScrollBehavior } from '@/lib/motion'
 import { getSuggestions } from '@/lib/chat/suggestions'
 import type { SourceRef } from '@/lib/rag/types'
 import { playChatReceiveSound, playChatSendSound } from '@/lib/sound'
@@ -177,7 +178,7 @@ export function ChatUI({ initialThreadId }: ChatUIProps = {}) {
   useEffect(() => {
     if (messages.length === 0) return
     if (isAtBottom) {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+      messagesEndRef.current?.scrollIntoView({ behavior: motionScrollBehavior() })
     } else {
       setShowJumpButton(true)
     }
@@ -398,7 +399,7 @@ export function ChatUI({ initialThreadId }: ChatUIProps = {}) {
         <button
           type="button"
           onClick={() => {
-            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+            messagesEndRef.current?.scrollIntoView({ behavior: motionScrollBehavior() })
             setShowJumpButton(false)
           }}
           aria-label="최신 응답으로 이동"
