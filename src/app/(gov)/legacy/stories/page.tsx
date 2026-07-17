@@ -69,7 +69,7 @@ export default function StoriesPage() {
           <Link
             key={section.href}
             href={section.href}
-            className="group rounded-xl border border-gray-200 bg-white p-6 transition-all hover:border-blue-300 hover:shadow-lg"
+            className="group rounded-xl border border-gray-200 bg-white p-6 transition-[border-color,box-shadow] hover:border-blue-300 hover:shadow-lg"
           >
             <div className="mb-4 text-blue-600">{section.icon}</div>
             <h2 className="mb-2 text-xl font-semibold text-gray-900 group-hover:text-blue-600">

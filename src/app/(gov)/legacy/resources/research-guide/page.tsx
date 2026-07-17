@@ -72,7 +72,7 @@ export default async function ResearchPage() {
                 {docs.map((doc) => (
                   <article
                     key={doc.slug}
-                    className="rounded-lg border-2 border-green-200 bg-green-50 p-5 transition-all hover:border-green-400 hover:bg-green-100"
+                    className="rounded-lg border-2 border-green-200 bg-green-50 p-5 transition-colors hover:border-green-400 hover:bg-green-100"
                   >
                     <div className="flex items-start gap-3">
                       <FileText className="mt-0.5 h-5 w-5 shrink-0 text-green-600" aria-hidden="true" />
