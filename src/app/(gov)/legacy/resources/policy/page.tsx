@@ -1,4 +1,5 @@
 import { Metadata } from "next"
+import Link from "next/link"
 import { Breadcrumb } from "@/components/layout/Breadcrumb"
 import { Sidebar } from "@/components/layout/Sidebar"
 import { mainNavigation } from "@/lib/navigation"
@@ -114,12 +115,12 @@ export default function PolicyPage() {
             <p className="mb-4 text-gray-600">
               장애인교원 지원 정책에 대한 아이디어가 있으시면 제안해 주세요.
             </p>
-            <a
+            <Link
               href="/legacy/participate/ask"
               className="inline-block rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-700"
             >
               제안하기
-            </a>
+            </Link>
           </section>
         </article>
       </div>

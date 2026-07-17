@@ -4,7 +4,7 @@ import { serialize } from "next-mdx-remote/serialize"
 import remarkGfm from "remark-gfm"
 import rehypeSlug from "rehype-slug"
 import { MDXClientWrapper } from "@/components/mdx/MDXClientWrapper"
-import { getKBDocBySlugCompat, getStaticParamsForSubsection } from "@/lib/kb"
+import { getKBDocBySlugCompat } from "@/lib/kb"
 import { adaptFrontmatterToLegacy } from "@/lib/kb-adapter"
 import { Calendar, User, ArrowLeft } from "lucide-react"
 import Link from "next/link"
@@ -12,17 +12,35 @@ import { UnderReviewNotice } from "@/components/kb/UnderReviewNotice"
 import { getPreviewActive } from "@/lib/admin/preview"
 import { shouldRenderUnderReview } from "@/lib/admin/preview-policy"
 
-interface PageProps {
-  params: Promise<{ slug: string }>
+/**
+ * resources 축(law·research) 문서의 읽기 모드 뷰.
+ * 기존 /resources/law/[slug]·/resources/research/[slug] 두 페이지의 동일 본문을
+ * subsection 파라미터로 통합한 서버 컴포넌트 — [...kb] catch-all 라우트가 사용한다.
+ */
+
+export type ResourcesSubsection = "law" | "research"
+
+const SUBSECTION_META: Record<
+  ResourcesSubsection,
+  { backHref: string; backLabel: string; tagClass: string }
+> = {
+  law: {
+    backHref: "/legacy/resources/law-guide",
+    backLabel: "법령·지침 목록",
+    tagClass: "rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-800",
+  },
+  research: {
+    backHref: "/legacy/resources/research-guide",
+    backLabel: "연구자료 목록",
+    tagClass: "rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800",
+  },
 }
 
-export async function generateStaticParams() {
-  return getStaticParamsForSubsection("research")
-}
-
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { slug } = await params
-  const kbDoc = await getKBDocBySlugCompat("resources", "research", slug)
+export async function buildResourcesDocMetadata(
+  subsection: ResourcesSubsection,
+  slug: string,
+): Promise<Metadata> {
+  const kbDoc = await getKBDocBySlugCompat("resources", subsection, slug)
 
   if (!kbDoc) {
     return { title: "문서를 찾을 수 없습니다" }
@@ -35,14 +53,20 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 }
 
-export default async function ResearchDocPage({ params }: PageProps) {
-  const { slug } = await params
-  const kbDoc = await getKBDocBySlugCompat("resources", "research", slug)
+export async function ResourcesDocView({
+  subsection,
+  slug,
+}: {
+  subsection: ResourcesSubsection
+  slug: string
+}) {
+  const kbDoc = await getKBDocBySlugCompat("resources", subsection, slug)
 
   if (!kbDoc) {
     notFound()
   }
 
+  const meta = SUBSECTION_META[subsection]
   const legacy = adaptFrontmatterToLegacy(kbDoc.frontmatter)
 
   // M2 게이트: published만 일반 공개.
@@ -52,8 +76,8 @@ export default async function ResearchDocPage({ params }: PageProps) {
       return (
         <UnderReviewNotice
           title={legacy.title}
-          backHref="/legacy/resources/research-guide"
-          backLabel="연구자료 목록"
+          backHref={meta.backHref}
+          backLabel={meta.backLabel}
         />
       )
     }
@@ -78,11 +102,11 @@ export default async function ResearchDocPage({ params }: PageProps) {
       <div className="sticky top-0 z-30 border-b border-gray-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-4xl items-center justify-between px-4 sm:px-6">
           <Link
-            href="/legacy/resources/research-guide"
+            href={meta.backHref}
             className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-            연구자료 목록
+            {meta.backLabel}
           </Link>
         </div>
       </div>
@@ -118,10 +142,7 @@ export default async function ResearchDocPage({ params }: PageProps) {
             {doc.tags && doc.tags.length > 0 && (
               <div className="mt-4 flex flex-wrap gap-2">
                 {doc.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800"
-                  >
+                  <span key={tag} className={meta.tagClass}>
                     {tag}
                   </span>
                 ))}
