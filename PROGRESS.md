@@ -4,7 +4,7 @@
 
 ## 현재 상태 (2026-07-17)
 
-- **⚠ 프로덕션 배포 전면 실패 중 (2026-07-17 원인 확정)**: engccer Hobby 프로젝트의 모든 Vercel 배포가 2026-06-18경부터 `exceeded_serverless_functions_per_deployment`(Hobby 배포당 함수 12개 제한, 빌드는 성공·patchBuild 단계 거부)로 ERROR. 현 서빙(webfortd.vercel.app)은 그 이전 스테일 빌드 — **이후 머지된 서버 변경(M3 Bearer·threads API, 모션 감사 #97 등)이 라이브 미반영**. 해소 경로는 §미결 결정.
+- **✅ 프로덕션 배포 정상화 (2026-07-17, PR #100)**: 2026-06-18경부터 모든 배포가 `exceeded_serverless_functions_per_deployment`(Hobby 함수 12개 제한)로 실패하던 것을 **KB 축 `[slug]` 라우트 9개 → `(wiki)/[...kb]` catch-all 통합**(URL 불변, 함수 17→9개)으로 해소. 한 달간 미반영이던 서버 변경(M3 Bearer·threads API, 모션 감사 #97 등) 전부 라이브 반영 확인. **영구 규칙: 새 KB 축·서브섹션 문서 라우트는 별도 파일 라우트를 만들지 말고 `[...kb]` 파서에 추가**(파일 라우트 1개 = Serverless Function 1개 소모). 1안(KHUDT Pro 재활성)은 위원장 보류 결정 — 카드 등록·Reactivate 버튼 활성 상태 확인됨(khudt@khudt.net Owner), 원할 때 실행 가능.
 - **애니메이션·모션 감사 트랙 완결 (2026-07-17, PR #97·#98)**: improve-animations 스킬 감사 → 플랜화 → 실행 → review-animations 기준 리뷰(양 트랙 모두 Approve, P1/P2 0건) → 머지. 웹 파인딩 9건 반영(키보드 토글 무애니메이션, JS 스크롤 reduced-motion 게이트, transition-all 전폐, framer-motion 등 죽은 자산 제거, --ease-out 강화 외) + iOS 1건(채팅 자동 스크롤 withAnimation + Reduce Motion 게이트, 시뮬레이터 프레임 정량 실측 검증). 정본: `plans/web-animations/`·`plans/ios-animations/`(기각 항목 근거 포함). `ios/deploy-device.sh` 이식(세 repo 동일본) + 실기기(iPhone 13 Pro) 배포 완료. 잔여: 위원장 실사용 feel check(reduced-motion 토글·채팅 스크롤·드로어).
 
 - **웹**: Phase 1~4·A·B·7 전 완료. 최근 FAQ 코너 신설(#86, axis faq 9건 draft — 위원장 검수 대기). production https://webfortd.vercel.app (engccer Hobby 임시, KHUDT Pro 결제 락).
@@ -26,7 +26,7 @@
 
 | 항목 | 내용 | 근거 문서 |
 |------|------|-----------|
-| **Vercel 프로덕션 배포 실패 해소 경로** | ① KHUDT Pro 결제 정상화 복귀(함수 제한 해제, `docs/VERCEL_RECOVERY_PLAN.md`) vs ② 동적 라우트(ƒ) 함수 수를 12개 이하로 감축(아키텍처 작업 — Draft Mode·auth 쿠키가 위키 라우트를 동적화한 구조 재검토) | 2026-07-17 진단(deployment errorCode `exceeded_serverless_functions_per_deployment`) |
+| KHUDT Pro 재활성(1안) 실행 시점 | 배포는 2안(PR #100)으로 정상화됨. Pro 복귀는 사업 자산 명의 정합 목적으로 여전히 유효한 옵션 — Billing에 Reactivate Pro 버튼 활성 + MasterCard •••• 2970 등록 확인(2026-07-17). 월 $20 결제 발생이라 위원장 실행 몫, 복귀 절차는 `docs/VERCEL_RECOVERY_PLAN.md`(5~15분) | 2026-07-17 보류 결정 |
 | Apple Developer Program 가입 | 연 $99(비용 하드 스톱). 개인 명의(법적 이름 노출) vs 장교조 조직 명의(D-U-N-S 필요) | docs/IOS_DISTRIBUTION.md §1 |
 | 앱 아이콘 | 1024×1024 미제작. 디자인 방향 결정 필요 | docs/IOS_DISTRIBUTION.md §2 |
 | 웹 /privacy·/terms 본문 | placeholder 상태 — TestFlight 외부 테스터·심사 전 필수 | docs/IOS_DISTRIBUTION.md §2 |

@@ -2,6 +2,15 @@
 
 > 날짜별 변경 이력(마일스톤 경계 갱신). 2026-07-10 이전 이력은 git log와 CLAUDE.md §Phase 진행 요약이 정본(지연 생성 원칙에 따라 이 파일은 iOS 트랙 진입 시점부터 시작).
 
+## 2026-07-17 — 프로덕션 배포 정상화: [...kb] catch-all 통합 (#100)
+
+- **원인 규명**: 2026-06-18경부터 engccer Hobby의 전 배포가 `exceeded_serverless_functions_per_deployment`(배포당 함수 12개 제한)로 실패. `vercel build` 산출물 실측 — 유니크 함수 17개 중 9개가 KB 축별 `[slug]` 라우트(prerender 라우트는 라우트당 함수 1개 + 콘텐츠 트레이스 6,501파일이라 공유 람다 그룹핑 불가). 라우트 수가 많은 KB 구조 특성이 원인이라 dodo-planet(API 68개, 균일 설정 → 공유 람다)·gildongmu는 안 걸림.
+- **무효 실험 2회 기록**: `dynamicParams=false`·`force-dynamic` 모두 함수 수 불변(17) — 렌더 모드가 아니라 라우트 수가 지배 변수.
+- **해소**: 축 `[slug]` 라우트 9개 → `(wiki)/[...kb]/page.tsx` 단일 catch-all(경로 파서 + generateStaticParams 통합, 605페이지 프리렌더·Draft Mode 유지, URL 완전 불변) + `ResourcesDocView` 공용화. 함수 17→9개(실배포 람다 7개).
+- **검증**: 프리뷰·프로덕션 배포 READY(한 달 만의 첫 성공), 실서비스 URL smoke(축·law 문서 200, 미지 slug 404, 정적 라우트 불변), 막혀 있던 #97 모션 변경 라이브 반영 확인. unit 370·components 166·a11y 33 그린.
+- **영구 규칙**: 새 KB 문서 라우트는 파일 라우트 신설 금지 — `[...kb]` 파서에 추가(파일 라우트 1개 = 함수 1개).
+- 1안(KHUDT Pro 재활성)은 위원장 보류 — Billing Reactivate 버튼 활성·카드 등록 확인 상태로 대기(PROGRESS.md §미결 결정).
+
 ## 2026-07-17 — 애니메이션·모션 전수 감사 (웹 #97 + iOS #98)
 
 improve-animations 스킬 사이클(감사 → 플랜화 → 실행 → review-animations 기준 리뷰 → 머지)을 두 트랙 단일 세션 완결. 정본: `plans/web-animations/`(9건 반영 + 기각 8건 근거), `plans/ios-animations/`(1건 반영 + 기각 7건 근거).
