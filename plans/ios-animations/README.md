@@ -23,6 +23,13 @@ iOS 코드베이스(`ios/` SwiftUI 소스 39파일)는 **명시적 모션이 0**
 - **Reduce Motion OFF**: 스크롤 발동 지점이 7~11프레임(약 250~350ms) 연속 이동 곡선(runs [10, 11, 7, 8]) — `withAnimation(.easeOut(0.25))` 추적 스크롤 실작동. 콘텐츠가 뷰포트를 넘기 전 델타는 1프레임 텍스트 추가(스크롤 불필요 구간, 정상).
 - **Reduce Motion ON**(`ReduceMotionEnabled` + 앱 재실행): 동일 이벤트가 전부 1프레임 점프(다프레임 run 소멸, 단독 스파이크 14.7 등) — 게이트 동작 확정, 기존 즉시 점프 보존.
 
+## 리뷰 결과 (2026-07-17, code-reviewer × review-animations 기준)
+
+**Approve — P1/P2 0건.** Reduce Motion 게이트 정확("움직임이 유일 속성이라 즉시 점프 = 올바른 적용"), streamTick 연타는 constant-motion 성격 + retarget 중단가능성으로 무해 판정, ease-out은 iOS 관성 감속 관용구 정합. P3 2건 처리:
+
+- **중복 scrollTo 분기**: 반영 — dodo-planet 선례와 동일한 `withAnimation(reduceMotion ? nil : .easeOut(duration: 0.25))` 단일 호출로 정리.
+- **deploy-device.sh 주석 em dash 2곳**: 수용(잔존). dodo-planet 원본 byte-identical 복사본 — 세 repo 동일본 규칙상 단독 수정이 오히려 드리프트. 고칠 경우 세 repo 동시 수정 전제.
+
 ## 감사 시 기각된 항목 (재론 방지, 근거 포함)
 
 - **시스템 화면 전환(sheet·NavigationStack·TabView·Toggle)**: OS가 모션·Reduce Motion 모두 보장 — 손대지 않는 것이 정답.

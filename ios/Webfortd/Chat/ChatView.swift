@@ -124,14 +124,10 @@ struct ChatView: View {
 
     private func scrollToLastMessage(_ proxy: ScrollViewProxy) {
         guard let lastId = chatStore.messages.last?.id else { return }
-        // 동작 줄이기 사용자는 즉시 점프가 정답 — 애니메이션 분기만 다르고 도착 상태는 동일.
+        // 동작 줄이기 사용자는 즉시 점프가 정답(nil 애니메이션). 도착 상태는 두 경우 동일.
         // withAnimation은 연속 호출 시 현재 위치에서 retarget하므로 스트리밍 델타 연타에 안전.
-        if reduceMotion {
+        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.25)) {
             proxy.scrollTo(lastId, anchor: .bottom)
-        } else {
-            withAnimation(.easeOut(duration: 0.25)) {
-                proxy.scrollTo(lastId, anchor: .bottom)
-            }
         }
     }
 
