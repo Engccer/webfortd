@@ -1,6 +1,6 @@
 # 002 — JS 스무스 스크롤에 reduced-motion 게이트 (채팅·TOC)
 
-- **Status**: TODO
+- **Status**: DONE
 - **Commit**: 76d6f21
 - **Severity**: HIGH
 - **Category**: 6 접근성

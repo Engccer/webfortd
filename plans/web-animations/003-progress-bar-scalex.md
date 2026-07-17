@@ -1,6 +1,6 @@
 # 003 — 레거시 체크리스트 진행률 바를 scaleX 전환으로
 
-- **Status**: TODO
+- **Status**: DONE
 - **Commit**: 76d6f21
 - **Severity**: HIGH
 - **Category**: 5 성능

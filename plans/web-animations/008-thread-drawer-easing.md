@@ -1,6 +1,6 @@
 # 008 — ThreadDrawer 시트 이징·비대칭 지속 교정
 
-- **Status**: TODO
+- **Status**: DONE
 - **Commit**: 76d6f21
 - **Severity**: LOW
 - **Category**: 2 이징·지속

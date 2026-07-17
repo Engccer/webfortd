@@ -1,6 +1,6 @@
 # 006 — --ease-out 토큰 강화 + 오버레이 진입 이징 명시
 
-- **Status**: TODO
+- **Status**: DONE
 - **Commit**: 76d6f21
 - **Severity**: MEDIUM
 - **Category**: 2 이징·지속 + 7 응집·토큰

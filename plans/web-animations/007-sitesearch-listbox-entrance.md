@@ -1,6 +1,6 @@
 # 007 — 검색 결과 listbox 진입 모션 (팝오버 언어 정합)
 
-- **Status**: TODO
+- **Status**: DONE
 - **Commit**: 76d6f21
 - **Severity**: MEDIUM
 - **Category**: 8 누락 기회 (+7 응집)

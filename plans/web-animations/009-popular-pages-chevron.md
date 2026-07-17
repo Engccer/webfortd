@@ -1,6 +1,6 @@
 # 009 — 위키 홈 인기 페이지 카드의 체브론 hover 이동 제거
 
-- **Status**: TODO
+- **Status**: DONE
 - **Commit**: 76d6f21
 - **Severity**: LOW
 - **Category**: 1 목적·빈도 (+6 접근성: 터치 false hover)

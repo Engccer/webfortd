@@ -1,6 +1,6 @@
 # 004 — transition-all 명시 속성 전환 + Button 눌림 피드백
 
-- **Status**: TODO
+- **Status**: DONE
 - **Commit**: 76d6f21
 - **Severity**: MEDIUM
 - **Category**: 5 성능 (+3 물리성: 눌림 피드백)

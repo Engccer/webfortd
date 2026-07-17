@@ -1,6 +1,6 @@
 # 001 — 사이드바 Cmd+B 토글에서 데스크탑 애니메이션 제거
 
-- **Status**: TODO
+- **Status**: DONE
 - **Commit**: 76d6f21
 - **Severity**: HIGH
 - **Category**: 1 목적·빈도 (+5 성능)

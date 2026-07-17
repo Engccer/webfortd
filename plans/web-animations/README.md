@@ -18,21 +18,29 @@
 
 | # | 제목 | 심각도 | Status |
 | --- | --- | --- | --- |
-| 001 | 사이드바 Cmd+B 토글 데스크탑 애니메이션 제거 | HIGH | TODO |
-| 002 | JS 스무스 스크롤 reduced-motion 게이트 (채팅·TOC) | HIGH | TODO |
-| 003 | 레거시 진행률 바 width→scaleX | HIGH | TODO |
-| 004 | transition-all 명시 속성 전환 + Button 눌림 피드백 | MEDIUM | TODO |
-| 005 | 미사용 모션 자산 제거 (framer-motion·sources·navigation-menu) | MEDIUM | TODO |
-| 006 | --ease-out 토큰 강화 + 오버레이 진입 이징 명시 | MEDIUM | TODO |
-| 007 | 검색 결과 listbox 진입 모션 | MEDIUM | TODO |
-| 008 | ThreadDrawer 시트 이징·비대칭 지속 | LOW | TODO |
-| 009 | 인기 페이지 체브론 hover 이동 제거 | LOW | TODO |
+| 001 | 사이드바 Cmd+B 토글 데스크탑 애니메이션 제거 | HIGH | DONE |
+| 002 | JS 스무스 스크롤 reduced-motion 게이트 (채팅·TOC) | HIGH | DONE |
+| 003 | 레거시 진행률 바 width→scaleX | HIGH | DONE |
+| 004 | transition-all 명시 속성 전환 + Button 눌림 피드백 | MEDIUM | DONE |
+| 005 | 미사용 모션 자산 제거 (framer-motion·sources·navigation-menu) | MEDIUM | DONE |
+| 006 | --ease-out 토큰 강화 + 오버레이 진입 이징 명시 | MEDIUM | DONE |
+| 007 | 검색 결과 listbox 진입 모션 | MEDIUM | DONE |
+| 008 | ThreadDrawer 시트 이징·비대칭 지속 | LOW | DONE |
+| 009 | 인기 페이지 체브론 hover 이동 제거 | LOW | DONE |
 
 ## 의존 관계
 
 - 004 ← 005 (005가 `navigation-menu.tsx`를 삭제해야 004의 잔여 transition-all 검증이 깔끔 — 같은 배치에서 005 먼저)
 - 007·008 ← 006 (강화된 `--ease-out` 곡선을 전제로 feel check — 없어도 동작은 함)
 - 나머지 독립.
+
+## 리뷰 결과 (2026-07-17, code-reviewer × review-animations 기준)
+
+**Approve — P1/P2 0건.** 9개 플랜 전부 diff 정합 확인, tw-animate `--tw-duration`/`--tw-ease` 체인 실측 검증, Button asChild(Slot)·hydration·잔존 참조 0건 확인. P3 3건 처리:
+
+- **Button 눌림 피드백이 기본 ease 곡선 공유**: 수용(기각). `ease-out`을 클래스에 더하면 hover 색 전환까지 강한 곡선을 타는데, 감사 기준상 hover/색 변화는 `ease`가 맞다. transform만 분리하려면 커스텀 CSS가 필요해 과공학 — 150ms 기본 곡선도 예산(100~160ms) 내.
+- **`@radix-ui/react-navigation-menu` 제거는 선언 정리**: `radix-ui` 우산 패키지의 transitive dep으로 node_modules에는 잔존(번들 영향 없음 — 어차피 import 0건이라 tree-shake됨). 직접 의존성 선언 정리로서 여전히 유효.
+- **Conversation render-time 게이트 전용 테스트**: 기각(YAGNI). 헬퍼는 tests/lib/motion.test.ts 6케이스로 커버, prop 전달은 타입이 보장.
 
 ## 감사 시 기각된 항목 (재론 방지, 근거 포함)
 

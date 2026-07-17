@@ -1,6 +1,6 @@
 # 005 — 미사용 모션 자산 제거 (framer-motion·sources·navigation-menu)
 
-- **Status**: TODO
+- **Status**: DONE
 - **Commit**: 76d6f21
 - **Severity**: MEDIUM
 - **Category**: 7 응집·토큰 (죽은 관습 제거)
