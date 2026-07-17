@@ -15,6 +15,7 @@ struct ChatView: View {
 
     @State private var inputText = ""
     @AccessibilityFocusState private var focusedMessageId: UUID?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     // 첨부 선택 흐름: 첨부 버튼 → confirmationDialog(사진 보관함 / 파일) → 각 피커.
     @State private var showAttachmentSourceDialog = false
@@ -123,7 +124,11 @@ struct ChatView: View {
 
     private func scrollToLastMessage(_ proxy: ScrollViewProxy) {
         guard let lastId = chatStore.messages.last?.id else { return }
-        proxy.scrollTo(lastId, anchor: .bottom)
+        // 동작 줄이기 사용자는 즉시 점프가 정답(nil 애니메이션). 도착 상태는 두 경우 동일.
+        // withAnimation은 연속 호출 시 현재 위치에서 retarget하므로 스트리밍 델타 연타에 안전.
+        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.25)) {
+            proxy.scrollTo(lastId, anchor: .bottom)
+        }
     }
 
     @ViewBuilder
