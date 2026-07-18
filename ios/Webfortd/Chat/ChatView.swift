@@ -14,6 +14,7 @@ struct ChatView: View {
     let authStore: AuthStore
 
     @State private var inputText = ""
+    @State private var speech = SpeechService()
     @AccessibilityFocusState private var focusedMessageId: UUID?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -68,6 +69,29 @@ struct ChatView: View {
             // 포커스 이동). streamTick과 별개 tick으로 원인(전송 완료 vs 이력 로드)을 구분한다.
             focusedMessageId = chatStore.messages.first?.id
         }
+        .onDisappear {
+            // 탭 이탈 시 진행 중 음성 인식 폐기(마이크 잔존 방지, gildongmu 동형).
+            Task { await speech.cancel() }
+        }
+        .alert(speechAlertMessage ?? "", isPresented: speechAlertBinding) {
+            Button("확인") {}
+        }
+    }
+
+    /// denied·failed 안내(gildongmu 동형). 확인 시 idle 복귀(재시도 가능 상태로).
+    private var speechAlertMessage: String? {
+        switch speech.phase {
+        case .denied: "설정에서 마이크 접근을 허용해 주세요"
+        case .failed: "음성 인식을 시작하지 못했습니다. 다시 시도해 주세요"
+        default: nil
+        }
+    }
+
+    private var speechAlertBinding: Binding<Bool> {
+        Binding(
+            get: { speechAlertMessage != nil },
+            set: { if !$0 { speech.reset() } }
+        )
     }
 
     @ToolbarContentBuilder
@@ -209,6 +233,19 @@ struct ChatView: View {
                     .lineLimit(1...4)
                     .frame(minHeight: 44)
 
+                // 라벨 변화("음성 입력"↔"입력 중지")가 상태 신호(disabled 금지, 접근성 헌장).
+                // 온디바이스 SpeechAnalyzer(ko-KR) — 서버 왕복 없음(SpeechService).
+                Button {
+                    toggleMic()
+                } label: {
+                    Label(
+                        speech.isListening ? "입력 중지" : "음성 입력",
+                        systemImage: speech.isListening ? "mic.fill" : "mic"
+                    )
+                    .labelStyle(.iconOnly)
+                }
+                .frame(minWidth: 44, minHeight: 44)
+
                 // 전송 중에도 TextField는 disabled 금지(입력은 유지, send가 자체 가드).
                 // 전송 버튼만 같은 위치에서 중단 버튼으로 교체.
                 if chatStore.phase == .streaming {
@@ -272,6 +309,20 @@ struct ChatView: View {
                 chatStore.clearAttachment()
             }
             .frame(minWidth: 44, minHeight: 44)
+        }
+    }
+
+    /// 음성 입력 토글: 최종 텍스트를 입력 필드 뒤에 append(자동 전송 안 함, 질문은 검토 후 전송).
+    /// gildongmu는 대체(draft = text)지만 webfortd는 웹과 동형으로 타이핑 초안을 보존한다.
+    private func toggleMic() {
+        Task {
+            if speech.isListening {
+                if let text = await speech.stop() {
+                    inputText = inputText.isEmpty ? text : inputText + " " + text
+                }
+            } else {
+                await speech.start()
+            }
         }
     }
 
