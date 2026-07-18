@@ -2,6 +2,16 @@
 
 > 날짜별 변경 이력(마일스톤 경계 갱신). 2026-07-10 이전 이력은 git log와 CLAUDE.md §Phase 진행 요약이 정본(지연 생성 원칙에 따라 이 파일은 iOS 트랙 진입 시점부터 시작).
 
+## 2026-07-18 — 음성 받아쓰기 gildongmu 이식: 웹 전면 개선 + iOS 신설 (#103·#104)
+
+- **웹 전면 gildongmu화 (#103)**: Web Audio 효과음 3종(상승=시작·하강=정지·단음=취소 — 기존 useSound는 무음 no-op) + useVoiceRecorder 견고화(오류 코드 6종 계약, busyRef 더블탭 잠금, mountedRef 언마운트 가드, AbortController fetch 취소, 핸들러 해제) + VoiceRecordButton 교체(시작/정지 음성 안내 제거 → 효과음+aria-label 변화가 상태 신호, 시작 성공 시 버튼 재포커스, Esc 취소 IME 가드; 120초 마일스톤 안내·성공 polite 통지는 유지) + 권한 사전 모달·훅 삭제(getUserMedia 네이티브 단일 경로) + transcribe 인식 실패 400→422.
+- **iOS 채팅 받아쓰기 신설 (#103)**: gildongmu SpeechService 이식(iOS 26 SpeechAnalyzer 온디바이스 ko-KR, 서버 왕복·Deepgram 키 불필요, 소리+햅틱) + ChatView 마이크 버튼(전사 append — 웹과 동형, gildongmu의 대체와 의도적 차이) + NSMicrophoneUsageDescription.
+- **iOS 위키 탭 검색 받아쓰기 (#104)**: 마이크 버튼은 목록 첫 행(toolbar는 VoiceOver가 제목보다 먼저 읽는 gildongmu 실측), **정지 = 쿼리 입력 + performSearch 즉시 실행**(검색 전용 계약, 채팅 append와 대비) + 탭 가시성 가드(정지 확정 중 탭 이탈 시 오프스크린 검색·전역 알림 차단).
+- **리뷰 fix 3건 (#103)**: iOS 세대 토큰(cancel 후 늦은 start 완주가 마이크 재점화), 웹 cancelRecording 이중 stop() throw → busyRef 영구 잠김(try/catch+상태 확인), iOS stop/cancel stopping 상호 배제. **①③은 gildongmu 원본에도 동일 결함 — 백포트 권장(미실행)**.
+- 검증: unit 374 / components 166 / lint 0 error / 웹·iOS 빌드 성공. production READY + transcribe 실스모크 200(conf 0.95). iPhone 13 Pro 배포 + **위원장 실 마이크 스모크 통과(채팅·위키 검색 모두)**.
+- 부수: eslint가 SwiftPM `.build` 산출물을 스캔해 lint가 깨지던 환경 결함 영구 해결(globalIgnores).
+- 운영 교훈: GitHub commit status "failure"(deployment blocked 링크)여도 Vercel 배포 목록엔 같은 커밋이 BUILDING→READY로 진행될 수 있음(Hobby 동시 빌드 제한의 일시 차단 추정) — status만으로 실패 단정 금지.
+
 ## 2026-07-17 — 프로덕션 배포 정상화: [...kb] catch-all 통합 (#100)
 
 - **원인 규명**: 2026-06-18경부터 engccer Hobby의 전 배포가 `exceeded_serverless_functions_per_deployment`(배포당 함수 12개 제한)로 실패. `vercel build` 산출물 실측 — 유니크 함수 17개 중 9개가 KB 축별 `[slug]` 라우트(prerender 라우트는 라우트당 함수 1개 + 콘텐츠 트레이스 6,501파일이라 공유 람다 그룹핑 불가). 라우트 수가 많은 KB 구조 특성이 원인이라 dodo-planet(API 68개, 균일 설정 → 공유 람다)·gildongmu는 안 걸림.
