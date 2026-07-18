@@ -15,6 +15,10 @@
  * - "header"(기본): 헤더 우측 소형 검색창. id="search-input"(Alt+3 타깃) + aria-label.
  * - "hero": 위키 홈 상단 대형 검색창. 헤더와 동시에 존재하므로 id/listbox를 분리하고
  *   접근명은 aria-label 대신 연결된 <label>로 준다(시맨틱 우선 — 위원장 지시).
+ *   hero에만 음성 받아쓰기 버튼(iOS 위키 탭 검색과 동일 계약, 2026-07-18) — 전사
+ *   완료가 곧 쿼리 대체 + 라이브 검색 실행이라 별도 제출 동작이 없고, 결과 건수는
+ *   기존 role="status" 영역이 발화한다. 헤더 소형 검색창(h-9)은 44px 터치 타깃이
+ *   부적합해 제외.
  */
 
 import * as React from "react"
@@ -24,6 +28,7 @@ import { Search, X } from "lucide-react"
 import FlexSearch from "flexsearch"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/Button"
+import { VoiceRecordButton } from "@/components/chat/VoiceRecordButton"
 import type { SearchDoc } from "@/lib/kb-search-data"
 
 const LIMIT = 8
@@ -96,6 +101,8 @@ export function SiteSearch({
   const [index, setIndex] = React.useState<DocumentIndex | null>(null)
   const [indexLoading, setIndexLoading] = React.useState(false)
   const loadStartedRef = React.useRef(false)
+  // 음성 받아쓰기 오류 (hero 전용) — ChatUI voiceError와 동형의 role=alert 단일 채널
+  const [voiceError, setVoiceError] = React.useState<string | null>(null)
 
   // 검색 데이터 지연 로드 — 첫 포커스/입력 시점에만 1.2MB 인덱스 청크를 받아온다.
   const ensureIndex = React.useCallback(async () => {
@@ -157,6 +164,22 @@ export function SiteSearch({
     setActiveIndex(-1)
   }, [])
 
+  // 받아쓰기 완료 = 검색 실행 (iOS 위키 탭 검색과 동일 계약): 쿼리를 전사 텍스트로
+  // 대체하고 결과 팝오버를 연다. 라이브 검색이라 setQuery만으로 결과가 즉시 계산되고,
+  // 건수는 기존 status 영역이 발화한다. 포커스는 입력창으로 이동 — combobox의
+  // aria-activedescendant·화살표 탐색은 입력창 포커스가 전제라, 마이크 버튼에 남기면
+  // 결과를 키보드로 만질 경로가 끊긴다(리뷰 P1).
+  const handleVoiceTranscribed = React.useCallback(
+    (text: string) => {
+      setVoiceError(null)
+      setQuery(text)
+      setOpen(true)
+      void ensureIndex()
+      inputRef.current?.focus()
+    },
+    [ensureIndex],
+  )
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "ArrowDown") {
       e.preventDefault()
@@ -197,7 +220,11 @@ export function SiteSearch({
         </label>
       )}
       <div className="flex items-center gap-2">
-        <Search
+        {/* hero: 아이콘·입력창·지우기를 별도 relative 묶음으로 감싸 우측에 음성 버튼
+            자리를 만든다. header: display:contents로 기존 DOM 기여를 그대로 유지
+            (absolute 아이콘·지우기는 종전처럼 바깥 relative 컨테이너에 앵커). */}
+        <div className={isHero ? "relative flex-1" : "contents"}>
+          <Search
           className={cn(
             "pointer-events-none absolute top-1/2 -translate-y-1/2 text-muted-foreground",
             isHero ? "left-4 h-5 w-5" : "left-3 h-4 w-4",
@@ -253,7 +280,34 @@ export function SiteSearch({
             <X className="h-3.5 w-3.5" aria-hidden="true" />
           </Button>
         )}
+        </div>
+        {isHero && (
+          <VoiceRecordButton
+            idleLabel="음성으로 검색"
+            successMessage="검색어를 입력했어요"
+            onTranscribed={handleVoiceTranscribed}
+            onError={(message) => setVoiceError(message)}
+          />
+        )}
       </div>
+
+      {/* 음성 오류 — ChatUI와 동형: 시각 표시 + role=alert 단일 채널, 닫기로 해제 */}
+      {isHero && voiceError && (
+        <div
+          role="alert"
+          className="mt-2 flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive"
+        >
+          <span className="flex-1">{voiceError}</span>
+          <button
+            type="button"
+            onClick={() => setVoiceError(null)}
+            aria-label="음성 오류 닫기"
+            className="text-xs underline hover:no-underline focus:outline-none focus:ring-2 focus:ring-ring"
+          >
+            닫기
+          </button>
+        </div>
+      )}
 
       {/* 상시 mount sr-only 상태 영역 — 결과 건수·빈 결과·준비 중 알림 (WCAG 4.1.3).
           role="status"는 aria-live="polite"를 암시하므로 명시 속성은 생략. */}
