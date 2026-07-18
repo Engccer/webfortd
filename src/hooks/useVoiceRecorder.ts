@@ -277,7 +277,16 @@ export function useVoiceRecorder(options: UseVoiceRecorderOptions = {}): UseVoic
       // 정지 전 핸들러 해제 — 취소인데 onstop이 STT를 태우지 않게.
       mediaRecorderRef.current.onstop = null
       mediaRecorderRef.current.ondataavailable = null
-      mediaRecorderRef.current.stop()
+      // stopRecording과의 좁은 경합 창(stale state 클로저의 Esc)에서 recorder가 이미
+      // inactive면 stop()이 동기 InvalidStateError를 던져 아래 정리(스트림 해제·
+      // busyRef 리셋)가 통째로 중단된다 — 마이크 누수 + 영구 잠금. 상태 확인 + try로 차단.
+      try {
+        if (mediaRecorderRef.current.state !== 'inactive') {
+          mediaRecorderRef.current.stop()
+        }
+      } catch {
+        // 이미 정지된 recorder — 아래 정리 계속
+      }
     }
 
     if (streamRef.current) {
