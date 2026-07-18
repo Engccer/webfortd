@@ -42,6 +42,12 @@ struct WikiHomeView: View {
     @State private var searchText = ""
     @State private var searchResults: [KBSearchResult] = []
     @State private var searchPhase: SearchPhase = .notSubmitted
+    @State private var speech = SpeechService()
+    /// 탭 가시성 — stop() 확정 대기 중 탭을 이탈하면 cancel()이 stopping 가드로
+    /// 양보하므로, 늦게 도착한 전사 텍스트가 오프스크린 검색·전역 VoiceOver 알림을
+    /// 발화하지 않도록 여기서 차단한다(ChatView의 "입력 필드 조용히 append"와 달리
+    /// 검색은 부수효과가 커서 가드 필요 — 리뷰 P2).
+    @State private var isVisible = true
 
     private var isSearchActive: Bool { !searchText.isEmpty }
 
@@ -49,6 +55,19 @@ struct WikiHomeView: View {
         Group {
             if let store {
                 List {
+                    // 마이크는 검색 필드 바로 다음 행(gildongmu 실기기 실측: toolbar에 두면
+                    // VoiceOver가 제목보다 먼저 읽는다). 라벨 변화가 상태 신호(disabled 금지).
+                    Section {
+                        Button {
+                            toggleMic(store: store)
+                        } label: {
+                            Label(
+                                speech.isListening ? "입력 중지" : "음성 입력",
+                                systemImage: speech.isListening ? "mic.fill" : "mic"
+                            )
+                        }
+                        .frame(minHeight: 44)
+                    }
                     if isSearchActive {
                         searchSection
                     } else {
@@ -81,6 +100,47 @@ struct WikiHomeView: View {
             }
         }
         .navigationTitle("장애인교원 위키")
+        .onAppear { isVisible = true }
+        .onDisappear {
+            isVisible = false
+            // 탭 이탈 시 진행 중 음성 인식 폐기(마이크 잔존 방지, ChatView 동형).
+            Task { await speech.cancel() }
+        }
+        .alert(speechAlertMessage ?? "", isPresented: speechAlertBinding) {
+            Button("확인") {}
+        }
+    }
+
+    /// 음성 입력 토글: 최종 텍스트를 검색어로 넣고 즉시 검색(gildongmu 음성 검색 계약 —
+    /// 채팅의 append와 달리 검색은 정지=제출까지 한 동작). partial은 필드에 실시간 반영하지
+    /// 않는다(필드 값 경합 회피, 최종만). 재진입은 SpeechService의 phase 가드가 차단.
+    private func toggleMic(store: KBStore) {
+        Task {
+            if speech.isListening {
+                if let text = await speech.stop(), isVisible {
+                    searchText = text
+                    performSearch(store: store)
+                }
+            } else {
+                await speech.start()
+            }
+        }
+    }
+
+    /// denied·failed 안내(ChatView 동형). 확인 시 idle 복귀(재시도 가능 상태로).
+    private var speechAlertMessage: String? {
+        switch speech.phase {
+        case .denied: "설정에서 마이크 접근을 허용해 주세요"
+        case .failed: "음성 인식을 시작하지 못했습니다. 다시 시도해 주세요"
+        default: nil
+        }
+    }
+
+    private var speechAlertBinding: Binding<Bool> {
+        Binding(
+            get: { speechAlertMessage != nil },
+            set: { if !$0 { speech.reset() } }
+        )
     }
 
     // MARK: - 검색 결과
