@@ -1,50 +1,59 @@
 'use client'
 
 /**
- * Phase 3 M7.1 — 음성 녹음 버튼.
+ * 음성 받아쓰기 버튼 — 탭-토글(탭=시작, 다시 탭=정지·전사), Esc=취소.
+ * gildongmu 판 이식(2026-07-18): 기존 dodo-planet 계열(권한 사전 모달 + 장황한
+ * 음성 안내) 교체.
  *
- * 출처: dodo-planet VoiceRecordButton (i18n 제거 + sonner toast 제거).
- *
- * 흐름:
- *   1. 클릭 → 권한 확인
- *   2. needsPermission → MicrophonePermissionPrompt 모달
- *   3. ready → 녹음 시작 + aria-live "녹음 중..."
- *   4. 다시 클릭 또는 120초 자동 → 정지 + STT → onTranscribed 콜백
- *   5. ESC 키로 취소
- *
- * 접근성:
- *   - aria-label 상태별 (마이크 시작/정지/변환 중/지원 안 됨)
- *   - role="status" + aria-live="polite" announcer
- *   - 44px 터치 타깃
+ * - 시작/정지/취소는 효과음(useRecordingSound)으로 통지 — 상승음=시작·하강음=정지·
+ *   단음=취소. SR에는 aria-label 변화("음성으로 질문 시작"↔"녹음 정지")가 상태 신호.
+ *   시작 성공 시 버튼 명시 재포커스로 getUserMedia 대기 중 이탈한 SR 커서를 되돌려
+ *   바뀐 라벨을 그 자리에서 읽게 한다. 시작음은 실제 시작 성공 후에만(권한 실패 시
+ *   신호 역전 방지).
+ * - 권한: getUserMedia 네이티브 프롬프트 단일 경로. NotAllowedError → mic_denied,
+ *   그 외 → mic_failed 정확 분류(사전 권한 요청의 중복 호출·오분류 제거).
+ * - polite announcer는 라벨 변화로 전달할 수 없는 정보 전용: 시간 마일스톤
+ *   ("1분이 지났어요"·"10초 후 자동으로 멈춰요"), 자동 정지, 전사 성공, Esc 취소
+ *   (전역 키라 포커스가 버튼 밖일 수 있고 음소거 환경 대비 — 효과음과 병행).
+ * - 오류는 코드→한국어 번역 후 부모(ChatUI voiceError role=alert) 단일 채널로만
+ *   전달한다 — 버튼 내 별도 assertive announcer를 두지 않는다(이중 낭독 방지).
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { Mic, Loader2, MicOff, Square } from 'lucide-react'
-import { useVoiceRecorder } from '@/hooks/useVoiceRecorder'
-import { useMicrophonePermission } from '@/hooks/useMicrophonePermission'
-import { useSound } from '@/hooks/useSound'
-import { MicrophonePermissionPrompt } from '@/components/chat/MicrophonePermissionPrompt'
+import { useVoiceRecorder, type VoiceRecorderErrorCode } from '@/hooks/useVoiceRecorder'
+import { useRecordingSound } from '@/hooks/useRecordingSound'
 
 interface VoiceRecordButtonProps {
   onTranscribed: (text: string) => void
-  onError?: (error: string) => void
+  onError?: (message: string) => void
   disabled?: boolean
 }
 
 const MAX_DURATION = 120 // 자동 정지 시각 (spec §D4)
 
+/** 훅의 오류 코드 → 사용자 문구(한국어 단일 로케일). 테스트가 완전성을 고정한다. */
+export const VOICE_ERROR_MESSAGES: Record<VoiceRecorderErrorCode, string> = {
+  mic_denied: '마이크 권한이 거부되었어요. 브라우저 설정에서 허용해 주세요.',
+  mic_failed: '마이크를 시작할 수 없어요.',
+  no_audio: '녹음된 오디오가 없어요.',
+  too_short: '녹음이 너무 짧아요. 좀 더 길게 말씀해 주세요.',
+  no_text: '음성을 인식하지 못했어요. 다시 말씀해 주세요.',
+  stt_failed: '음성 인식에 실패했어요. 잠시 후 다시 시도해 주세요.',
+}
+
 export function VoiceRecordButton({ onTranscribed, onError, disabled }: VoiceRecordButtonProps) {
   const announcerRef = useRef<HTMLDivElement>(null)
-  const { playRecordStart, playRecordStop } = useSound()
-  const { permissionState, checkPermission, requestPermission } = useMicrophonePermission()
-  const [showPrompt, setShowPrompt] = useState(false)
+  const buttonRef = useRef<HTMLButtonElement>(null)
+  const { playStart, playStop, playCancel } = useRecordingSound()
 
+  // polite announcer — 시간 마일스톤·자동 정지·성공·Esc 취소 전용(오류는 부모 채널).
   const announce = useCallback((message: string) => {
     if (announcerRef.current) {
       announcerRef.current.textContent = message
       setTimeout(() => {
         if (announcerRef.current) announcerRef.current.textContent = ''
-      }, 1500)
+      }, 2000)
     }
   }, [])
 
@@ -52,59 +61,41 @@ export function VoiceRecordButton({ onTranscribed, onError, disabled }: VoiceRec
     useVoiceRecorder({
       maxDuration: MAX_DURATION,
       onTranscribed: (text) => {
-        playRecordStop()
-        // STT 성공을 announcer로 알림 (WCAG 4.1.3) — 무음이면 결과 반영을 알 수 없음
+        // 성공은 polite 통지 (WCAG 4.1.3) — 무음이면 입력창 반영을 알 수 없음
         announce('받아쓰기를 입력창에 추가했어요')
         onTranscribed(text)
       },
-      onError: (error) => {
-        console.error('[VoiceRecordButton] error:', error)
-        onError?.(error)
-      },
+      onError: (code) => onError?.(VOICE_ERROR_MESSAGES[code]),
     })
-
-  const handleAllowed = useCallback(async () => {
-    const granted = await requestPermission()
-    if (granted) {
-      playRecordStart()
-      announce('녹음을 시작했어요')
-      await new Promise((r) => setTimeout(r, 300))
-      await startRecording()
-    }
-  }, [requestPermission, playRecordStart, startRecording, announce])
 
   const handleClick = useCallback(async () => {
     if (disabled || !isSupported || state === 'processing') return
     if (state === 'recording') {
-      announce('녹음을 멈췄어요')
+      playStop()
       await stopRecording()
       return
     }
-    const result = permissionState === 'idle' || permissionState === 'checking'
-      ? await checkPermission()
-      : permissionState
-    if (result === 'ready') {
-      playRecordStart()
-      announce('녹음을 시작했어요')
-      await new Promise((r) => setTimeout(r, 300))
-      await startRecording()
-    } else if (result === 'needsPermission') {
-      setShowPrompt(true)
-    } else if (result === 'denied') {
-      onError?.('마이크 권한이 거부되었어요. 브라우저 설정에서 허용해 주세요.')
+    // idle → 곧장 녹음 시작. 권한은 getUserMedia 네이티브 프롬프트가 담당.
+    const ok = await startRecording()
+    if (ok) {
+      playStart()
+      buttonRef.current?.focus()
     }
-  }, [disabled, isSupported, state, permissionState, checkPermission, playRecordStart, startRecording, stopRecording, announce, onError])
+  }, [disabled, isSupported, state, startRecording, stopRecording, playStart, playStop])
 
+  // Esc로 녹음 취소. IME 조합 중에는 무시(한글 입력 확정과 충돌 방지).
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      if (e.isComposing) return
       if (e.key === 'Escape' && state === 'recording') {
+        playCancel()
         announce('녹음을 취소했어요')
         cancelRecording()
       }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [state, cancelRecording, announce])
+  }, [state, cancelRecording, playCancel, announce])
 
   // 녹음 타이머 간헐 안내 — 시각 타이머는 비가청이라 주요 시점만 발화 (매초 발화 금지)
   useEffect(() => {
@@ -149,6 +140,7 @@ export function VoiceRecordButton({ onTranscribed, onError, disabled }: VoiceRec
       {/* disabled 대신 aria-disabled — 정지 직후 disabled가 되면 포커스가 소실됨 (WCAG 2.4.3).
           실제 동작 차단은 handleClick 첫머리 가드가 담당. */}
       <button
+        ref={buttonRef}
         type="button"
         onClick={handleClick}
         aria-disabled={disabled || !isSupported || state === 'processing'}
@@ -161,7 +153,7 @@ export function VoiceRecordButton({ onTranscribed, onError, disabled }: VoiceRec
               : 'inline-flex h-11 w-11 items-center justify-center rounded-md bg-muted text-muted-foreground hover:bg-muted/80 focus:outline-none focus:ring-2 focus:ring-ring aria-disabled:cursor-not-allowed aria-disabled:opacity-50'
         }
       >
-        {!isSupported || permissionState === 'denied' ? (
+        {!isSupported ? (
           <MicOff className="h-5 w-5" aria-hidden="true" />
         ) : state === 'recording' ? (
           <Square className="h-4 w-4 fill-current" aria-hidden="true" />
@@ -171,8 +163,6 @@ export function VoiceRecordButton({ onTranscribed, onError, disabled }: VoiceRec
           <Mic className="h-5 w-5" aria-hidden="true" />
         )}
       </button>
-
-      <MicrophonePermissionPrompt open={showPrompt} onOpenChange={setShowPrompt} onAllow={handleAllowed} />
     </div>
   )
 }

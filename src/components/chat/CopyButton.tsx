@@ -34,7 +34,7 @@ export function CopyButton({ content }: CopyButtonProps) {
   // 닫힘 시 포커스 복귀 대상 — 모달을 연 Copy 버튼
   const returnFocusRef = useRef<HTMLElement | null>(null)
 
-  // ESC 닫기 + 포커스 이동/복귀 + Tab 순환 트랩 (MicrophonePermissionPrompt 동일 패턴)
+  // ESC 닫기 + 포커스 이동/복귀 + Tab 순환 트랩
   useEffect(() => {
     if (!open) return
     returnFocusRef.current =
