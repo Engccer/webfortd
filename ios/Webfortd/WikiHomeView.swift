@@ -179,7 +179,7 @@ struct WikiHomeView: View {
             searchResults = results
             searchPhase = .completed
             let message = results.isEmpty ? "검색 결과가 없습니다" : "검색 결과 \(results.count)건"
-            AccessibilityNotification.Announcement(message).post()
+            Announce.post(message)
         }
     }
 

@@ -15,7 +15,18 @@ struct ChatView: View {
 
     @State private var inputText = ""
     @State private var speech = SpeechService()
+    /// 마이크 토글 Task in-flight 가드(더블탭이 start/stop을 인터리브하는 경합 차단)
+    @State private var micTaskInFlight = false
+    /// 완료 시 마지막 질문 헤딩으로 VoiceOver 포커스 이동(헌장 §6 포커스 계약)
     @AccessibilityFocusState private var focusedMessageId: UUID?
+    /// 포커스 계약(헌장 §6, 위원장 실기기 판정 2026-07-19 dodo R184 이식): 전송 시
+    /// 항상 존재하는 보내기 버튼으로 이동해 생성 내내 머물고, 완료 시에만 마지막 질문
+    /// 헤딩으로 이동한다. 구계약(완료 시 답변으로 이동)은 폐기 — 질문 헤딩에 앉아야
+    /// 다음 스와이프가 답변 첫 블록으로 자연스럽게 이어진다.
+    @AccessibilityFocusState private var isSendFocused: Bool
+    /// 진행 중인 완료 포커스 시퀀스(400ms 가시화 대기 + 600ms 실패 감지 + 재시도).
+    /// 새 답변 도착·뷰 이탈 시 취소해 옛 질문으로의 지연 대입 잔류를 막는다.
+    @State private var completionFocusTask: Task<Void, Never>?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     // 첨부 선택 흐름: 첨부 버튼 → confirmationDialog(사진 보관함 / 파일) → 각 피커.
@@ -57,21 +68,28 @@ struct ChatView: View {
                 Task { await signOut() }
             }
         }
-        .onChange(of: chatStore.phase) { oldPhase, newPhase in
-            // 완료 시 답변 첫 부분으로 포커스 이동(별도 완료 통지 없음. 포커스 이동이 신호).
-            // 오류는 ChatStore가 이미 Announcement로 알렸으므로 여기서 다시 focus를 옮기면
-            // 같은 문구가 두 번 낭독된다. lastErrorMessage가 있으면 건너뛴다.
-            guard oldPhase == .streaming, newPhase == .idle, chatStore.lastErrorMessage == nil else { return }
-            focusedMessageId = chatStore.messages.last?.id
-        }
         .onChange(of: chatStore.threadLoadTick) { _, _ in
-            // 대화 목록에서 스레드를 불러오면 첫 메시지로 포커스 이동(§동적 콘텐츠 등장 시
-            // 포커스 이동). streamTick과 별개 tick으로 원인(전송 완료 vs 이력 로드)을 구분한다.
-            focusedMessageId = chatStore.messages.first?.id
+            // 스레드 교체는 "world changed" — 진행 중이던 구 스레드의 완료 포커스 시퀀스를
+            // 취소한다(살아남으면 400~900ms 뒤 사라진 메시지 id를 대입해, 방금 옮긴 새 스레드
+            // 포커스를 바인딩 nil 리셋으로 도로 걷어간다 — 리뷰 검출 레이스).
+            completionFocusTask?.cancel()
+            completionFocusTask = nil
+            // 대화 목록에서 스레드를 불러오면 첫 질문 헤딩으로 포커스 이동(§동적 콘텐츠 등장
+            // 시 포커스 이동). 포커스 바인딩은 user 버블에만 있으므로 첫 user 메시지를 찾는다
+            // (스레드는 관례상 질문으로 시작하지만 DB 제약은 아니라 방어적으로 필터).
+            focusedMessageId = chatStore.messages.first(where: { $0.role == "user" })?.id
+        }
+        .onAppear {
+            #if DEBUG
+            installChatFocusObserverOnce()
+            #endif
         }
         .onDisappear {
             // 탭 이탈 시 진행 중 음성 인식 폐기(마이크 잔존 방지, gildongmu 동형).
             Task { await speech.cancel() }
+            // 완료 포커스 시퀀스도 폐기(화면을 떠난 뷰의 지연 포커스 대입 방지)
+            completionFocusTask?.cancel()
+            completionFocusTask = nil
         }
         .alert(speechAlertMessage ?? "", isPresented: speechAlertBinding) {
             Button("확인") {}
@@ -94,35 +112,56 @@ struct ChatView: View {
         )
     }
 
+    // 44pt frame은 label 안쪽 + contentShape(버튼 바깥 frame은 히트 영역을 안 넓힌다).
+    // [새 대화]는 상시 존재 버튼이라 포커스가 유지되고, 완료는 polite 통지 1회로 알린다
+    // (이력이 조용히 비워지는 전이는 SR에 무신호 — dodo 동일 계약).
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
         ToolbarItem(placement: .navigationBarLeading) {
-            Button("새 대화") {
+            Button {
+                // 이력이 비워지는 world change — 구 대화의 완료 포커스 시퀀스도 함께 폐기.
+                completionFocusTask?.cancel()
+                completionFocusTask = nil
                 chatStore.startNewThread()
+                Announce.post("새 대화를 시작했어요")
+            } label: {
+                Text("새 대화")
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
             }
-            .frame(minWidth: 44, minHeight: 44)
         }
         ToolbarItemGroup(placement: .navigationBarTrailing) {
             if authStore.isSignedIn {
-                Button("대화 목록") {
+                Button {
                     showThreadListSheet = true
+                } label: {
+                    Text("대화 목록")
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
                 }
-                .frame(minWidth: 44, minHeight: 44)
-                Button("계정") {
+                Button {
                     showAccountMenu = true
+                } label: {
+                    Text("계정")
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
                 }
-                .frame(minWidth: 44, minHeight: 44)
             } else {
-                Button("로그인") {
+                Button {
                     showAuthSheet = true
+                } label: {
+                    Text("로그인")
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
                 }
-                .frame(minWidth: 44, minHeight: 44)
             }
         }
     }
 
     /// 로그아웃 + 이력 리셋(로그아웃 후 서버 저장 없는 익명 휘발 모드로 복귀).
     private func signOut() async {
+        completionFocusTask?.cancel()
+        completionFocusTask = nil
         await authStore.signOut()
         chatStore.startNewThread()
     }
@@ -134,25 +173,94 @@ struct ChatView: View {
                     ForEach(chatStore.messages) { message in
                         messageRow(message)
                             .id(message.id)
-                            .accessibilityFocused($focusedMessageId, equals: message.id)
                     }
                 }
                 .padding()
             }
             .onChange(of: chatStore.messages.count) { _, _ in scrollToLastMessage(proxy) }
-            // 스트리밍 델타마다 하단으로 추적 스크롤(시각 사용자용). VoiceOver 포커스 이동은
-            // 완료 시 1회(위 onChange(of: chatStore.phase))만 처리하므로 이 스크롤과 무관하다.
+            // 스트리밍 델타마다 추적 스크롤(시각 사용자용). VoiceOver 포커스 이동은
+            // 완료 시 1회(아래 answerRevision onChange)만 처리하므로 이 스크롤과 무관하다.
             .onChange(of: chatStore.streamTick) { _, _ in scrollToLastMessage(proxy) }
+            // 완료 시에만 질문 헤딩으로 포커스 이동(헌장 §6). answerRevision은 자연 완료
+            // (오류 포함)에만 오르는 세대 신호 — 사용자 중단(stop)은 완료가 아니라 포커스가
+            // 중단 버튼(=전송 버튼, 라벨만 교체)에 그대로 남는다.
+            .onChange(of: chatStore.answerRevision) { _, _ in
+                completionFocusTask?.cancel()
+                completionFocusTask = Task { @MainActor in
+                    await runCompletionFocusSequence(proxy)
+                }
+            }
         }
     }
 
     private func scrollToLastMessage(_ proxy: ScrollViewProxy) {
-        guard let lastId = chatStore.messages.last?.id else { return }
+        guard let last = chatStore.messages.last else { return }
+        // VO 실행 중 응답 append·델타는 하단이 아니라 질문 상단으로 스크롤해 완료 포커스
+        // 대상(질문 헤딩)을 화면에 유지한다 — 하단 스크롤이 질문을 화면 밖으로 밀면
+        // ScrollView가 질문을 AX 트리에서 컬링해 완료 시 포커스 대입이 조용히 실패한다
+        // (dodo R184 실기기 로그 확정: 하단 withAnimation 스크롤과 완료 측 질문 상단
+        // scrollTo의 경합 → VO 실행 중엔 append부터 목적지를 질문 상단으로 단일화).
+        if UIAccessibility.isVoiceOverRunning, last.role == "assistant",
+           let lastUserId = chatStore.messages.last(where: { $0.role == "user" })?.id {
+            proxy.scrollTo(lastUserId, anchor: .top)
+            return
+        }
         // 동작 줄이기 사용자는 즉시 점프가 정답(nil 애니메이션). 도착 상태는 두 경우 동일.
         // withAnimation은 연속 호출 시 현재 위치에서 retarget하므로 스트리밍 델타 연타에 안전.
         withAnimation(reduceMotion ? nil : .easeOut(duration: 0.25)) {
-            proxy.scrollTo(lastId, anchor: .bottom)
+            proxy.scrollTo(last.id, anchor: .bottom)
         }
+    }
+
+    /// 완료 포커스 시퀀스(헌장 §6, dodo R184 이식): VO 실행 중이면 질문 상단 스크롤로
+    /// 가시화 → 400ms 후 포커스 대입 → 600ms 후 바인딩 nil 리셋(AX 컬링 실패 신호)
+    /// 감지 시 재스크롤+1회 재시도. 각 체크포인트에서 취소·새 질문 전송(streaming)을
+    /// 확인해 stale 대입을 중단한다. VO 미실행 시엔 답변 하단 스크롤만(기존 시각 동작).
+    /// 오류 완료는 건너뛴다 — ChatStore가 이미 interrupting 통지했고 포커스는 보내기
+    /// 버튼에 유지된다(같은 문구 이중 낭독·이중 신호 방지).
+    private func runCompletionFocusSequence(_ proxy: ScrollViewProxy) async {
+        guard chatStore.lastErrorMessage == nil, let last = chatStore.messages.last else { return }
+        #if DEBUG
+        chatFocusLog("completion: voRunning=\(UIAccessibility.isVoiceOverRunning) sendFocused=\(isSendFocused)")
+        #endif
+        guard UIAccessibility.isVoiceOverRunning,
+              let lastUser = chatStore.messages.last(where: { $0.role == "user" }) else {
+            proxy.scrollTo(last.id, anchor: .bottom)
+            return
+        }
+        proxy.scrollTo(lastUser.id, anchor: .top)
+        try? await Task.sleep(for: .milliseconds(400))
+        guard sequenceStillValid(for: lastUser.id) else { return }
+        // 보내기 버튼의 포커스 상태를 먼저 해제(이중 점유 충돌 후보 제거)
+        isSendFocused = false
+        focusedMessageId = lastUser.id
+        #if DEBUG
+        chatFocusLog("assigned question focus id=\(lastUser.id)")
+        #endif
+        try? await Task.sleep(for: .milliseconds(600))
+        guard sequenceStillValid(for: lastUser.id) else { return }
+        // 대입 실패의 진짜 신호는 바인딩 nil 리셋(대상이 AX 트리에 없으면 SwiftUI가
+        // 되돌린다, dodo R184 실기기 로그 확정). 재스크롤 후 1회 재시도.
+        if focusedMessageId != lastUser.id {
+            #if DEBUG
+            chatFocusLog("retry: rescroll + reassign (focusedMessageId=\(focusedMessageId?.uuidString ?? "nil"))")
+            #endif
+            proxy.scrollTo(lastUser.id, anchor: .top)
+            try? await Task.sleep(for: .milliseconds(300))
+            guard sequenceStillValid(for: lastUser.id) else { return }
+            isSendFocused = false
+            focusedMessageId = lastUser.id
+        }
+    }
+
+    /// 완료 포커스 시퀀스의 sleep 체크포인트 공용 가드: 취소·새 질문 전송(streaming)·대상
+    /// 메시지 소실(스레드 전환·새 대화·로그아웃 등 world change) 시 stale 대입을 중단한다.
+    /// 명시 취소 경로(threadLoadTick·새 대화·signOut·onDisappear)의 안전망 겸용 — 미래의
+    /// messages 교체 경로가 취소를 빠뜨려도 사라진 id 대입은 여기서 구조적으로 차단된다.
+    private func sequenceStillValid(for messageId: UUID) -> Bool {
+        !Task.isCancelled
+            && chatStore.phase != .streaming
+            && chatStore.messages.contains(where: { $0.id == messageId })
     }
 
     @ViewBuilder
@@ -164,13 +272,18 @@ struct ChatView: View {
         }
     }
 
-    // user 버블만 단일 Text(다른 접근성 구조 없음).
+    // user 버블은 단일 평문 Text(마크다운 해석·재구성 금지) + 헤딩 trait(시각 불변):
+    // 긴 대화에서 로터 헤딩 탐색으로 턴(질문) 단위 점프가 되는 유일한 경로(헌장 §6).
+    // 완료·이력 로드 포커스 대상이라 포커스 바인딩도 이 Text에 직접 둔다(컨테이너 바인딩은
+    // 침묵 실패 위험 — dodo·gildongmu 검증 패턴은 질문 Text 직접 바인딩).
     private func userBubble(_ message: ChatMessage) -> some View {
         HStack {
             Spacer(minLength: 32)
             Text(message.text)
                 .padding(12)
                 .background(.tint.opacity(0.15), in: RoundedRectangle(cornerRadius: 14))
+                .accessibilityAddTraits(.isHeader)
+                .accessibilityFocused($focusedMessageId, equals: message.id)
         }
     }
 
@@ -201,16 +314,21 @@ struct ChatView: View {
     }
 
     /// 번들 문서면 앱 내 push, 아니면(번들 외 문서) 웹 URL로 폴백.
+    /// 44pt frame은 label 안쪽 + contentShape(바깥 frame은 히트 영역을 안 넓힌다).
     @ViewBuilder
     private func sourceCard(_ ref: ChatSourceRef) -> some View {
         if store?.summary(slug: ref.slug) != nil {
             NavigationLink(value: AppRoute.document(slug: ref.slug)) {
                 Text("출처: \(ref.title)")
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
             }
-            .frame(minHeight: 44)
         } else if let url = URL(string: ref.href, relativeTo: AppConfig.webBaseURL) {
-            Link("출처: \(ref.title)", destination: url)
-                .frame(minHeight: 44)
+            Link(destination: url) {
+                Text("출처: \(ref.title)")
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
+            }
         }
     }
 
@@ -233,33 +351,42 @@ struct ChatView: View {
                     .lineLimit(1...4)
                     .frame(minHeight: 44)
 
-                // 라벨 변화("음성 입력"↔"입력 중지")가 상태 신호(disabled 금지, 접근성 헌장).
+                // 라벨 변화("받아쓰기 시작"↔"받아쓰기 중지")가 상태 신호(disabled 금지, 헌장).
+                // "음성 입력"은 금지 — 받아쓴 질문에 "음성"이 들어가면 SR 낭독에서 내용과
+                // 컨트롤 라벨이 구분 안 됨(헌장 §6, gildongmu 실기기 실측 2026-07-18).
                 // 온디바이스 SpeechAnalyzer(ko-KR) — 서버 왕복 없음(SpeechService).
+                // 44pt frame은 label 안쪽 + contentShape — 버튼 바깥 frame은 레이아웃만
+                // 키우고 히트 영역을 안 넓힌다(gildongmu 실측). 이 파일 버튼 전부 동일 패턴.
                 Button {
                     toggleMic()
                 } label: {
                     Label(
-                        speech.isListening ? "입력 중지" : "음성 입력",
+                        speech.isListening ? "받아쓰기 중지" : "받아쓰기 시작",
                         systemImage: speech.isListening ? "mic.fill" : "mic"
                     )
                     .labelStyle(.iconOnly)
+                    .frame(minWidth: 44, minHeight: 44)
+                    .contentShape(Rectangle())
                 }
-                .frame(minWidth: 44, minHeight: 44)
 
                 // 전송 중에도 TextField는 disabled 금지(입력은 유지, send가 자체 가드).
-                // 전송 버튼만 같은 위치에서 중단 버튼으로 교체.
-                if chatStore.phase == .streaming {
-                    Button("중단") {
+                // 전송·중단은 단일 버튼의 라벨 교체 — if/else로 버튼을 갈아끼우면 포커스를
+                // 쥔 요소가 제거돼 VO가 최상단으로 리셋된다(§5). `.disabled(빈 입력)`도 같은
+                // 이유로 금지(전송 직후 입력이 비면 포커스가 body로 이탈) — 빈 입력 전송은
+                // ChatStore.send 가드가 무시한다. 전송 시 VO 포커스가 여기로 선점 이동해
+                // 생성 내내 머문다(헌장 §6).
+                Button {
+                    if chatStore.phase == .streaming {
                         chatStore.stop()
-                    }
-                    .frame(minWidth: 44, minHeight: 44)
-                } else {
-                    Button("전송") {
+                    } else {
                         send()
                     }
-                    .frame(minWidth: 44, minHeight: 44)
-                    .disabled(inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                } label: {
+                    Text(chatStore.phase == .streaming ? "중단" : "전송")
+                        .frame(minWidth: 44, minHeight: 44)
+                        .contentShape(Rectangle())
                 }
+                .accessibilityFocused($isSendFocused)
             }
         }
         .padding()
@@ -283,20 +410,23 @@ struct ChatView: View {
     }
 
     private var attachmentButton: some View {
-        Button("파일 첨부") {
-            // 스트리밍 중이면 가드 + Announcement (disabled 금지, 포커스 유지 원칙).
+        Button {
+            // 스트리밍 중이면 가드 + 통지 (disabled 금지, 포커스 유지 원칙).
             if chatStore.phase == .streaming {
-                AccessibilityNotification.Announcement("답변 작성 중에는 첨부할 수 없어요").post()
+                Announce.post("답변 작성 중에는 첨부할 수 없어요")
                 return
             }
-            // 이미 첨부가 있으면 가드 + Announcement.
+            // 이미 첨부가 있으면 가드 + 통지.
             if chatStore.pendingAttachment != nil {
-                AccessibilityNotification.Announcement("첨부는 한 건만 가능해요. 기존 첨부를 제거해 주세요.").post()
+                Announce.post("첨부는 한 건만 가능해요. 기존 첨부를 제거해 주세요.")
                 return
             }
             showAttachmentSourceDialog = true
+        } label: {
+            Text("파일 첨부")
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
         }
-        .frame(minWidth: 44, minHeight: 44)
     }
 
     // 필드명 + 값을 한 Text로 합쳐(§한 줄 = 한 접근성 객체) 표시, 제거 버튼은 별도 인터랙티브 요소로 유지.
@@ -305,20 +435,34 @@ struct ChatView: View {
             Text("첨부: \(filename)")
                 .font(.footnote)
             Spacer()
-            Button("첨부 제거") {
+            Button {
                 chatStore.clearAttachment()
+            } label: {
+                Text("첨부 제거")
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
             }
-            .frame(minWidth: 44, minHeight: 44)
         }
     }
 
-    /// 음성 입력 토글: 최종 텍스트를 입력 필드 뒤에 append(자동 전송 안 함, 질문은 검토 후 전송).
+    /// 받아쓰기 토글: 최종 텍스트를 입력 필드 뒤에 append(자동 전송 안 함, 질문은 검토 후 전송).
     /// gildongmu는 대체(draft = text)지만 webfortd는 웹과 동형으로 타이핑 초안을 보존한다.
+    /// in-flight 가드: 더블탭이 두 Task를 띄워 start/stop이 인터리브되는 경합 차단(헌장).
+    /// 전사 성공은 침묵 금지(헌장 §6 받아쓰기 완료, dodo R184 실기기 확정): 포커스를 전송
+    /// 버튼으로 이동(자동 전송이 없는 설계라 다음 행동이 곧 전송) → 받아쓴 결과 원문을
+    /// polite 통지(포커스 발화 뒤 결과 낭독 순서). ⚠ SpeechService엔 자동 정지 경로가
+    /// 없어(정지는 이 토글 유일) 반환값 소비로 전사 유실이 없다 — dodo의 콜백 단일 채널
+    /// 전환(60초 캡 유실 실버그)은 여기선 비해당(gildongmu 동일 판단).
     private func toggleMic() {
+        guard !micTaskInFlight else { return }
+        micTaskInFlight = true
         Task {
+            defer { micTaskInFlight = false }
             if speech.isListening {
                 if let text = await speech.stop() {
                     inputText = inputText.isEmpty ? text : inputText + " " + text
+                    isSendFocused = true
+                    Announce.post(text)
                 }
             } else {
                 await speech.start()
@@ -327,10 +471,13 @@ struct ChatView: View {
     }
 
     // 가드로 전송이 거부되면(ChatStore.send가 false 반환) 입력 텍스트를 비우지 않고 보존한다.
+    // 전송 성공 시 VO 포커스를 보내기 버튼으로 선점(§6: 생성 내내 유지. 타이핑 전송은
+    // 이미 여기라 무이동, 받아쓰기 후 전송도 이미 여기다).
     private func send() {
         let text = inputText
         if chatStore.send(text) {
             inputText = ""
+            isSendFocused = true
         }
     }
 

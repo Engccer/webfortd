@@ -51,6 +51,11 @@ final class ChatStore {
     /// 변화를 관찰해 첫 메시지로 접근성 포커스를 이동한다(streamTick과 동형, 별개 원인의 messages
     /// 변경을 구분해야 하므로 messages.count 변화만으로는 판별할 수 없다).
     private(set) var threadLoadTick = 0
+    /// 스트리밍이 자연 완료(오류 포함, finish 도달)될 때마다 증가하는 세대 신호. ChatView의
+    /// 완료 포커스 시퀀스(§6: 완료 시에만 질문 헤딩 이동)가 이 값을 관찰한다. 사용자 중단
+    /// (stop())은 완료가 아니므로 올리지 않는다 — phase 전이(streaming→idle)만으론 중단과
+    /// 완료를 구분할 수 없어 별도 신호가 필요하다(gildongmu answerRevision 동형).
+    private(set) var answerRevision = 0
 
     static let maxAttachmentBytes = 10 * 1024 * 1024 // 10MB, 서버 계약(MAX_FILE_SIZE) 미러
     private static let oversizeAttachmentMessage = "파일이 너무 커요. 10MB 이하만 첨부할 수 있어요."
@@ -80,7 +85,7 @@ final class ChatStore {
     func send(_ text: String) -> Bool {
         guard phase == .idle else { return false }
         guard !isAttachmentLoading else {
-            AccessibilityNotification.Announcement("첨부를 준비하고 있어요. 잠시 후 전송해 주세요.").post()
+            Announce.post("첨부를 준비하고 있어요. 잠시 후 전송해 주세요.")
             return false
         }
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -108,7 +113,7 @@ final class ChatStore {
         let myGeneration = generation
         let requestThreadId = threadId
 
-        AccessibilityNotification.Announcement("답변 작성 중").post()
+        Announce.post("답변 작성 중")
 
         streamTask = Task { @MainActor [weak self, api] in
             guard let self else { return }
@@ -133,7 +138,7 @@ final class ChatStore {
     /// isAttachmentLoading을 false로 되돌린다.
     func beginAttachmentLoad() {
         isAttachmentLoading = true
-        AccessibilityNotification.Announcement("첨부 준비 중").post()
+        Announce.post("첨부 준비 중")
     }
 
     /// 첨부 스테이징: 10MB 초과면 즉시 오류 문구 설정 + Announcement 후 미첨부, 통과하면 저장.
@@ -162,7 +167,8 @@ final class ChatStore {
         isAttachmentLoading = false
         let message = "파일을 불러오지 못했습니다. 다른 파일을 선택해 주세요."
         attachmentErrorMessage = message
-        AccessibilityNotification.Announcement(message).post()
+        // 실패는 interrupting: 시각으론 오류 문구가 뜨지만 SR 사용자는 이 통지가 유일 신호(§6)
+        Announce.post(message, interrupting: true)
     }
 
     /// 첨부 크기 초과 통지: 로드 후 검증(stageAttachment)과 ChatView의 PDF 사전 크기 검증
@@ -170,7 +176,7 @@ final class ChatStore {
     func notifyAttachmentTooLarge() {
         isAttachmentLoading = false
         attachmentErrorMessage = Self.oversizeAttachmentMessage
-        AccessibilityNotification.Announcement(Self.oversizeAttachmentMessage).post()
+        Announce.post(Self.oversizeAttachmentMessage, interrupting: true)
     }
 
     /// 스트리밍 중단: Task를 취소하되 지금까지 누적된 부분 답변은 그대로 둔다(접미 없음).
@@ -178,6 +184,9 @@ final class ChatStore {
     func stop() {
         streamTask?.cancel()
         streamTask = nil
+        // 취소된 Task가 뒤늦게 finishStreaming에 도달해도 완료(answerRevision)로 처리되지
+        // 않도록 세대를 올려 무효화한다 — 중단은 완료가 아니다(포커스는 중단 버튼에 유지).
+        generation += 1
         phase = .idle
         // 마지막 assistant 메시지가 비어있으면 제거(중단 시 텍스트가 없는 경우).
         if let lastMessage = messages.last, lastMessage.role == "assistant", lastMessage.text.isEmpty {
@@ -215,6 +224,7 @@ final class ChatStore {
     private func finishStreaming(generation: Int) {
         guard self.generation == generation else { return }
         phase = .idle
+        answerRevision += 1
     }
 
     private func apply(_ event: ChatStreamEvent, at index: Int) {
@@ -243,6 +253,7 @@ final class ChatStore {
         messages[index].text = message
         messages[index].isError = true
         lastErrorMessage = message
-        AccessibilityNotification.Announcement(message).post()
+        // 실패는 interrupting(§6): SR 사용자는 보내기 버튼에 앉아 있어 이 통지가 유일 신호.
+        Announce.post(message, interrupting: true)
     }
 }

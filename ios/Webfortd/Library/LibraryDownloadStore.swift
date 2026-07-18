@@ -101,7 +101,7 @@ final class LibraryDownloadStore {
         guard let remoteURL = URL(string: item.downloadUrl) else {
             guard generations[item.slug] == generation else { return }
             states[item.slug] = .notCached
-            AccessibilityNotification.Announcement("다운로드 실패: \(item.title)").post()
+            Announce.post("다운로드 실패: \(item.title)", interrupting: true)
             return
         }
         do {
@@ -127,13 +127,13 @@ final class LibraryDownloadStore {
             }
             guard generations[item.slug] == generation else { return }
             states[item.slug] = .cached(fileURL: destination)
-            AccessibilityNotification.Announcement("다운로드 완료: \(item.title)").post()
+            Announce.post("다운로드 완료: \(item.title)")
         } catch {
             // 사용자가 명시적으로 중단한 경우 실패 알림을 겹쳐 내지 않는다(의도된 취소).
             guard generations[item.slug] == generation else { return }
             states[item.slug] = .notCached
             if !Task.isCancelled {
-                AccessibilityNotification.Announcement("다운로드 실패: \(item.title)").post()
+                Announce.post("다운로드 실패: \(item.title)", interrupting: true)
             }
         }
     }
