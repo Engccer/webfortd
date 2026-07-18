@@ -108,7 +108,9 @@ export async function POST(req: Request): Promise<Response> {
   const alternative = channel?.alternatives?.[0]
 
   if (!alternative?.transcript) {
-    return json400('음성을 인식할 수 없어요. 좀 더 또렷하게 다시 말씀해 주세요.')
+    // 422 = "요청은 유효하나 음성 인식 실패" — 클라이언트 훅이 no_text 코드로 매핑
+    // (gildongmu 계약 통일, 2026-07-18)
+    return jsonError(422, '음성을 인식할 수 없어요. 좀 더 또렷하게 다시 말씀해 주세요.')
   }
 
   // PIPA: transcript 본문 로그 X — 길이·언어·confidence만
@@ -129,8 +131,12 @@ export async function POST(req: Request): Promise<Response> {
 }
 
 function json400(message: string): Response {
+  return jsonError(400, message)
+}
+
+function jsonError(status: number, message: string): Response {
   return new Response(JSON.stringify({ error: message }), {
-    status: 400,
+    status,
     headers: { 'content-type': 'application/json; charset=utf-8' },
   })
 }
