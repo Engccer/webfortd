@@ -137,7 +137,7 @@ struct AuthSheet: View {
         do {
             try await authStore.verifyOtp(email: email, code: trimmedCode)
             isSubmitting = false
-            AccessibilityNotification.Announcement("로그인했습니다").post()
+            Announce.post("로그인했습니다")
             dismiss()
         } catch {
             isSubmitting = false
@@ -150,6 +150,6 @@ struct AuthSheet: View {
     /// (ChatStore.applyError와 동일 패턴, 표시 문구와 낭독 문구를 별도로 관리하지 않는다).
     private func show(error message: String) {
         errorMessage = message
-        AccessibilityNotification.Announcement(message).post()
+        Announce.post(message, interrupting: true)
     }
 }

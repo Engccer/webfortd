@@ -28,8 +28,14 @@ struct ThreadListSheet: View {
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
-                        Button("닫기") { dismiss() }
-                            .frame(minWidth: 44, minHeight: 44)
+                        // 44pt frame은 label 안쪽 + contentShape(바깥 frame은 히트 영역을 안 넓힌다)
+                        Button {
+                            dismiss()
+                        } label: {
+                            Text("닫기")
+                                .frame(minHeight: 44)
+                                .contentShape(Rectangle())
+                        }
                     }
                 }
         }
@@ -53,10 +59,13 @@ struct ThreadListSheet: View {
             } description: {
                 Text(message)
             } actions: {
-                Button("다시 시도") {
+                Button {
                     Task { await load() }
+                } label: {
+                    Text("다시 시도")
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
                 }
-                .frame(minHeight: 44)
             }
         case .loaded(let threads):
             List(threads) { thread in
@@ -65,8 +74,9 @@ struct ThreadListSheet: View {
                 } label: {
                     // 제목 + 상대 시간을 쉼표로 합친 단일 텍스트(§한 줄 = 한 접근성 객체).
                     Text("\(thread.title), \(Self.relativeTime(thread.updatedAt))")
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
                 }
-                .frame(minHeight: 44)
             }
         }
     }
