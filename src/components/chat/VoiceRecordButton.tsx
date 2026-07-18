@@ -28,6 +28,10 @@ interface VoiceRecordButtonProps {
   onTranscribed: (text: string) => void
   onError?: (message: string) => void
   disabled?: boolean
+  /** idle 상태 aria-label 오버라이드 — 검색 등 채팅 외 문맥용 (기본: 채팅 카피) */
+  idleLabel?: string
+  /** 전사 성공 polite 안내 오버라이드 (기본: 채팅 카피) */
+  successMessage?: string
 }
 
 const MAX_DURATION = 120 // 자동 정지 시각 (spec §D4)
@@ -42,7 +46,13 @@ export const VOICE_ERROR_MESSAGES: Record<VoiceRecorderErrorCode, string> = {
   stt_failed: '음성 인식에 실패했어요. 잠시 후 다시 시도해 주세요.',
 }
 
-export function VoiceRecordButton({ onTranscribed, onError, disabled }: VoiceRecordButtonProps) {
+export function VoiceRecordButton({
+  onTranscribed,
+  onError,
+  disabled,
+  idleLabel = '음성으로 질문 시작',
+  successMessage = '받아쓰기를 입력창에 추가했어요',
+}: VoiceRecordButtonProps) {
   const announcerRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
   const { playStart, playStop, playCancel } = useRecordingSound()
@@ -62,7 +72,7 @@ export function VoiceRecordButton({ onTranscribed, onError, disabled }: VoiceRec
       maxDuration: MAX_DURATION,
       onTranscribed: (text) => {
         // 성공은 polite 통지 (WCAG 4.1.3) — 무음이면 입력창 반영을 알 수 없음
-        announce('받아쓰기를 입력창에 추가했어요')
+        announce(successMessage)
         onTranscribed(text)
       },
       onError: (code) => onError?.(VOICE_ERROR_MESSAGES[code]),
@@ -119,7 +129,7 @@ export function VoiceRecordButton({ onTranscribed, onError, disabled }: VoiceRec
       ? '녹음 정지'
       : state === 'processing'
         ? '변환 중'
-        : '음성으로 질문 시작'
+        : idleLabel
 
   const formatDuration = (s: number) =>
     `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
