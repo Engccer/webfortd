@@ -2,6 +2,16 @@
 
 > 날짜별 변경 이력(마일스톤 경계 갱신). 2026-07-10 이전 이력은 git log와 CLAUDE.md §Phase 진행 요약이 정본(지연 생성 원칙에 따라 이 파일은 iOS 트랙 진입 시점부터 시작).
 
+## 2026-07-20 — iOS WhatsApp식 홀드 받아쓰기 이식: 탭 토글 대체 + Lazy 스택 CPU 결함 선제 제거
+
+- **배경**: gildongmu 실기기 VoiceOver 검증 완료(2026-07-20, 위원장 합격)된 홀드 받아쓰기 계약을 이식. 진입점별 차등 — 전송형(채팅)=홀드+잠금+취소 풀 계약, 단일 확정형(위키 검색)=홀드 단일 동작.
+- **`HoldDictationButton` 신설**: gildongmu 정본 1:1 이식(UIKit 인식기 계층 — `UILongPressGestureRecognizer` 0.25s + `UITapGestureRecognizer.require(toFail:)`, SwiftUI 제스처 조합은 List 팬 경합·VO pass-through 드래그 유실 실기기 확정으로 금지). 경합 가드 3종(finishInFlight·cancelInFlight·startTask await)·지배 축 슬라이드 판정(위 60pt=잠금, 왼쪽 60pt=취소)·녹음 시작 interrupting 무음 통지(진행 중 VO 낭독 절단)·녹음 중 라벨 불변(정적 "받아쓰기")·짧은 탭=사용법 안내·권한 미시작 세션 잠금 무통지(3-state) 전부 보존. webfortd 적응 2가지: i18n → 한국어 리터럴, 통지 → `Announce` 단일 채널 경유. webfortd `SpeechService`는 동일 엔진(SpeechAnalyzer)에 세대 토큰·stopping 가드가 이미 있어 무수정 재사용.
+- **채팅(ChatView)**: 릴리스=초안 병합 즉시 전송(생성 중엔 초안 보존 폴백, `send` 가드 거부 시 초안 복원), 잠금=전사를 입력창에 병합 확정+"받아쓰기 잠김"+새 세그먼트 polite 통지(재홀드로 이어쓰기), 왼쪽 밀기=세션 전사만 취소. "텍스트 지우기" 버튼 신설(초안 있을 때만, 자기소거 시 입력 필드 포커스 선점 §5). 구 탭 토글(라벨 전환 신호)·`micTaskInFlight` 제거.
+- **위키 검색(WikiHomeView)**: 홀드 단일 동작(잠금·취소 없음) — 릴리스=쿼리 대체+즉시 검색. 구 탭 토글의 금지 라벨 "음성 입력"도 함께 소거.
+- **Lazy 스택 결함 선제 제거**: 채팅 메시지 리스트·BlockRenderer의 `LazyVStack`→eager `VStack`. gildongmu 실기기 cpu_resource 마이크로스택샷으로 확정된 결함 — 대화 몇 턴 후 lazy 레이아웃 캐시(LazySubviewPlacements) 크기 추정 진동이 메인 스레드 100% CPU 무한 루프(앱 먹통·VO 무응답). 히스토리 유한이라 eager가 정본, 화면 밖 AX 컬링(완료 포커스 실패·로터 누락 원인)도 함께 해소.
+- **리뷰 fix (P1)**: 홀드 중 탭 이탈 시 인식기 `.cancelled`의 stop()이 onDisappear cancel()보다 stopping 가드를 선점하면 늦은 전사가 떠난 화면의 onTranscript로 배달(전역 통지+무확인 전송) — ChatView에 WikiHomeView 동형 `isVisible` 가드 이식.
+- **검증**: Kit 49 그린 / 시뮬레이터 빌드 그린 / iPhone 실기기 배포. **VoiceOver 실측(홀드 시 힌트 낭독 즉시 중단·잠금 통지·이어쓰기·병합 전송·취소·짧은 탭 안내)은 위원장 머지 게이트 잔여**.
+
 ## 2026-07-19 — iOS 채팅 VoiceOver 접근성 헌장 §6 정렬: R184 포커스 계약 이식 (#108)
 
 - **배경**: dodo-planet R184(2026-07-19 실기기 판정)·gildongmu 역이식으로 확정된 대화형 UI 계약이 gildongmu 초기 클론 계열인 webfortd iOS 채팅에 전부 미반영 — §6 전 항목 기준 점검·이식.
