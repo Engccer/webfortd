@@ -22,6 +22,7 @@ import { DefaultChatTransport } from 'ai'
 import { ArrowDown, Mic } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { flushSync } from 'react-dom'
 import { mutate } from 'swr'
 import {
   Conversation,
@@ -81,6 +82,8 @@ export function ChatUI({ initialThreadId }: ChatUIProps = {}) {
   const [lastFailedMessage, setLastFailedMessage] = useState<string | null>(null)
   const [chatError, setChatError] = useState<Error | null>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+  // §6 받아쓰기 완료: 전사 성공 시 포커스를 전송 버튼으로 이동(다음 행동이 곧 전송)
+  const sendButtonRef = useRef<HTMLButtonElement>(null)
   // M6.3 — 자동 스크롤 + 사용자 위로 스크롤 감지
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const [isAtBottom, setIsAtBottom] = useState(true)
@@ -515,11 +518,18 @@ export function ChatUI({ initialThreadId }: ChatUIProps = {}) {
             }}
             disabled={isLoading || !!attachment}
           />
-          {/* M7.1 — 음성 받아쓰기: 전사 텍스트는 input 뒤에 append. 오류는 voiceError(role=alert) */}
+          {/* M7.1 — 음성 받아쓰기: 전사 텍스트는 input 뒤에 append. 오류는 voiceError(role=alert).
+              §6 받아쓰기 완료(dodo R184·iOS 동형): append 후 전송 버튼으로 포커스 이동, 결과
+              원문 polite 통지는 VoiceRecordButton 내장(포커스 발화 뒤 결과 낭독 순서). 전송
+              버튼은 입력이 비면 disabled라 append 커밋 전 동기 focus()가 침묵 실패한다 —
+              flushSync로 상태 반영을 먼저 커밋한 뒤 포커스(결정론, rAF 타이밍 의존 금지). */}
           <VoiceRecordButton
             onTranscribed={(text) => {
-              setInput((prev) => (prev ? `${prev} ${text}` : text))
-              setVoiceError(null)
+              flushSync(() => {
+                setInput((prev) => (prev ? `${prev} ${text}` : text))
+                setVoiceError(null)
+              })
+              sendButtonRef.current?.focus()
             }}
             onError={(error) => setVoiceError(error)}
             disabled={isLoading}
@@ -539,6 +549,7 @@ export function ChatUI({ initialThreadId }: ChatUIProps = {}) {
           </button>
           {/* 스트리밍/제출 중에는 중단 버튼으로 동작 (WCAG 4.1.2) — onStop은 prompt-input 내장 처리 */}
           <PromptInputSubmit
+            ref={sendButtonRef}
             status={status}
             onStop={stop}
             aria-label={isLoading ? '응답 중단' : '전송'}

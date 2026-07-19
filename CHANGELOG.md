@@ -2,6 +2,13 @@
 
 > 날짜별 변경 이력(마일스톤 경계 갱신). 2026-07-10 이전 이력은 git log와 CLAUDE.md §Phase 진행 요약이 정본(지연 생성 원칙에 따라 이 파일은 iOS 트랙 진입 시점부터 시작).
 
+## 2026-07-20 — 받아쓰기 트랙 후속 정비 3건: gildongmu 백포트 + iOS 44pt 정비 + 웹 §6 신계약
+
+- **gildongmu SpeechService 레이스 가드 백포트**(gildongmu main `e1f5d2f`, 실기기 배포): PR #103 리뷰가 검출해 "백포트 권장(미실행)"으로 기록됐던 2건 — ① 세대 토큰(cancel 후 늦게 완주한 start()의 마이크 재점화 차단) ② stopping 상호 배제(stop finalize 중 cancel의 중복 종료 차단) — 를 원본에 이식. 받아쓰기 트랙의 두 repo 정합 완결.
+- **iOS 44pt 터치 타깃 정비 7파일**(#108 후속 이월 ①): Axis·WikiHome·Document·Settings·Auth·Library·Media의 바깥 `.frame(minHeight: 44)`를 label 안쪽 `.frame`+`.contentShape`로 이동(확립 패턴 "버튼 바깥 frame은 히트 영역을 안 넓힌다"). 실결함은 비-List 컨텍스트(DocumentView 원문 보기·백링크, LibraryView 트레일링·toolbar, AuthSheet)이고 List 행은 패턴 통일. 리뷰 확인: role·라벨 불변, 회귀 없음.
+- **웹 받아쓰기 §6 신계약**(#108 후속 이월 ③, dodo R184·iOS 동형): ① VoiceRecordButton 전사 성공 통지를 일반 안내문("추가했어요")에서 **받아쓴 결과 원문**으로 교체(successMessage prop 제거, 소비자 콜백 먼저 → 원문 통지 순서 = "포커스 발화 뒤 결과 낭독") ② ChatUI 전사 성공 시 **전송 버튼 포커스 이동** — 전송 버튼이 빈 입력일 때 disabled라 `flushSync`로 append 커밋 후 focus(리뷰가 통제 실험으로 flushSync 필요성·ref 스프레드 체인 도달을 실측 확인) ③ hero 검색도 원문 통지로 정렬(입력창 재포커스+건수 통지는 기존 유지). §6 계약 vitest 2건 추가(VoiceRecordButton 원문 통지·ChatUI 포커스).
+- **검증**: lint 0 error / unit 374 / components 전건 / next build / iOS 시뮬레이터 빌드 그린. 잔여 실측(위원장): List NavigationLink 행 전체 탭 육안 확인(최소 44pt는 보장됨), BlockRenderer 리스트 마커 이중 낭독 확인(기존 이월 ②).
+
 ## 2026-07-20 — iOS WhatsApp식 홀드 받아쓰기 이식: 탭 토글 대체 + Lazy 스택 CPU 결함 선제 제거 (#109)
 
 - **배경**: gildongmu 실기기 VoiceOver 검증 완료(2026-07-20, 위원장 합격)된 홀드 받아쓰기 계약을 이식. 진입점별 차등 — 전송형(채팅)=홀드+잠금+취소 풀 계약, 단일 확정형(위키 검색)=홀드 단일 동작.

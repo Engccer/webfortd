@@ -56,9 +56,13 @@ struct DocumentView: View {
                 .font(.footnote)
                 .foregroundStyle(.secondary)
             if let urlString = summary.frontmatter.source.url, let url = URL(string: urlString) {
-                Link("원문 보기", destination: url)
-                    .font(.footnote)
-                    .frame(minHeight: 44)
+                // 44pt frame은 label 안쪽 + contentShape(바깥 frame은 히트 영역을 안 넓힌다)
+                Link(destination: url) {
+                    Text("원문 보기")
+                        .font(.footnote)
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
+                }
             }
         }
         .padding(.top, 16)
@@ -81,10 +85,13 @@ struct DocumentView: View {
                     ForEach(backlinks, id: \.from) { backlink in
                         // summary 미해석이면 해당 행 생략.
                         if let backlinkSummary = store.summary(slug: backlink.from) {
+                            // 44pt frame은 label 안쪽 + contentShape(바깥 frame은 히트 영역을
+                            // 안 넓힌다 — ScrollView라 List 행 전체 탭도 없음)
                             NavigationLink(value: AppRoute.document(slug: backlink.from)) {
                                 Text(backlinkSummary.frontmatter.title)
+                                    .frame(minHeight: 44)
+                                    .contentShape(Rectangle())
                             }
-                            .frame(minHeight: 44)
                         }
                     }
                 }

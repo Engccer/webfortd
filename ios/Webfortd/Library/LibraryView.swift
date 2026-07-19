@@ -41,10 +41,14 @@ struct LibraryView: View {
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
                         ToolbarItem(placement: .confirmationAction) {
-                            Button("닫기") {
+                            // 44pt frame은 label 안쪽 + contentShape(바깥 frame은 히트 영역을 안 넓힌다)
+                            Button {
                                 previewItem = nil
+                            } label: {
+                                Text("닫기")
+                                    .frame(minWidth: 44, minHeight: 44)
+                                    .contentShape(Rectangle())
                             }
-                            .frame(minWidth: 44, minHeight: 44)
                         }
                     }
             }
@@ -87,31 +91,41 @@ struct LibraryView: View {
 
     @ViewBuilder
     private func trailingControl(item: WebfortdKit.LibraryItem, state: LibraryDownloadStore.State) -> some View {
+        // 44pt frame은 label 안쪽 + contentShape(바깥 frame은 히트 영역을 안 넓힌다)
         switch state {
         case .notCached:
-            Button("받기") {
+            Button {
                 downloadStore.startDownload(item: item)
+            } label: {
+                Text("받기")
+                    .frame(minWidth: 44, minHeight: 44)
+                    .contentShape(Rectangle())
             }
-            .frame(minWidth: 44, minHeight: 44)
         case .downloading:
             HStack(spacing: 8) {
                 // 시각 스피너 보조 표시. 상태 구분은 "중단" 버튼 라벨(텍스트)이 전달하므로 중복 낭독 방지.
                 ProgressView()
                     .accessibilityHidden(true)
-                Button("중단") {
+                Button {
                     downloadStore.cancelDownload(slug: item.slug)
+                } label: {
+                    Text("중단")
+                        .frame(minWidth: 44, minHeight: 44)
+                        .contentShape(Rectangle())
                 }
-                .frame(minWidth: 44, minHeight: 44)
             }
         case .cached(let fileURL):
-            Button("열기") {
+            Button {
                 if let cachedURL = downloadStore.cachedURLIfExists(for: item.slug) {
                     previewItem = PreviewItem(url: cachedURL)
                 } else {
                     Announce.post("받은 파일이 삭제되어 다시 받아야 해요", interrupting: true)
                 }
+            } label: {
+                Text("열기")
+                    .frame(minWidth: 44, minHeight: 44)
+                    .contentShape(Rectangle())
             }
-            .frame(minWidth: 44, minHeight: 44)
         }
     }
 }

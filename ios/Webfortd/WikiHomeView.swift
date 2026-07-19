@@ -204,6 +204,7 @@ struct WikiHomeView: View {
     @ViewBuilder
     private func axisSection(_ store: KBStore) -> some View {
         ForEach(visibleAxes(store), id: \.axis) { entry in
+            // 44pt frame은 label 안쪽 + contentShape(바깥 frame은 히트 영역을 안 넓힌다)
             NavigationLink(value: AppRoute.axis(entry.axis)) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("\(entry.label), \(store.documents(in: entry.axis).count)개 문서")
@@ -213,8 +214,9 @@ struct WikiHomeView: View {
                         .foregroundStyle(.secondary)
                 }
                 .accessibilityElement(children: .combine)
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
             }
-            .frame(minHeight: 44)
         }
     }
 
@@ -228,6 +230,7 @@ struct WikiHomeView: View {
     /// 검색 결과·오늘의 위키 공통 행: 제목+축(+발췌) 단일 접근성 객체, 탭 시 문서로 이동.
     @ViewBuilder
     private func documentRow(title: String, axis: KBAxis, snippet: String?, slug: String) -> some View {
+        // 44pt frame은 label 안쪽 + contentShape(바깥 frame은 히트 영역을 안 넓힌다)
         NavigationLink(value: AppRoute.document(slug: slug)) {
             VStack(alignment: .leading, spacing: 4) {
                 Text("\(title), \(BrowsableAxis.label(for: axis))")
@@ -238,7 +241,8 @@ struct WikiHomeView: View {
                 }
             }
             .accessibilityElement(children: .combine)
+            .frame(minHeight: 44)
+            .contentShape(Rectangle())
         }
-        .frame(minHeight: 44)
     }
 }

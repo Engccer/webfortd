@@ -43,16 +43,23 @@ struct SettingsView: View {
                 Text("로그인 상태를 확인하고 있어요")
             case .signedOut:
                 Text("로그인되어 있지 않아요")
-                Button("로그인") {
+                // 44pt frame은 label 안쪽 + contentShape(바깥 frame은 히트 영역을 안 넓힌다)
+                Button {
                     showAuthSheet = true
+                } label: {
+                    Text("로그인")
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
                 }
-                .frame(minHeight: 44)
             case .signedIn(let email):
                 Text("로그인: \(email)")
-                Button("로그아웃", role: .destructive) {
+                Button(role: .destructive) {
                     showLogoutConfirm = true
+                } label: {
+                    Text("로그아웃")
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
                 }
-                .frame(minHeight: 44)
             }
         }
     }
@@ -93,10 +100,17 @@ struct SettingsView: View {
         Section("정보") {
             Text(Self.identityStatement)
             Text("버전 \(Self.appVersion)")
-            Link("웹사이트 열기", destination: AppConfig.webBaseURL)
-                .frame(minHeight: 44)
-            Link("개인정보처리방침", destination: AppConfig.webBaseURL.appendingPathComponent("privacy"))
-                .frame(minHeight: 44)
+            // 44pt frame은 label 안쪽 + contentShape(바깥 frame은 히트 영역을 안 넓힌다)
+            Link(destination: AppConfig.webBaseURL) {
+                Text("웹사이트 열기")
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
+            }
+            Link(destination: AppConfig.webBaseURL.appendingPathComponent("privacy")) {
+                Text("개인정보처리방침")
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
+            }
         }
     }
 
