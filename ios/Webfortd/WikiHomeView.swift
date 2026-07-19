@@ -56,17 +56,26 @@ struct WikiHomeView: View {
             if let store {
                 List {
                     // 마이크는 검색 필드 바로 다음 행(gildongmu 실기기 실측: toolbar에 두면
-                    // VoiceOver가 제목보다 먼저 읽는다). 라벨 변화가 상태 신호(disabled 금지).
+                    // VoiceOver가 제목보다 먼저 읽는다). WhatsApp식 홀드 단일 동작(2026-07-20
+                    // 탭 토글 대체): 누른 채로 말하고 떼면 즉시 검색 — 검색은 단일 확정형
+                    // 입력이라 잠금·취소 슬라이드 없음(onPause: nil). 최종 텍스트만 검색어로
+                    // 넣는다(partial 실시간 반영 금지, 필드 값 경합 회피). 포커스 이동은 하지
+                    // 않는다 — 검색이 자동 실행되는 설계라 결과 통지(performSearch)가 후속.
+                    // isVisible 가드: stop() 확정 대기 중 탭 이탈 시 늦은 전사가 오프스크린
+                    // 검색·전역 통지를 발화하지 않도록 차단(리뷰 P2, 탭 토글 시절과 동일).
                     Section {
-                        Button {
-                            toggleMic(store: store)
-                        } label: {
-                            Label(
-                                speech.isListening ? "입력 중지" : "음성 입력",
-                                systemImage: speech.isListening ? "mic.fill" : "mic"
-                            )
-                        }
-                        .frame(minHeight: 44)
+                        HoldDictationButton(
+                            speech: speech,
+                            hint: "누른 채로 말하고, 손을 떼면 검색합니다",
+                            showsTitle: true,
+                            onTranscript: { text in
+                                guard isVisible else { return }
+                                searchText = text
+                                Announce.post(text)
+                                performSearch(store: store)
+                            },
+                            onPause: nil
+                        )
                     }
                     if isSearchActive {
                         searchSection
@@ -108,22 +117,6 @@ struct WikiHomeView: View {
         }
         .alert(speechAlertMessage ?? "", isPresented: speechAlertBinding) {
             Button("확인") {}
-        }
-    }
-
-    /// 음성 입력 토글: 최종 텍스트를 검색어로 넣고 즉시 검색(gildongmu 음성 검색 계약 —
-    /// 채팅의 append와 달리 검색은 정지=제출까지 한 동작). partial은 필드에 실시간 반영하지
-    /// 않는다(필드 값 경합 회피, 최종만). 재진입은 SpeechService의 phase 가드가 차단.
-    private func toggleMic(store: KBStore) {
-        Task {
-            if speech.isListening {
-                if let text = await speech.stop(), isVisible {
-                    searchText = text
-                    performSearch(store: store)
-                }
-            } else {
-                await speech.start()
-            }
         }
     }
 

@@ -6,7 +6,12 @@ struct BlockRenderer: View {
     let blocks: [KBBlock]
 
     var body: some View {
-        LazyVStack(alignment: .leading, spacing: 12) {
+        // ⚠ LazyVStack 금지(gildongmu 실기기 cpu_resource 확정, 2026-07-20): lazy 레이아웃
+        // 캐시(LazySubviewPlacements)의 크기 추정 진동이 메인 스레드 100% CPU 무한 루프를
+        // 만든다. 특히 채팅 스트리밍은 델타마다 블록을 재파싱해 lazy 캐시를 계속 무효화하고,
+        // 이 컨테이너는 리스트·인용 안에 재귀 중첩된다. 블록 수는 문서·답변당 유한하므로
+        // eager VStack이 정본 — 화면 밖 블록 AX 컬링(로터 헤딩 탐색 누락)도 함께 해소.
+        VStack(alignment: .leading, spacing: 12) {
             ForEach(Array(blocks.enumerated()), id: \.offset) { _, block in
                 BlockView(block: block)
             }

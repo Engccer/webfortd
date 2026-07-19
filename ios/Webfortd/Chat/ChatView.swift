@@ -15,10 +15,15 @@ struct ChatView: View {
 
     @State private var inputText = ""
     @State private var speech = SpeechService()
-    /// 마이크 토글 Task in-flight 가드(더블탭이 start/stop을 인터리브하는 경합 차단)
-    @State private var micTaskInFlight = false
     /// 완료 시 마지막 질문 헤딩으로 VoiceOver 포커스 이동(헌장 §6 포커스 계약)
     @AccessibilityFocusState private var focusedMessageId: UUID?
+    /// 지우기 버튼이 초안 소거로 자신을 제거할 때 포커스를 입력 필드로 선점 이동(§5)
+    @AccessibilityFocusState private var isInputFocused: Bool
+    /// 탭 가시성 — 홀드 중 탭 이탈 시 인식기 .cancelled의 endHold()와 onDisappear의
+    /// cancel()이 경합해, stop()이 stopping 가드를 선점하면 늦은 전사가 떠난 화면의
+    /// onTranscript로 배달된다(전역 통지 + 사용자 확인 없는 전송). 릴리스=즉시 전송
+    /// 계약이라 부수효과가 커서 WikiHomeView와 동형 가드 필요(이식 리뷰 P1).
+    @State private var isVisible = true
     /// 포커스 계약(헌장 §6, 위원장 실기기 판정 2026-07-19 dodo R184 이식): 전송 시
     /// 항상 존재하는 보내기 버튼으로 이동해 생성 내내 머물고, 완료 시에만 마지막 질문
     /// 헤딩으로 이동한다. 구계약(완료 시 답변으로 이동)은 폐기 — 질문 헤딩에 앉아야
@@ -80,11 +85,13 @@ struct ChatView: View {
             focusedMessageId = chatStore.messages.first(where: { $0.role == "user" })?.id
         }
         .onAppear {
+            isVisible = true
             #if DEBUG
             installChatFocusObserverOnce()
             #endif
         }
         .onDisappear {
+            isVisible = false
             // 탭 이탈 시 진행 중 음성 인식 폐기(마이크 잔존 방지, gildongmu 동형).
             Task { await speech.cancel() }
             // 완료 포커스 시퀀스도 폐기(화면을 떠난 뷰의 지연 포커스 대입 방지)
@@ -169,7 +176,13 @@ struct ChatView: View {
     private var messageList: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: 20) {
+                // ⚠ LazyVStack 금지(gildongmu 실기기 cpu_resource 마이크로스택샷으로 확정,
+                // 2026-07-20): 대화가 몇 턴 쌓이면 lazy 레이아웃 캐시(LazySubviewPlacements)가
+                // 크기 추정 진동으로 매 UI 사이클 트랜잭션을 재발행해 메인 스레드 100% CPU
+                // 무한 루프(앱 먹통, VO 전면 무응답). 채팅 히스토리는 세션당 유한하므로
+                // eager VStack이 정본 — 진동 기제 자체가 없고, 화면 밖 요소 AX 컬링
+                // (완료 포커스 대입 실패 원인)도 함께 해소.
+                VStack(alignment: .leading, spacing: 20) {
                     ForEach(chatStore.messages) { message in
                         messageRow(message)
                             .id(message.id)
@@ -350,24 +363,80 @@ struct ChatView: View {
                     .textFieldStyle(.roundedBorder)
                     .lineLimit(1...4)
                     .frame(minHeight: 44)
+                    .accessibilityFocused($isInputFocused)
 
-                // 라벨 변화("받아쓰기 시작"↔"받아쓰기 중지")가 상태 신호(disabled 금지, 헌장).
-                // "음성 입력"은 금지 — 받아쓴 질문에 "음성"이 들어가면 SR 낭독에서 내용과
-                // 컨트롤 라벨이 구분 안 됨(헌장 §6, gildongmu 실기기 실측 2026-07-18).
-                // 온디바이스 SpeechAnalyzer(ko-KR) — 서버 왕복 없음(SpeechService).
-                // 44pt frame은 label 안쪽 + contentShape — 버튼 바깥 frame은 레이아웃만
-                // 키우고 히트 영역을 안 넓힌다(gildongmu 실측). 이 파일 버튼 전부 동일 패턴.
-                Button {
-                    toggleMic()
-                } label: {
-                    Label(
-                        speech.isListening ? "받아쓰기 중지" : "받아쓰기 시작",
-                        systemImage: speech.isListening ? "mic.fill" : "mic"
-                    )
-                    .labelStyle(.iconOnly)
-                    .frame(minWidth: 44, minHeight: 44)
-                    .contentShape(Rectangle())
+                // 텍스트 지우기(검색창 시스템 clear 버튼의 채팅 판, 2026-07-20 위원장 요청).
+                // 초안이 있을 때만 존재 — 지우면 자신이 사라지므로 포커스를 입력 필드로
+                // 선점 이동(§5). 키보드 재진입은 VO 제약상 직접 더블탭 필요(프로그래밍 불가).
+                if !inputText.isEmpty {
+                    Button {
+                        inputText = ""
+                        isInputFocused = true
+                    } label: {
+                        Label("텍스트 지우기", systemImage: "xmark.circle.fill")
+                            .labelStyle(.iconOnly)
+                            .frame(minWidth: 44, minHeight: 44)
+                            .contentShape(Rectangle())
+                    }
                 }
+
+                // WhatsApp식 홀드 받아쓰기(2026-07-20 탭 토글 대체, gildongmu 실기기 합격
+                // 이식): 누르는 동안 녹음, 떼면 초안 병합 즉시 전송. 위로 밀면 잠금
+                // (일시정지) — 전사를 입력창에 확정해 확인·수정 후 다시 길게 눌러 이어쓴다.
+                // 왼쪽 밀기=취소. 라벨 "받아쓰기"는 정적(세션 중 라벨 전환 금지) + 행위
+                // 일반명사 충돌 회피("음성 입력" 금지 — 받아쓴 내용의 "음성"과 낭독 혼동,
+                // 실측 2026-07-18). 온디바이스 SpeechAnalyzer(ko-KR) — 서버 왕복 없음.
+                HoldDictationButton(
+                    speech: speech,
+                    hint: "누른 채로 말하고, 손을 떼면 전송합니다. 누른 채 위로 밀면 잠겨서 그때까지 받아쓴 내용이 입력창에 들어가고, 수정한 뒤 다시 길게 눌러 이어서 받아쓸 수 있습니다. 누른 채 왼쪽으로 밀면 취소합니다",
+                    showsTitle: false,
+                    onTranscript: { text in
+                        // 홀드 중 탭 이탈의 늦은 전사 차단(위 isVisible 주석, 리뷰 P1)
+                        guard isVisible else { return }
+                        // 직전 답변의 지연 완료 시퀀스가 대기 중이면 폐기 — streaming 가드는
+                        // "새 질문 전송"만 걸러서, 전송 전 시점엔 통과해 방금 잡은 포커스를
+                        // 옛 질문 헤딩으로 되돌린다(gildongmu 리뷰 검출).
+                        completionFocusTask?.cancel()
+                        completionFocusTask = nil
+                        // 초안(타이핑·잠금 확정분)과 새 전사는 병합이 정책(무병합이면 초안이
+                        // 고아로 방치): 보내는 것 = 초안 + 받아쓴 말 전부, 초안은 소거.
+                        // 통지도 병합 원문 전체 — 사용자가 들은 것이 곧 전송된 것(결정론).
+                        let message = mergedInput(with: text)
+                        if chatStore.phase == .streaming {
+                            // 생성 중엔 전송 불가: 발화 유실 금지 — 초안으로 보존(폴백)
+                            inputText = message
+                            isSendFocused = true
+                            Announce.post(message)
+                        } else {
+                            // 릴리스=즉시 전송(위원장 실기기 지시 2026-07-20, WhatsApp 동형).
+                            // 순서는 헌장 §6 "포커스 먼저, 통지 나중": 보내기 버튼 포커스를
+                            // 동기 선점한 뒤 통지. send 가드 거부(첨부 로드 중 등) 시 초안
+                            // 복원으로 발화 유실 금지(ChatStore.send Bool 계약).
+                            inputText = ""
+                            isSendFocused = true
+                            Announce.post(message)
+                            if !chatStore.send(message) {
+                                inputText = message
+                            }
+                        }
+                    },
+                    // 잠금(일시정지, 2026-07-20 위원장 재설계): 전사를 초안에 확정해 별도 UI
+                    // 없이 확인·수정·이어쓰기. 녹음이 멈춘 뒤라 통지가 발화 금지와 무충돌.
+                    // 통지는 "받아쓰기 잠김" + 새 세그먼트만(누적 초안 전체 재낭독은 소음 —
+                    // 전체 확인은 입력 필드 탐색으로). 포커스는 건드리지 않는다(손가락이
+                    // 아직 마이크 위, 다음 행동이 이어쓰기·수정·전송으로 갈리는 지점).
+                    onPause: { segment in
+                        guard isVisible else { return }
+                        completionFocusTask?.cancel()
+                        completionFocusTask = nil
+                        if let segment {
+                            inputText = mergedInput(with: segment)
+                            Announce.post("받아쓰기 잠김, \(segment)")
+                        } else {
+                            Announce.post("받아쓰기 잠김")
+                        }
+                    }
+                )
 
                 // 전송 중에도 TextField는 disabled 금지(입력은 유지, send가 자체 가드).
                 // 전송·중단은 단일 버튼의 라벨 교체 — if/else로 버튼을 갈아끼우면 포커스를
@@ -445,29 +514,9 @@ struct ChatView: View {
         }
     }
 
-    /// 받아쓰기 토글: 최종 텍스트를 입력 필드 뒤에 append(자동 전송 안 함, 질문은 검토 후 전송).
-    /// gildongmu는 대체(draft = text)지만 webfortd는 웹과 동형으로 타이핑 초안을 보존한다.
-    /// in-flight 가드: 더블탭이 두 Task를 띄워 start/stop이 인터리브되는 경합 차단(헌장).
-    /// 전사 성공은 침묵 금지(헌장 §6 받아쓰기 완료, dodo R184 실기기 확정): 포커스를 전송
-    /// 버튼으로 이동(자동 전송이 없는 설계라 다음 행동이 곧 전송) → 받아쓴 결과 원문을
-    /// polite 통지(포커스 발화 뒤 결과 낭독 순서). ⚠ SpeechService엔 자동 정지 경로가
-    /// 없어(정지는 이 토글 유일) 반환값 소비로 전사 유실이 없다 — dodo의 콜백 단일 채널
-    /// 전환(60초 캡 유실 실버그)은 여기선 비해당(gildongmu 동일 판단).
-    private func toggleMic() {
-        guard !micTaskInFlight else { return }
-        micTaskInFlight = true
-        Task {
-            defer { micTaskInFlight = false }
-            if speech.isListening {
-                if let text = await speech.stop() {
-                    inputText = inputText.isEmpty ? text : inputText + " " + text
-                    isSendFocused = true
-                    Announce.post(text)
-                }
-            } else {
-                await speech.start()
-            }
-        }
+    /// 초안(타이핑·잠금 확정분)과 새 전사 세그먼트의 병합(홀드 릴리스·잠금 공용).
+    private func mergedInput(with text: String) -> String {
+        inputText.isEmpty ? text : inputText + " " + text
     }
 
     // 가드로 전송이 거부되면(ChatStore.send가 false 반환) 입력 텍스트를 비우지 않고 보존한다.
