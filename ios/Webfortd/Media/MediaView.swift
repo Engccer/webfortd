@@ -30,10 +30,12 @@ struct MediaView: View {
             Text(item.caption)
                 .font(.subheadline)
             // 출처 문서로 push(미디어 탭 NavigationStack의 공용 destination 사용).
+            // 44pt frame은 label 안쪽 + contentShape(바깥 frame은 히트 영역을 안 넓힌다)
             NavigationLink(value: AppRoute.document(slug: item.sourceDocSlug)) {
                 Text("출처: \(item.sourceDocTitle)")
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
             }
-            .frame(minHeight: 44)
         }
         .padding(.vertical, 4)
     }

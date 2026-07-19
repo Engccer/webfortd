@@ -12,12 +12,46 @@
  *   - disabled prop 추가 시에도 aria-disabled (native disabled 금지 — WCAG 2.4.3 포커스 유지)
  *   - polite announcer 렌더 (단일 role=status sr-only — 오류는 부모 role=alert 채널)
  *   - VOICE_ERROR_MESSAGES 6개 코드 완전성(코드→한국어 문구 계약)
+ *   - 전사 성공 = 소비자 콜백 먼저 → 받아쓴 결과 원문 polite 통지(헌장 §6 신계약,
+ *     훅 옵션 캡처로 직접 발화)
  */
 
-import { render, screen } from '@testing-library/react'
-import { describe, it, expect, vi } from 'vitest'
-import { VoiceRecordButton, VOICE_ERROR_MESSAGES } from '@/components/chat/VoiceRecordButton'
+import { render, screen, act } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { VoiceRecorderErrorCode } from '@/hooks/useVoiceRecorder'
+
+// 훅 옵션 캡처 — §6 전사 성공 계약 테스트가 onTranscribed를 직접 트리거한다
+// (site-search-voice.test.tsx 동형. vi.mock은 파일 단위라 이 파일 전체에 적용되지만,
+// 기존 테스트는 훅 반환값 형태만 같으면 무관하다 — isSupported=true로 바뀌는 것만 반영).
+interface CapturedOpts {
+  onTranscribed?: (text: string) => void
+  onError?: (code: VoiceRecorderErrorCode) => void
+}
+let recorderOpts: CapturedOpts = {}
+
+vi.mock('@/hooks/useVoiceRecorder', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@/hooks/useVoiceRecorder')>()
+  return {
+    ...original,
+    useVoiceRecorder: (opts: CapturedOpts) => {
+      recorderOpts = opts
+      return {
+        state: 'idle',
+        duration: 0,
+        startRecording: vi.fn(),
+        stopRecording: vi.fn(),
+        cancelRecording: vi.fn(),
+        isSupported: false,
+      }
+    },
+  }
+})
+
+import { VoiceRecordButton, VOICE_ERROR_MESSAGES } from '@/components/chat/VoiceRecordButton'
+
+beforeEach(() => {
+  recorderOpts = {}
+})
 
 describe('VoiceRecordButton (받아쓰기 — gildongmu 이식)', () => {
   it('JSDOM 미지원 환경 — "음성 입력 미지원 브라우저예요" + aria-disabled', () => {
@@ -38,6 +72,18 @@ describe('VoiceRecordButton (받아쓰기 — gildongmu 이식)', () => {
     expect(announcer).toBeInTheDocument()
     expect(announcer).toHaveClass('sr-only')
     expect(document.querySelector('[aria-live="assertive"]')).not.toBeInTheDocument()
+  })
+
+  it('전사 성공 — 소비자 콜백 먼저, polite 통지는 받아쓴 결과 원문 (§6 신계약)', () => {
+    const calls: string[] = []
+    render(<VoiceRecordButton onTranscribed={(text) => calls.push(`consumer:${text}`)} />)
+    const announcer = document.querySelector('[role="status"][aria-live="polite"]')!
+    act(() => {
+      recorderOpts.onTranscribed?.('보조공학기기 신청 방법')
+    })
+    // 소비자(포커스 이동 담당)가 먼저 호출되고, 통지 문구는 일반 안내가 아닌 전사 원문.
+    expect(calls).toEqual(['consumer:보조공학기기 신청 방법'])
+    expect(announcer).toHaveTextContent('보조공학기기 신청 방법')
   })
 
   it('VOICE_ERROR_MESSAGES — 6개 오류 코드 전부 비어 있지 않은 한국어 문구', () => {

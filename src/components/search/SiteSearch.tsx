@@ -283,8 +283,8 @@ export function SiteSearch({
         </div>
         {isHero && (
           <VoiceRecordButton
+            // 전사 성공 통지는 받아쓴 원문(버튼 내장, 헌장 §6) — 건수는 기존 role=status가 후속 발화
             idleLabel="음성으로 검색"
-            successMessage="검색어를 입력했어요"
             onTranscribed={handleVoiceTranscribed}
             onError={(message) => setVoiceError(message)}
           />

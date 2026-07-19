@@ -50,8 +50,14 @@ struct AuthSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("취소") { dismiss() }
-                        .frame(minWidth: 44, minHeight: 44)
+                    // 44pt frame은 label 안쪽 + contentShape(바깥 frame은 히트 영역을 안 넓힌다)
+                    Button {
+                        dismiss()
+                    } label: {
+                        Text("취소")
+                            .frame(minWidth: 44, minHeight: 44)
+                            .contentShape(Rectangle())
+                    }
                 }
             }
         }
@@ -69,10 +75,14 @@ struct AuthSheet: View {
             .autocorrectionDisabled()
             .focused($focusedField, equals: .email)
             .frame(minHeight: 44)
-        Button(isSubmitting ? "인증 코드 요청 중" : "인증 코드 받기") {
+        // 44pt frame은 label 안쪽 + contentShape(바깥 frame은 히트 영역을 안 넓힌다)
+        Button {
             Task { await requestCode() }
+        } label: {
+            Text(isSubmitting ? "인증 코드 요청 중" : "인증 코드 받기")
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
         }
-        .frame(minHeight: 44)
     }
 
     @ViewBuilder
@@ -85,18 +95,25 @@ struct AuthSheet: View {
             .keyboardType(.numberPad)
             .focused($focusedField, equals: .code)
             .frame(minHeight: 44)
-        Button(isSubmitting ? "확인 중" : "확인") {
+        // 44pt frame은 label 안쪽 + contentShape(바깥 frame은 히트 영역을 안 넓힌다)
+        Button {
             Task { await verifyCode() }
+        } label: {
+            Text(isSubmitting ? "확인 중" : "확인")
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
         }
-        .frame(minHeight: 44)
-        Button("다른 이메일 사용") {
+        Button {
             guard !isSubmitting else { return }
             step = .email
             code = ""
             errorMessage = nil
             focusedField = .email
+        } label: {
+            Text("다른 이메일 사용")
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
         }
-        .frame(minHeight: 44)
     }
 
     /// 이메일로 인증 코드 발송을 요청한다. `isSubmitting`으로 재진입만 가드하고 필드는

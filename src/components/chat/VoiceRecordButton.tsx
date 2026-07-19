@@ -15,6 +15,9 @@
  * - polite announcer는 라벨 변화로 전달할 수 없는 정보 전용: 시간 마일스톤
  *   ("1분이 지났어요"·"10초 후 자동으로 멈춰요"), 자동 정지, 전사 성공, Esc 취소
  *   (전역 키라 포커스가 버튼 밖일 수 있고 음소거 환경 대비 — 효과음과 병행).
+ * - 전사 성공 통지는 받아쓴 결과 원문(헌장 §6 받아쓰기 완료, dodo R184·iOS 동형):
+ *   일반 안내문("추가했어요")은 무엇이 입력됐는지 전달하지 못한다. 순서는 onTranscribed
+ *   (소비자의 포커스 이동)가 먼저, 원문 통지가 나중 — "포커스 발화 뒤 결과 낭독".
  * - 오류는 코드→한국어 번역 후 부모(ChatUI voiceError role=alert) 단일 채널로만
  *   전달한다 — 버튼 내 별도 assertive announcer를 두지 않는다(이중 낭독 방지).
  */
@@ -30,8 +33,6 @@ interface VoiceRecordButtonProps {
   disabled?: boolean
   /** idle 상태 aria-label 오버라이드 — 검색 등 채팅 외 문맥용 (기본: 채팅 카피) */
   idleLabel?: string
-  /** 전사 성공 polite 안내 오버라이드 (기본: 채팅 카피) */
-  successMessage?: string
 }
 
 const MAX_DURATION = 120 // 자동 정지 시각 (spec §D4)
@@ -51,7 +52,6 @@ export function VoiceRecordButton({
   onError,
   disabled,
   idleLabel = '음성으로 질문 시작',
-  successMessage = '받아쓰기를 입력창에 추가했어요',
 }: VoiceRecordButtonProps) {
   const announcerRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
@@ -71,9 +71,10 @@ export function VoiceRecordButton({
     useVoiceRecorder({
       maxDuration: MAX_DURATION,
       onTranscribed: (text) => {
-        // 성공은 polite 통지 (WCAG 4.1.3) — 무음이면 입력창 반영을 알 수 없음
-        announce(successMessage)
+        // 성공은 침묵 금지(WCAG 4.1.3) — 소비자 포커스 이동 후 받아쓴 결과 원문을
+        // polite 통지(헌장 §6: 포커스 발화 뒤 결과 낭독 순서, 전사 원문이라 i18n 무관)
         onTranscribed(text)
+        announce(text)
       },
       onError: (code) => onError?.(VOICE_ERROR_MESSAGES[code]),
     })
