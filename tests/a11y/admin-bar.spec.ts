@@ -33,4 +33,18 @@ test.describe('AdminBar — 비-admin 비노출', () => {
     // redirect 결과 / 또는 어느 라우트든 axe-core 통과해야 함
     await expectNoAxeViolations(page, info, '/')
   })
+
+  // 편집기 트랙 — /admin/editor도 동일한 admin layout 게이트를 공유(slug 유무와 무관).
+  test('비-admin 사용자가 /admin/editor 접근 시 redirect', async ({ page }) => {
+    const response = await page.goto('/admin/editor')
+    await expect(page).toHaveURL(/\/(?:$|\?)/)
+    expect(response?.ok()).toBe(true)
+  })
+
+  test('a11y: /admin/editor 비-admin 접근 후 / 라우트 axe-core PASS', async ({
+    page,
+  }, info) => {
+    await page.goto('/admin/editor')
+    await expectNoAxeViolations(page, info, '/')
+  })
 })
