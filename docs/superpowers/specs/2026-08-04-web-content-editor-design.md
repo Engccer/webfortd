@@ -104,7 +104,7 @@ KB 문서 페이지 [편집] 버튼 (editor/admin에게만 노출)
 
 1. fine-grained PAT 발급(위원장 GitHub 계정, contents:write 한정) → Vercel 환경변수 등록. **회전 주기(만료일) 캘린더 등록** — 만료 시 전 편집이 "시스템 연결 문제"로 실패한다
 2. master ruleset 등록: force push·브랜치 삭제 금지(감사 이력 보전)
-3. GitHub Actions Secrets 등록: `GEMINI_API_KEY`, Supabase URL·service_role 키 (야간 sync+embed용) + repo variable 갱신용 fine-grained PAT `VAR_RW_TOKEN`(Variables write — 마지막 성공 SHA 기록에 필요, 기본 GITHUB_TOKEN 권한 밖)
+3. GitHub Actions Secrets 등록(구현 시 실계약 확인된 정확한 이름): `NEXT_PUBLIC_SUPABASE_URL` · `SUPABASE_SECRET_KEY` · `GOOGLE_GENERATIVE_AI_API_KEY` (야간 sync+embed용) + repo variable 갱신용 fine-grained PAT `VAR_RW_TOKEN`(Variables write, 마지막 성공 SHA 기록에 필요, 기본 GITHUB_TOKEN 권한 밖). ⚠ 등록 순서: `VAR_RW_TOKEN` 발급이 선행되어야 workflow_dispatch 실 검증 가능
 4. 연구보조원 이메일 `editor_roles` seed (0014 이후 운영 쿼리, 가명 식별자 매핑 확인)
 5. 감수자용 1쪽 사용 안내(로그인 → 편집 → 반영 → 몇 분 후 새로고침 확인) + 문제 해결 절차(버튼이 안 보일 때: 로그인 만료/권한 미등록 구분)
 6. 런북: Vercel 빌드 실패 이메일 수신 시 대응(revert 절차), 긴급 수정 시 RAG 즉시 갱신은 수동 `kb:sync`+`kb:embed`
