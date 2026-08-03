@@ -3,7 +3,7 @@
 import { getCurrentUserEditorStatus } from '@/lib/auth/editor'
 import { getContentFile, putContentFile } from '@/lib/github/contents'
 import { checkRateLimit } from '@/lib/rate-limit'
-import { loadDocumentCore, submitBodyCore } from '@/lib/editor/edit-core'
+import { loadDocumentCore, submitBodyCore, MSG } from '@/lib/editor/edit-core'
 import type { LoadResult, SubmitResult } from '@/lib/editor/edit-core'
 import { validateBody } from '@/lib/editor/document-io'
 import { serializeKbContent } from '@/lib/kb-mdx'
@@ -32,8 +32,11 @@ export type PreviewResult =
 
 export async function previewBody(body: string): Promise<PreviewResult> {
   const editor = await getCurrentUserEditorStatus()
-  if (!editor.canEdit || !editor.userId) {
-    return { status: 'forbidden', message: '편집 권한이 없습니다.' }
+  if (!editor.userId) {
+    return { status: 'forbidden', message: MSG.needLogin }
+  }
+  if (!editor.canEdit) {
+    return { status: 'forbidden', message: MSG.forbidden }
   }
   if (!DEPS.rateLimit(`editor-preview:${editor.userId}`)) {
     return { status: 'rate_limited', message: '요청이 너무 잦습니다. 잠시 후 다시 시도해 주세요.' }

@@ -34,11 +34,12 @@ describe('getContentFile', () => {
 })
 
 describe('putContentFile', () => {
-  it('성공 시 commitSha 반환', async () => {
-    stubFetch(200, { commit: { sha: 'deadbeef' } })
+  it('성공 시 commitSha + contentSha(새 baseSha) 반환', async () => {
+    stubFetch(200, { commit: { sha: 'deadbeef' }, content: { sha: 'newblob' } })
     const r = await putContentFile({ path: 'a.md', text: '본문', sha: 'abc', message: 'msg' })
     assert.ok(r.ok)
     assert.equal(r.value.commitSha, 'deadbeef')
+    assert.equal(r.value.contentSha, 'newblob')
   })
   it('409/422는 conflict(SHA 불일치)', async () => {
     stubFetch(409, {})

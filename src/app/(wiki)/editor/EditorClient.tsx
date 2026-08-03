@@ -139,6 +139,9 @@ export function EditorClient({
       } else {
         announce(result.message)
       }
+    } catch {
+      // 서버 액션 transport 실패(네트워크 단절 등) — 편집 내용은 그대로 두고 통지만.
+      announce("시스템 연결에 문제가 있습니다. 잠시 후 다시 시도해 주세요.")
     } finally {
       previewInFlightRef.current = false
     }
@@ -153,11 +156,17 @@ export function EditorClient({
       announce(result.message)
       if (result.status === "accepted") {
         localStorage.removeItem(draftKey(slug, baseSha))
+        // 같은 세션에서 연속 반영해도 두 번째 제출이 이 새 sha를 기준으로 비교되어야
+        // 방금 낸 내 커밋 자체를 가짜 충돌로 오인하지 않는다.
+        setBaseSha(result.newBaseSha)
       } else if (result.status === "conflict") {
         setConflictBackup(body)
         handleBodyChange(result.latestBody)
         setBaseSha(result.latestSha)
       }
+    } catch {
+      // 서버 액션 transport 실패(네트워크 단절 등) — 편집 내용은 그대로 두고 통지만.
+      announce("시스템 연결에 문제가 있습니다. 잠시 후 다시 시도해 주세요.")
     } finally {
       submitInFlightRef.current = false
       setSubmitting(false)

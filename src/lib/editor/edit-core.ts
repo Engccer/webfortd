@@ -9,12 +9,15 @@ import {
 export interface EditDeps {
   getEditor(): Promise<EditorStatus>
   getFile(path: string): Promise<GithubResult<{ text: string; sha: string }>>
-  putFile(args: { path: string; text: string; sha: string; message: string }): Promise<GithubResult<{ commitSha: string }>>
+  putFile(args: { path: string; text: string; sha: string; message: string }): Promise<GithubResult<{ commitSha: string; contentSha: string }>>
   rateLimit(key: string): boolean
 }
 
-const MSG = {
+// 비로그인(needLogin)과 로그인했지만 무권한(forbidden)은 status는 같은 'forbidden'이지만
+// 메시지로 원인을 구분한다(spec §5) — 비로그인 사용자에게 "권한 등록을 확인하라"는 안내는 무의미.
+export const MSG = {
   forbidden: '편집 권한이 없습니다. 로그인 상태와 권한 등록을 확인해 주세요.',
+  needLogin: '로그인이 필요합니다. 로그인 후 다시 시도해 주세요.',
   notFound: '문서를 찾을 수 없습니다. 문서 위치가 바뀌었을 수 있으니 관리자에게 알려 주세요.',
   system: '시스템 연결에 문제가 있습니다. 잠시 후에도 계속되면 관리자에게 알려 주세요.',
   rateLimited: '요청이 너무 잦습니다. 잠시 후 다시 시도해 주세요.',
@@ -27,7 +30,7 @@ export type LoadResult =
   | { status: 'forbidden' | 'not_found' | 'system' | 'rate_limited'; message: string }
 
 export type SubmitResult =
-  | { status: 'accepted'; message: string }
+  | { status: 'accepted'; message: string; newBaseSha: string }
   | { status: 'rejected'; message: string }
   | { status: 'conflict'; message: string; latestBody: string; latestSha: string }
   | { status: 'forbidden' | 'system' | 'rate_limited'; message: string }
@@ -40,7 +43,8 @@ function githubFail(reason: 'conflict' | 'not_found' | 'auth' | 'network'):
 
 export async function loadDocumentCore(deps: EditDeps, slug: string): Promise<LoadResult> {
   const editor = await deps.getEditor()
-  if (!editor.canEdit || !editor.userId) return { status: 'forbidden', message: MSG.forbidden }
+  if (!editor.userId) return { status: 'forbidden', message: MSG.needLogin }
+  if (!editor.canEdit) return { status: 'forbidden', message: MSG.forbidden }
   if (!deps.rateLimit(`editor-load:${editor.userId}`)) return { status: 'rate_limited', message: MSG.rateLimited }
 
   const path = resolveContentPath(slug)
@@ -68,7 +72,8 @@ export async function submitBodyCore(
   args: { slug: string; baseSha: string; body: string },
 ): Promise<SubmitResult> {
   const editor = await deps.getEditor()
-  if (!editor.canEdit || !editor.userId) return { status: 'forbidden', message: MSG.forbidden }
+  if (!editor.userId) return { status: 'forbidden', message: MSG.needLogin }
+  if (!editor.canEdit) return { status: 'forbidden', message: MSG.forbidden }
   if (!deps.rateLimit(`editor-submit:${editor.userId}`)) return { status: 'rate_limited', message: MSG.rateLimited }
 
   const path = resolveContentPath(args.slug)
@@ -118,5 +123,5 @@ export async function submitBodyCore(
     }
     return { status: 'system', message: MSG.system }
   }
-  return { status: 'accepted', message: MSG.accepted }
+  return { status: 'accepted', message: MSG.accepted, newBaseSha: put.value.contentSha }
 }

@@ -9,7 +9,7 @@ function deps(overrides: Partial<Record<string, unknown>> = {}) {
   return {
     getEditor: async () => editor,
     getFile: async () => ({ ok: true, value: { text: SAMPLE, sha: 'sha-1' } }),
-    putFile: async () => ({ ok: true, value: { commitSha: 'c1' } }),
+    putFile: async () => ({ ok: true, value: { commitSha: 'c1', contentSha: 'sha-1-new' } }),
     rateLimit: () => true,
     ...overrides,
   } as never
@@ -34,12 +34,21 @@ describe('loadDocumentCore', () => {
       assert.equal(r.docPath, '/resources/law/ordinance-comparison')
     }
   })
-  it('무권한은 forbidden', async () => {
+  it('비로그인은 forbidden + needLogin 문구', async () => {
     const r = await loadDocumentCore(
       deps({ getEditor: async () => ({ canEdit: false, userId: null, email: null }) }),
       '2020-ca-1-2',
     )
     assert.equal(r.status, 'forbidden')
+    if (r.status === 'forbidden') assert.ok(r.message.includes('로그인'))
+  })
+  it('로그인했으나 무권한은 forbidden + 기존 문구(권한 등록 안내)', async () => {
+    const r = await loadDocumentCore(
+      deps({ getEditor: async () => ({ canEdit: false, userId: 'user-1', email: 'e@x.y' }) }),
+      '2020-ca-1-2',
+    )
+    assert.equal(r.status, 'forbidden')
+    if (r.status === 'forbidden') assert.ok(r.message.includes('권한 등록'))
   })
   it('미등록 slug·GET 404는 not_found', async () => {
     assert.equal((await loadDocumentCore(deps(), 'no-such-slug-xyz')).status, 'not_found')
@@ -55,13 +64,14 @@ describe('loadDocumentCore', () => {
 
 describe('submitBodyCore', () => {
   const args = { slug: '2020-ca-1-2', baseSha: 'sha-1', body: '고친 본문\n' }
-  it('정상 경로: frontmatter 보존 병합 + 가명 커밋 메시지 + accepted', async () => {
+  it('정상 경로: frontmatter 보존 병합 + 가명 커밋 메시지 + accepted + newBaseSha', async () => {
     let put: { text: string; message: string } | null = null
     const r = await submitBodyCore(
-      deps({ putFile: async (a: { text: string; message: string }) => { put = a; return { ok: true, value: { commitSha: 'c1' } } } }),
+      deps({ putFile: async (a: { text: string; message: string }) => { put = a; return { ok: true, value: { commitSha: 'c1', contentSha: 'sha-2' } } } }),
       args,
     )
     assert.equal(r.status, 'accepted')
+    if (r.status === 'accepted') assert.equal(r.newBaseSha, 'sha-2')
     assert.ok(put)
     assert.ok(put!.text.startsWith('---\ntitle: "표본"'))
     assert.ok(put!.text.endsWith('고친 본문\n'))
@@ -92,6 +102,22 @@ describe('submitBodyCore', () => {
   it('rate limit 초과는 rate_limited', async () => {
     const r = await submitBodyCore(deps({ rateLimit: () => false }), args)
     assert.equal(r.status, 'rate_limited')
+  })
+  it('비로그인은 forbidden + needLogin 문구', async () => {
+    const r = await submitBodyCore(
+      deps({ getEditor: async () => ({ canEdit: false, userId: null, email: null }) }),
+      args,
+    )
+    assert.equal(r.status, 'forbidden')
+    if (r.status === 'forbidden') assert.ok(r.message.includes('로그인'))
+  })
+  it('로그인했으나 무권한은 forbidden + 기존 문구(권한 등록 안내)', async () => {
+    const r = await submitBodyCore(
+      deps({ getEditor: async () => ({ canEdit: false, userId: 'user-1', email: 'e@x.y' }) }),
+      args,
+    )
+    assert.equal(r.status, 'forbidden')
+    if (r.status === 'forbidden') assert.ok(r.message.includes('권한 등록'))
   })
   it('PUT 시점 레이스 충돌은 자기 제출값이 아닌 재조회한 서버 최신본을 동봉', async () => {
     let getFileCalls = 0

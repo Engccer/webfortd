@@ -48,7 +48,7 @@ export async function putContentFile(args: {
   text: string
   sha: string
   message: string
-}): Promise<GithubResult<{ commitSha: string }>> {
+}): Promise<GithubResult<{ commitSha: string; contentSha: string }>> {
   try {
     const res = await fetch(
       `https://api.github.com/repos/${REPO()}/contents/${args.path}`,
@@ -64,8 +64,8 @@ export async function putContentFile(args: {
       },
     )
     if (!res.ok) return failFromStatus(res.status)
-    const json = (await res.json()) as { commit: { sha: string } }
-    return { ok: true, value: { commitSha: json.commit.sha } }
+    const json = (await res.json()) as { commit: { sha: string }; content: { sha: string } }
+    return { ok: true, value: { commitSha: json.commit.sha, contentSha: json.content.sha } }
   } catch {
     return { ok: false, reason: 'network' }
   }

@@ -4,9 +4,13 @@ import { EditorClient } from '@/app/(wiki)/editor/EditorClient'
 
 vi.mock('@/app/(wiki)/editor/actions', () => ({
   previewBody: vi.fn(async () => ({ status: 'ok', source: { compiledSource: '', scope: {}, frontmatter: {} } })),
-  submitBody: vi.fn(async () => ({ status: 'accepted', message: '반영 커밋이 접수되었습니다. 몇 분 후 문서 페이지를 새로고침해 확인해 주세요.' })),
+  submitBody: vi.fn(async () => ({
+    status: 'accepted',
+    message: '반영 커밋이 접수되었습니다. 몇 분 후 문서 페이지를 새로고침해 확인해 주세요.',
+    newBaseSha: 'sha-2',
+  })),
 }))
-import { submitBody } from '@/app/(wiki)/editor/actions'
+import { previewBody, submitBody } from '@/app/(wiki)/editor/actions'
 
 const props = { slug: 's1', title: '표본', body: '원래 본문', baseSha: 'sha-1', docPath: '/agreements/s1' }
 
@@ -88,7 +92,7 @@ describe('EditorClient', () => {
   })
 
   it('반영 진행 중에는 aria-disabled가 true, 완료 후 해제된다', async () => {
-    let resolveSubmit: (value: { status: 'accepted'; message: string }) => void = () => {}
+    let resolveSubmit: (value: { status: 'accepted'; message: string; newBaseSha: string }) => void = () => {}
     vi.mocked(submitBody).mockReturnValueOnce(
       new Promise((resolve) => {
         resolveSubmit = resolve
@@ -98,8 +102,44 @@ describe('EditorClient', () => {
     const btn = screen.getByRole('button', { name: '수정 반영' })
     fireEvent.click(btn)
     await waitFor(() => expect(btn).toHaveAttribute('aria-disabled', 'true'))
-    resolveSubmit({ status: 'accepted', message: '반영 커밋이 접수되었습니다.' })
+    resolveSubmit({ status: 'accepted', message: '반영 커밋이 접수되었습니다.', newBaseSha: 'sha-2' })
     await waitFor(() => expect(btn).toHaveAttribute('aria-disabled', 'false'))
+  })
+
+  it('accepted 후 baseSha가 갱신되어 같은 세션 재반영이 가짜 충돌 없이 진행된다 (F1 회귀 방지)', async () => {
+    vi.mocked(submitBody).mockResolvedValueOnce({
+      status: 'accepted',
+      message: '반영 커밋이 접수되었습니다.',
+      newBaseSha: 'sha-2',
+    })
+    render(<EditorClient {...props} />)
+    const btn = screen.getByRole('button', { name: '수정 반영' })
+    fireEvent.click(btn)
+    await waitFor(() => expect(submitBody).toHaveBeenCalledTimes(1))
+    expect(submitBody).toHaveBeenNthCalledWith(1, { slug: 's1', baseSha: 'sha-1', body: '원래 본문' })
+
+    fireEvent.click(btn)
+    await waitFor(() => expect(submitBody).toHaveBeenCalledTimes(2))
+    expect(submitBody).toHaveBeenNthCalledWith(2, { slug: 's1', baseSha: 'sha-2', body: '원래 본문' })
+  })
+
+  it('반영 요청이 transport 실패로 reject되면 편집 내용 보존 + 연결 오류 통지 (F2 회귀 방지)', async () => {
+    vi.mocked(submitBody).mockRejectedValueOnce(new Error('network'))
+    render(<EditorClient {...props} />)
+    const ta = screen.getByLabelText('본문 (마크다운)')
+    fireEvent.change(ta, { target: { value: '내 편집' } })
+    fireEvent.click(screen.getByRole('button', { name: '수정 반영' }))
+    await waitFor(() =>
+      expect(screen.getByRole('status')).toHaveTextContent('시스템 연결에 문제가 있습니다'))
+    expect(screen.getByLabelText('본문 (마크다운)')).toHaveValue('내 편집')
+  })
+
+  it('프리뷰 요청이 transport 실패로 reject되면 연결 오류를 통지한다 (F2 회귀 방지)', async () => {
+    vi.mocked(previewBody).mockRejectedValueOnce(new Error('network'))
+    render(<EditorClient {...props} />)
+    fireEvent.click(screen.getByRole('button', { name: '프리뷰 보기' }))
+    await waitFor(() =>
+      expect(screen.getByRole('status')).toHaveTextContent('시스템 연결에 문제가 있습니다'))
   })
 
   it('문서로 돌아가기 링크가 서버가 해석한 docPath를 그대로 쓴다', () => {
