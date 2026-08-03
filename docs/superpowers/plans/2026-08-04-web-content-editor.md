@@ -69,7 +69,7 @@ describe('serializeKbContent', () => {
 })
 ```
 
-- [ ] **Step 2: 실패 확인** — Run: `npm test -- tests/kb-mdx.test.ts` / Expected: FAIL (모듈 없음)
+- [ ] **Step 2: 실패 확인**: Run: `npm test -- tests/kb-mdx.test.ts` / Expected: FAIL (모듈 없음)
 
 - [ ] **Step 3: 구현** (`src/lib/kb-mdx.ts`)
 
@@ -89,7 +89,7 @@ export function escapeKbContent(content: string): string {
   return content
     .replace(/<!--[\s\S]*?-->/g, '')
     .replace(/</g, '&lt;')
-    // LaTeX `\frac{...}` 등을 MDX가 JSX expression으로 오해해 acorn 오류 — `{`도 escape.
+    // LaTeX `\frac{...}` 등을 MDX가 JSX expression으로 오해해 acorn 오류: `{`도 escape.
     .replace(/\{/g, '&#123;')
     .replace(/\}/g, '&#125;')
 }
@@ -106,11 +106,11 @@ export async function serializeKbContent(
 }
 ```
 
-- [ ] **Step 4: KbPageLayout 교체** — `KbPageLayout.tsx`의 `const escapedContent = ...`부터 `const mdxSource = await serialize(...)`까지(76~95행 부근)를 `const mdxSource = await serializeKbContent(doc.content)` 한 줄로 교체하고, 미사용이 된 `serialize`/`remarkGfm`/`rehypeSlug` import 제거. 주석(escape 근거)은 kb-mdx.ts로 이동했으므로 삭제.
+- [ ] **Step 4: KbPageLayout 교체**: `KbPageLayout.tsx`의 `const escapedContent = ...`부터 `const mdxSource = await serialize(...)`까지(76~95행 부근)를 `const mdxSource = await serializeKbContent(doc.content)` 한 줄로 교체하고, 미사용이 된 `serialize`/`remarkGfm`/`rehypeSlug` import 제거. 주석(escape 근거)은 kb-mdx.ts로 이동했으므로 삭제.
 
-- [ ] **Step 5: 통과 확인** — Run: `npm test -- tests/kb-mdx.test.ts && npm run lint && npm run build` / Expected: 테스트 PASS, 빌드 성공(렌더 동작 불변).
+- [ ] **Step 5: 통과 확인**: Run: `npm test -- tests/kb-mdx.test.ts && npm run lint && npm run build` / Expected: 테스트 PASS, 빌드 성공(렌더 동작 불변).
 
-- [ ] **Step 6: 커밋** — `git add src/lib/kb-mdx.ts tests/kb-mdx.test.ts src/components/kb/KbPageLayout.tsx && git commit -m "refactor: KB MDX escape+serialize를 kb-mdx 공용 헬퍼로 추출" -- src/lib/kb-mdx.ts tests/kb-mdx.test.ts src/components/kb/KbPageLayout.tsx`
+- [ ] **Step 6: 커밋**: `git add src/lib/kb-mdx.ts tests/kb-mdx.test.ts src/components/kb/KbPageLayout.tsx && git commit -m "refactor: KB MDX escape+serialize를 kb-mdx 공용 헬퍼로 추출" -- src/lib/kb-mdx.ts tests/kb-mdx.test.ts src/components/kb/KbPageLayout.tsx`
 
 ---
 
@@ -124,7 +124,7 @@ export async function serializeKbContent(
 - Consumes: `getServerClient()`(`src/lib/supabase/server.ts`), 기존 `admin.ts` 패턴
 - Produces: `interface EditorStatus { canEdit: boolean; userId: string | null; email: string | null }` / `getCurrentUserEditorStatus(): Promise<EditorStatus>` / `getCurrentUserEditorStatusWith(supabase): Promise<EditorStatus>` / `editorIdShort(userId: string): string` (UUID 앞 8자)
 
-- [ ] **Step 1: 실패하는 테스트 작성** (`tests/auth/editor.test.ts`) — 기존 admin 테스트의 mock supabase 패턴 재사용:
+- [ ] **Step 1: 실패하는 테스트 작성** (`tests/auth/editor.test.ts`): 기존 admin 테스트의 mock supabase 패턴 재사용:
 
 ```ts
 import { describe, it } from 'node:test'
@@ -170,9 +170,9 @@ describe('editorIdShort', () => {
 })
 ```
 
-- [ ] **Step 2: 실패 확인** — Run: `npm test -- tests/auth/editor.test.ts` / Expected: FAIL
+- [ ] **Step 2: 실패 확인**: Run: `npm test -- tests/auth/editor.test.ts` / Expected: FAIL
 
-- [ ] **Step 3: 구현** (`src/lib/auth/editor.ts`) — `admin.ts`와 동형. 차이는 role 조건뿐:
+- [ ] **Step 3: 구현** (`src/lib/auth/editor.ts`): `admin.ts`와 동형. 차이는 role 조건뿐:
 
 ```ts
 import 'server-only'
@@ -217,14 +217,14 @@ export async function getCurrentUserEditorStatusWith(
   }
 }
 
-/** 공개 커밋용 가명 식별자 — 개인 이메일·실명은 public repo에 남기지 않는다(spec §4). */
+/** 공개 커밋용 가명 식별자: 개인 이메일·실명은 public repo에 남기지 않는다(spec §4). */
 export function editorIdShort(userId: string): string {
   return userId.slice(0, 8)
 }
 ```
 
-- [ ] **Step 4: 통과 확인** — Run: `npm test -- tests/auth/editor.test.ts` / Expected: PASS
-- [ ] **Step 5: 커밋** — `git add src/lib/auth/editor.ts tests/auth/editor.test.ts && git commit -m "feat: editor-or-admin 권한 판정 헬퍼 + 가명 식별자" -- src/lib/auth/editor.ts tests/auth/editor.test.ts`
+- [ ] **Step 4: 통과 확인**: Run: `npm test -- tests/auth/editor.test.ts` / Expected: PASS
+- [ ] **Step 5: 커밋**: `git add src/lib/auth/editor.ts tests/auth/editor.test.ts && git commit -m "feat: editor-or-admin 권한 판정 헬퍼 + 가명 식별자" -- src/lib/auth/editor.ts tests/auth/editor.test.ts`
 
 ---
 
@@ -247,7 +247,7 @@ putContentFile(args: { path: string; text: string; sha: string; message: string 
 
 - 환경변수: `GITHUB_CONTENT_TOKEN`(필수), `GITHUB_CONTENT_REPO`(기본 `khudt-org/webfortd`), 브랜치 `master` 고정.
 
-- [ ] **Step 1: 실패하는 테스트 작성** (`tests/github-contents.test.ts`) — `globalThis.fetch`를 스텁:
+- [ ] **Step 1: 실패하는 테스트 작성** (`tests/github-contents.test.ts`): `globalThis.fetch`를 스텁:
 
 ```ts
 import { describe, it, beforeEach, afterEach } from 'node:test'
@@ -300,13 +300,13 @@ describe('putContentFile', () => {
 })
 ```
 
-- [ ] **Step 2: 실패 확인** — Run: `npm test -- tests/github-contents.test.ts` / Expected: FAIL
+- [ ] **Step 2: 실패 확인**: Run: `npm test -- tests/github-contents.test.ts` / Expected: FAIL
 
 - [ ] **Step 3: 구현** (`src/lib/github/contents.ts`)
 
 ```ts
 /**
- * GitHub Contents API 얇은 래퍼(fetch 직접, octokit 불추가 — 호출 2종뿐).
+ * GitHub Contents API 얇은 래퍼(fetch 직접, octokit 불추가: 호출 2종뿐).
  * master 고정: 감수자 반영 경로는 master 직행이 위원장 확정 결정(spec §2).
  */
 export type GithubResult<T> =
@@ -377,19 +377,19 @@ export async function putContentFile(args: {
 }
 ```
 
-- [ ] **Step 4: 통과 확인** — Run: `npm test -- tests/github-contents.test.ts` / Expected: PASS
-- [ ] **Step 5: 커밋** — `git add src/lib/github/contents.ts tests/github-contents.test.ts && git commit -m "feat: GitHub Contents API 래퍼(GET/PUT, 타입드 실패 사유)" -- src/lib/github/contents.ts tests/github-contents.test.ts`
+- [ ] **Step 4: 통과 확인**: Run: `npm test -- tests/github-contents.test.ts` / Expected: PASS
+- [ ] **Step 5: 커밋**: `git add src/lib/github/contents.ts tests/github-contents.test.ts && git commit -m "feat: GitHub Contents API 래퍼(GET/PUT, 타입드 실패 사유)" -- src/lib/github/contents.ts tests/github-contents.test.ts`
 
 ---
 
-### Task 4: 문서 IO — 경로 해석·frontmatter 바이트 보존·본문 검증 (`src/lib/editor/document-io.ts`)
+### Task 4: 문서 IO: 경로 해석·frontmatter 바이트 보존·본문 검증 (`src/lib/editor/document-io.ts`)
 
 **Files:**
 - Create: `src/lib/editor/document-io.ts`
 - Test: `tests/editor-document-io.test.ts`
 
 **Interfaces:**
-- Consumes: `serializeKbContent`(Task 1), kb-index(`src/lib/kb.ts`의 `getKBDocBySlug`가 쓰는 `kb-index.generated.json` — 여기서는 `documents[].{slug, filePath}` 직접 로드)
+- Consumes: `serializeKbContent`(Task 1), kb-index(`src/lib/kb.ts`의 `getKBDocBySlug`가 쓰는 `kb-index.generated.json`: 여기서는 `documents[].{slug, filePath}` 직접 로드)
 - Produces:
 
 ```ts
@@ -456,7 +456,7 @@ describe('validateBody', () => {
 })
 ```
 
-- [ ] **Step 2: 실패 확인** — Run: `npm test -- tests/editor-document-io.test.ts` / Expected: FAIL
+- [ ] **Step 2: 실패 확인**: Run: `npm test -- tests/editor-document-io.test.ts` / Expected: FAIL
 
 - [ ] **Step 3: 구현** (`src/lib/editor/document-io.ts`)
 
@@ -469,7 +469,7 @@ import { serializeKbContent } from '../kb-mdx.ts'
 /**
  * slug → content 파일 경로 화이트리스트.
  * 클라이언트는 slug만 보내고 경로는 서버가 kb-index에서 해석한다(spec §6).
- * kb-index는 빌드 산출물이라 stale일 수 있다 — 소비자는 GET 404를 별도 처리(Task 5).
+ * kb-index는 빌드 산출물이라 stale일 수 있다: 소비자는 GET 404를 별도 처리(Task 5).
  */
 interface KbIndexDoc { slug: string; filePath: string }
 
@@ -491,7 +491,7 @@ export function resolveContentPath(slug: string): string | null {
   return normalized
 }
 
-/** frontmatter 원본 바이트 보존 분리 — YAML 파싱·재직렬화 금지(주석·순서·줄바꿈 보존). */
+/** frontmatter 원본 바이트 보존 분리: YAML 파싱·재직렬화 금지(주석·순서·줄바꿈 보존). */
 export function splitDocument(
   raw: string,
 ): { frontmatterRaw: string; body: string } | null {
@@ -509,7 +509,7 @@ export function mergeDocument(frontmatterRaw: string, body: string): string {
 export const BODY_MAX_BYTES = 200 * 1024
 
 /**
- * 반영 전 본문 검증 — 구문 결함 차단(빌드 성공의 완전 보장 아님, spec §7).
+ * 반영 전 본문 검증: 구문 결함 차단(빌드 성공의 완전 보장 아님, spec §7).
  * serialize는 프로덕션 렌더와 동일 경로(kb-mdx)라 여기서 실패하면 렌더도 실패한다.
  */
 export async function validateBody(
@@ -530,8 +530,8 @@ export async function validateBody(
 
 주의: kb-index를 쓰는 이 모듈은 `server-only`이며, 테스트는 tsx 로더로 직접 import한다(기존 `tests/admin-client.test.ts`가 같은 방식). `server-only` import가 node:test에서 문제가 되면 기존 테스트들이 쓰는 우회 관례를 따른다(먼저 `grep -rn "server-only" tests/` 로 확인).
 
-- [ ] **Step 4: 통과 확인** — Run: `npm test -- tests/editor-document-io.test.ts` / Expected: PASS
-- [ ] **Step 5: 커밋** — `git add src/lib/editor/document-io.ts tests/editor-document-io.test.ts && git commit -m "feat: 편집기 문서 IO — slug 화이트리스트, frontmatter 바이트 보존, 본문 검증" -- src/lib/editor/document-io.ts tests/editor-document-io.test.ts`
+- [ ] **Step 4: 통과 확인**: Run: `npm test -- tests/editor-document-io.test.ts` / Expected: PASS
+- [ ] **Step 5: 커밋**: `git add src/lib/editor/document-io.ts tests/editor-document-io.test.ts && git commit -m "feat: 편집기 문서 IO(slug 화이트리스트, frontmatter 바이트 보존, 본문 검증)" -- src/lib/editor/document-io.ts tests/editor-document-io.test.ts`
 
 ---
 
@@ -545,7 +545,7 @@ export async function validateBody(
 
 **Interfaces:**
 - Consumes: Task 1 `serializeKbContent` / Task 2 `EditorStatus`·`editorIdShort` / Task 3 `getContentFile`·`putContentFile`·`GithubResult` / Task 4 전부 / `checkRateLimit`(`src/lib/rate-limit.ts`)
-- Produces (코어 — 액션이 그대로 반환):
+- Produces (코어: 액션이 그대로 반환):
 
 ```ts
 type LoadResult =
@@ -566,7 +566,7 @@ interface EditDeps {
 }
 ```
 
-- 액션: `loadDocument(slug)` / `previewBody(body)`(검증+serialize 결과 반환) / `submitBody(args)` — 모두 `'use server'`, 코어에 실 의존성 주입.
+- 액션: `loadDocument(slug)` / `previewBody(body)`(검증+serialize 결과 반환) / `submitBody(args)`: 모두 `'use server'`, 코어에 실 의존성 주입.
 
 - [ ] **Step 1: 실패하는 테스트 작성** (`tests/editor-edit-core.test.ts`)
 
@@ -659,7 +659,7 @@ describe('submitBodyCore', () => {
 })
 ```
 
-- [ ] **Step 2: 실패 확인** — Run: `npm test -- tests/editor-edit-core.test.ts` / Expected: FAIL
+- [ ] **Step 2: 실패 확인**: Run: `npm test -- tests/editor-edit-core.test.ts` / Expected: FAIL
 
 - [ ] **Step 3: 코어 구현** (`src/lib/editor/edit-core.ts`)
 
@@ -718,7 +718,7 @@ export async function loadDocumentCore(deps: EditDeps, slug: string): Promise<Lo
   const parts = splitDocument(file.value.text)
   if (!parts) return { status: 'system', message: MSG.system }
 
-  // title은 화면 표시용 — frontmatter의 title 값만 정규식으로 추출(파싱·재직렬화 아님)
+  // title은 화면 표시용: frontmatter의 title 값만 정규식으로 추출(파싱·재직렬화 아님)
   const titleMatch = parts.frontmatterRaw.match(/^title:\s*["']?(.+?)["']?\s*$/m)
   return {
     status: 'ok',
@@ -777,7 +777,7 @@ export async function submitBodyCore(
 }
 ```
 
-- [ ] **Step 4: 통과 확인** — Run: `npm test -- tests/editor-edit-core.test.ts` / Expected: PASS
+- [ ] **Step 4: 통과 확인**: Run: `npm test -- tests/editor-edit-core.test.ts` / Expected: PASS
 
 - [ ] **Step 5: 서버 액션 작성** (`src/app/(wiki)/admin/editor/actions.ts`)
 
@@ -828,8 +828,8 @@ export async function previewBody(body: string): Promise<PreviewResult> {
 }
 ```
 
-- [ ] **Step 6: lint·전체 테스트** — Run: `npm run lint && npm test` / Expected: PASS
-- [ ] **Step 7: 커밋** — `git add src/lib/editor/edit-core.ts src/app/\(wiki\)/admin/editor/actions.ts tests/editor-edit-core.test.ts && git commit -m "feat: 편집 코어 로직(DI) + 서버 액션 3종(로드·프리뷰·반영)" -- src/lib/editor/edit-core.ts "src/app/(wiki)/admin/editor/actions.ts" tests/editor-edit-core.test.ts`
+- [ ] **Step 6: lint·전체 테스트**: Run: `npm run lint && npm test` / Expected: PASS
+- [ ] **Step 7: 커밋**: `git add src/lib/editor/edit-core.ts src/app/\(wiki\)/admin/editor/actions.ts tests/editor-edit-core.test.ts && git commit -m "feat: 편집 코어 로직(DI) + 서버 액션 3종(로드·프리뷰·반영)" -- src/lib/editor/edit-core.ts "src/app/(wiki)/admin/editor/actions.ts" tests/editor-edit-core.test.ts`
 
 ---
 
@@ -852,7 +852,7 @@ export async function previewBody(body: string): Promise<PreviewResult> {
 - localStorage 초안: key `editor-draft:<slug>:<baseSha>`, body 변경 시 debounce 500ms 저장, 마운트 시 같은 키가 있고 로드 본문과 다르면 "저장하지 않은 초안이 있습니다" + "초안 복원" 버튼 노출. 반영 accepted 시 키 삭제.
 - 미권한/미로그인 접근: 액션 `forbidden` 메시지를 본문 영역에 표시(구분 문구는 서버 반환 그대로).
 
-- [ ] **Step 1: 실패하는 컴포넌트 테스트 작성** (`tests/components/editor-client.test.tsx`) — 액션 모듈은 `vi.mock`으로 스텁:
+- [ ] **Step 1: 실패하는 컴포넌트 테스트 작성** (`tests/components/editor-client.test.tsx`): 액션 모듈은 `vi.mock`으로 스텁:
 
 ```tsx
 import { describe, it, expect, vi, beforeEach } from 'vitest'
@@ -912,9 +912,9 @@ describe('EditorClient', () => {
 })
 ```
 
-- [ ] **Step 2: 실패 확인** — Run: `npm run test:components -- editor-client` / Expected: FAIL
+- [ ] **Step 2: 실패 확인**: Run: `npm run test:components -- editor-client` / Expected: FAIL
 
-- [ ] **Step 3: `EditorClient.tsx` 구현** — `"use client"`. 상태: `body`, `mode: 'edit' | 'preview'`, `baseSha`, `notice: string`, `conflictBackup: string | null`, `previewSource`. in-flight `useRef(false)` + `finally` 해제. 반영 후 포커스는 반영 버튼 유지(재포커스 불필요 — `aria-disabled` 패턴이라 이탈 없음). localStorage debounce는 `useEffect` + `setTimeout` 500ms. 단축키는 래퍼 `<div onKeyDown>`에서 `(e.metaKey || e.ctrlKey) && e.key === 's'|'e'` 판정. 프리뷰는 `previewBody` 호출 성공 시 `<MDXContent source={...} />` 렌더, `rejected`면 live region에 메시지 출력하고 편집 모드 유지. 스타일은 기존 페이지의 Tailwind 관용구(`min-h-11`, `rounded-lg`, `focus:ring-2`)를 따른다.
+- [ ] **Step 3: `EditorClient.tsx` 구현**: `"use client"`. 상태: `body`, `mode: 'edit' | 'preview'`, `baseSha`, `notice: string`, `conflictBackup: string | null`, `previewSource`. in-flight `useRef(false)` + `finally` 해제. 반영 후 포커스는 반영 버튼 유지(재포커스 불필요: `aria-disabled` 패턴이라 이탈 없음). localStorage debounce는 `useEffect` + `setTimeout` 500ms. 단축키는 래퍼 `<div onKeyDown>`에서 `(e.metaKey || e.ctrlKey) && e.key === 's'|'e'` 판정. 프리뷰는 `previewBody` 호출 성공 시 `<MDXContent source={...} />` 렌더, `rejected`면 live region에 메시지 출력하고 편집 모드 유지. 스타일은 기존 페이지의 Tailwind 관용구(`min-h-11`, `rounded-lg`, `focus:ring-2`)를 따른다.
 
 - [ ] **Step 4: `page.tsx` 구현**
 
@@ -948,10 +948,10 @@ export default async function EditorPage({
 }
 ```
 
-(참고: `(wiki)` 레이아웃이 이미 `<main>`을 렌더하면 중첩 main 금지 — 구현 시 `src/app/(wiki)/layout.tsx`를 확인해 `<div>`로 강등할 것.)
+(참고: `(wiki)` 레이아웃이 이미 `<main>`을 렌더하면 중첩 main 금지: 구현 시 `src/app/(wiki)/layout.tsx`를 확인해 `<div>`로 강등할 것.)
 
-- [ ] **Step 5: 통과 확인** — Run: `npm run test:components -- editor-client && npm run lint && npm run build` / Expected: PASS + 빌드 성공. 빌드 출력에서 ƒ(dynamic) 함수 수를 세어 12 이하 확인·기록.
-- [ ] **Step 6: 커밋** — `git add "src/app/(wiki)/admin/editor/page.tsx" "src/app/(wiki)/admin/editor/EditorClient.tsx" tests/components/editor-client.test.tsx && git commit -m "feat: /admin/editor 편집 화면 — 텍스트영역+프리뷰 토글+4상태 통지+충돌 보존+초안 백업" -- "src/app/(wiki)/admin/editor/page.tsx" "src/app/(wiki)/admin/editor/EditorClient.tsx" tests/components/editor-client.test.tsx`
+- [ ] **Step 5: 통과 확인**: Run: `npm run test:components -- editor-client && npm run lint && npm run build` / Expected: PASS + 빌드 성공. 빌드 출력에서 ƒ(dynamic) 함수 수를 세어 12 이하 확인·기록.
+- [ ] **Step 6: 커밋**: `git add "src/app/(wiki)/admin/editor/page.tsx" "src/app/(wiki)/admin/editor/EditorClient.tsx" tests/components/editor-client.test.tsx && git commit -m "feat: /admin/editor 편집 화면(텍스트영역+프리뷰 토글+4상태 통지+충돌 보존+초안 백업)" -- "src/app/(wiki)/admin/editor/page.tsx" "src/app/(wiki)/admin/editor/EditorClient.tsx" tests/components/editor-client.test.tsx`
 
 ---
 
@@ -963,15 +963,15 @@ export default async function EditorPage({
 - Test: `tests/components/edit-button.test.tsx`
 
 **Interfaces:**
-- Consumes: `useAuth()`(`src/contexts/AuthContext.tsx` — client 세션), Supabase browser client(`src/lib/supabase/client`), 기존 RLS "editor read own role"(0002 — 자기 행 SELECT 허용)
-- Produces: 권한자에게만 `/admin/editor?slug=<slug>` 링크 렌더. 비로그인·무권한·조회 실패는 null 렌더(정적 페이지 훼손 없음 — 직접 URL 접근 시의 구분 안내는 Task 6 페이지가 담당).
+- Consumes: `useAuth()`(`src/contexts/AuthContext.tsx`: client 세션), Supabase browser client(`src/lib/supabase/client`), 기존 RLS "editor read own role"(0002: 자기 행 SELECT 허용)
+- Produces: 권한자에게만 `/admin/editor?slug=<slug>` 링크 렌더. 비로그인·무권한·조회 실패는 null 렌더(정적 페이지 훼손 없음: 직접 URL 접근 시의 구분 안내는 Task 6 페이지가 담당).
 
-- [ ] **Step 1: 실패하는 테스트 작성** (`tests/components/edit-button.test.tsx`) — AuthContext·supabase client를 `vi.mock`: ① 세션 없음 → 렌더 없음 ② editor role 행 존재 → link `편집` 렌더(`href="/admin/editor?slug=s1"`) ③ 조회 error → 렌더 없음. (mock 형상은 기존 `tests/components/`의 AuthContext mock 관례를 먼저 확인해 따른다.)
-- [ ] **Step 2: 실패 확인** — Run: `npm run test:components -- edit-button` / Expected: FAIL
-- [ ] **Step 3: 구현** — `"use client"`. `useAuth()`의 user가 없으면 null. 있으면 `useEffect`에서 `supabase.from('editor_roles').select('role').eq('user_id', user.id)` 1회 조회(기존 RLS가 자기 행만 허용), 행이 있으면 `<Link href={...} className="min-h-11 ...">편집</Link>` 렌더. 로딩 중·실패는 null(깜빡임 없는 미니멀 — 발견 경로는 감수자 안내문이 담당).
-- [ ] **Step 4: KbPageLayout에 배치** — sticky 헤더 우측 `StatusBadge`와 `AccessibilityToolbar` 사이에 삽입.
-- [ ] **Step 5: 통과 확인** — Run: `npm run test:components -- edit-button && npm run build` / Expected: PASS(정적 프리렌더 수 불변 확인 — EditButton은 client라 빌드 산출 불변).
-- [ ] **Step 6: 커밋** — `git add src/components/kb/EditButton.tsx src/components/kb/KbPageLayout.tsx tests/components/edit-button.test.tsx && git commit -m "feat: KB 문서 페이지 편집 버튼(권한자 한정 노출)" -- src/components/kb/EditButton.tsx src/components/kb/KbPageLayout.tsx tests/components/edit-button.test.tsx`
+- [ ] **Step 1: 실패하는 테스트 작성** (`tests/components/edit-button.test.tsx`): AuthContext·supabase client를 `vi.mock`: ① 세션 없음 → 렌더 없음 ② editor role 행 존재 → link `편집` 렌더(`href="/admin/editor?slug=s1"`) ③ 조회 error → 렌더 없음. (mock 형상은 기존 `tests/components/`의 AuthContext mock 관례를 먼저 확인해 따른다.)
+- [ ] **Step 2: 실패 확인**: Run: `npm run test:components -- edit-button` / Expected: FAIL
+- [ ] **Step 3: 구현**: `"use client"`. `useAuth()`의 user가 없으면 null. 있으면 `useEffect`에서 `supabase.from('editor_roles').select('role').eq('user_id', user.id)` 1회 조회(기존 RLS가 자기 행만 허용), 행이 있으면 `<Link href={...} className="min-h-11 ...">편집</Link>` 렌더. 로딩 중·실패는 null(깜빡임 없는 미니멀: 발견 경로는 감수자 안내문이 담당).
+- [ ] **Step 4: KbPageLayout에 배치**: sticky 헤더 우측 `StatusBadge`와 `AccessibilityToolbar` 사이에 삽입.
+- [ ] **Step 5: 통과 확인**: Run: `npm run test:components -- edit-button && npm run build` / Expected: PASS(정적 프리렌더 수 불변 확인: EditButton은 client라 빌드 산출 불변).
+- [ ] **Step 6: 커밋**: `git add src/components/kb/EditButton.tsx src/components/kb/KbPageLayout.tsx tests/components/edit-button.test.tsx && git commit -m "feat: KB 문서 페이지 편집 버튼(권한자 한정 노출)" -- src/components/kb/EditButton.tsx src/components/kb/KbPageLayout.tsx tests/components/edit-button.test.tsx`
 
 ---
 
@@ -981,11 +981,11 @@ export default async function EditorPage({
 - Create: `tests/migrations/editor-roles-rls.test.ts` (기존 `tests/migrations/` 관례·`.env.local` 필요)
 
 **Interfaces:**
-- Consumes: 기존 integration 테스트 헬퍼(anon/service 클라이언트 생성 관례 — `tests/migrations/`의 기존 파일에서 복제)
+- Consumes: 기존 integration 테스트 헬퍼(anon/service 클라이언트 생성 관례: `tests/migrations/`의 기존 파일에서 복제)
 
-- [ ] **Step 1: 테스트 작성** — ① anon 클라이언트로 `editor_roles` insert 시도 → RLS 거부(error 존재) 확인 ② anon update/delete 도 거부 ③ service_role 클라이언트로 임시 행 insert→delete 성공(권한 부여는 service만 가능함을 실증). 기존 파일의 스킵 가드(`.env.local` 없으면 skip) 패턴 준수.
-- [ ] **Step 2: 실행 확인** — Run: `npm run test:integration -- tests/migrations/editor-roles-rls.test.ts` / Expected: PASS
-- [ ] **Step 3: 커밋** — `git add tests/migrations/editor-roles-rls.test.ts && git commit -m "test: editor_roles 권한 자기부여 차단 RLS 고정" -- tests/migrations/editor-roles-rls.test.ts`
+- [ ] **Step 1: 테스트 작성**: ① anon 클라이언트로 `editor_roles` insert 시도 → RLS 거부(error 존재) 확인 ② anon update/delete 도 거부 ③ service_role 클라이언트로 임시 행 insert→delete 성공(권한 부여는 service만 가능함을 실증). 기존 파일의 스킵 가드(`.env.local` 없으면 skip) 패턴 준수.
+- [ ] **Step 2: 실행 확인**: Run: `npm run test:integration -- tests/migrations/editor-roles-rls.test.ts` / Expected: PASS
+- [ ] **Step 3: 커밋**: `git add tests/migrations/editor-roles-rls.test.ts && git commit -m "test: editor_roles 권한 자기부여 차단 RLS 고정" -- tests/migrations/editor-roles-rls.test.ts`
 
 ---
 
@@ -995,7 +995,7 @@ export default async function EditorPage({
 - Create: `.github/workflows/nightly-embed.yml`
 
 **Interfaces:**
-- Consumes: `npm run kb:sync`·`npm run kb:embed`(단, CI에는 `.env.local`이 없으므로 `--env-file` 없이 환경변수 직접 주입 — package.json 스크립트를 우회해 `npx tsx scripts/sync-content-to-db.ts` / `npx tsx scripts/embed-content.ts`를 직접 호출; 두 스크립트가 요구하는 env 변수명은 `scripts/lib/env-loader.ts`에서 확인해 그대로 사용), Secrets `GEMINI_API_KEY`·`SUPABASE_URL`·`SUPABASE_SERVICE_ROLE_KEY`, 상태 저장은 repo variable `LAST_EMBED_SHA`.
+- Consumes: `npm run kb:sync`·`npm run kb:embed`(단, CI에는 `.env.local`이 없으므로 `--env-file` 없이 환경변수 직접 주입: package.json 스크립트를 우회해 `npx tsx scripts/sync-content-to-db.ts` / `npx tsx scripts/embed-content.ts`를 직접 호출; 두 스크립트가 요구하는 env 변수명은 `scripts/lib/env-loader.ts`에서 확인해 그대로 사용), Secrets `GEMINI_API_KEY`·`SUPABASE_URL`·`SUPABASE_SERVICE_ROLE_KEY`, 상태 저장은 repo variable `LAST_EMBED_SHA`.
 
 - [ ] **Step 1: 워크플로 작성**
 
@@ -1052,8 +1052,8 @@ jobs:
 
 주의(구현자가 확인할 것): ① 두 스크립트의 실제 CLI 플래그(`--apply` 형식)와 env 변수명(`NEXT_PUBLIC_SUPABASE_URL`일 수 있음)을 `scripts/lib/env-loader.ts`·각 스크립트 헤더에서 확인해 맞출 것. ② `vars.LAST_EMBED_SHA` 미존재 시 빈 문자열 비교로 정상 동작(첫 실행은 무조건 실행). ③ repo variable 쓰기는 기본 `GITHUB_TOKEN` 권한 밖이라 fine-grained PAT(`VAR_RW_TOKEN`, Variables write)을 Secrets에 등록하는 항목을 spec §11 운영 체크리스트에 이미 반영된 Secrets 목록에 추가.
 
-- [ ] **Step 2: 문법 검증** — Run: `npx --yes @action-validator/cli .github/workflows/nightly-embed.yml || npx --yes yaml-lint .github/workflows/nightly-embed.yml` (둘 다 실패 시 `python3 -c "import yaml,sys; yaml.safe_load(open('.github/workflows/nightly-embed.yml'))"` 로 최소 YAML 파스 확인) / Expected: 파스 성공
-- [ ] **Step 3: 커밋** — `git add .github/workflows/nightly-embed.yml && git commit -m "ci: 야간 kb:sync+kb:embed 워크플로(SHA 게이트, 실패 자동 재시도)" -- .github/workflows/nightly-embed.yml`
+- [ ] **Step 2: 문법 검증**: Run: `npx --yes @action-validator/cli .github/workflows/nightly-embed.yml || npx --yes yaml-lint .github/workflows/nightly-embed.yml` (둘 다 실패 시 `python3 -c "import yaml,sys; yaml.safe_load(open('.github/workflows/nightly-embed.yml'))"` 로 최소 YAML 파스 확인) / Expected: 파스 성공
+- [ ] **Step 3: 커밋**: `git add .github/workflows/nightly-embed.yml && git commit -m "ci: 야간 kb:sync+kb:embed 워크플로(SHA 게이트, 실패 자동 재시도)" -- .github/workflows/nightly-embed.yml`
 
 ---
 
@@ -1064,10 +1064,10 @@ jobs:
 - Create: `docs/EDITOR_GUIDE.md`
 - Modify: `PROGRESS.md`
 
-- [ ] **Step 1: a11y 테스트 추가** — 기존 Playwright axe 스위트 관례를 따라 `/admin/editor`(slug 없는 안내 화면 — 미로그인 상태에서도 렌더되는 화면) axe 검사 케이스 1건 추가. Run: `npm run test:a11y` / Expected: PASS
-- [ ] **Step 2: `docs/EDITOR_GUIDE.md` 작성** — 감수자 1쪽 안내(한국어): 로그인(이메일 코드) → 문서에서 "편집" → 본문 수정 → 프리뷰 확인 → "수정 반영" → 몇 분 후 새로고침 확인. 문제 해결: 편집 버튼이 안 보일 때(로그인 만료/권한 미등록), "다른 수정과 충돌" 안내, 시스템 연결 문제 시 관리자 연락. 단축키 표(Cmd/Ctrl+S, Cmd/Ctrl+E).
-- [ ] **Step 3: PROGRESS.md 갱신** — 편집기 트랙 상태·운영 체크리스트(spec §11) 잔여 항목 기록.
-- [ ] **Step 4: 커밋** — `git add tests/a11y docs/EDITOR_GUIDE.md PROGRESS.md && git commit -m "docs+test: 편집기 a11y 케이스, 감수자 안내, PROGRESS 갱신" -- tests/a11y docs/EDITOR_GUIDE.md PROGRESS.md`
+- [ ] **Step 1: a11y 테스트 추가**: 기존 Playwright axe 스위트 관례를 따라 `/admin/editor`(slug 없는 안내 화면: 미로그인 상태에서도 렌더되는 화면) axe 검사 케이스 1건 추가. Run: `npm run test:a11y` / Expected: PASS
+- [ ] **Step 2: `docs/EDITOR_GUIDE.md` 작성**: 감수자 1쪽 안내(한국어): 로그인(이메일 코드) → 문서에서 "편집" → 본문 수정 → 프리뷰 확인 → "수정 반영" → 몇 분 후 새로고침 확인. 문제 해결: 편집 버튼이 안 보일 때(로그인 만료/권한 미등록), "다른 수정과 충돌" 안내, 시스템 연결 문제 시 관리자 연락. 단축키 표(Cmd/Ctrl+S, Cmd/Ctrl+E).
+- [ ] **Step 3: PROGRESS.md 갱신**: 편집기 트랙 상태·운영 체크리스트(spec §11) 잔여 항목 기록.
+- [ ] **Step 4: 커밋**: `git add tests/a11y docs/EDITOR_GUIDE.md PROGRESS.md && git commit -m "docs+test: 편집기 a11y 케이스, 감수자 안내, PROGRESS 갱신" -- tests/a11y docs/EDITOR_GUIDE.md PROGRESS.md`
 
 ---
 
@@ -1076,4 +1076,4 @@ jobs:
 - [ ] cross-cutting 리뷰: 전체 diff 대상 spec-compliance + 코드품질 subagent 리뷰(리뷰어에게 spec·플랜과 diff만 제공, 세션 히스토리 금지)
 - [ ] `npm test && npm run test:components && npm run lint && npm run build` 전체 green + 함수 수 실측(≤12) 기록
 - [ ] PR 생성(feat/web-content-editor → master). 머지 전 실측 게이트: Vercel preview에서 편집→커밋 접수→빌드→페이지 반영 1회 실호출(위원장 또는 테스트 계정, PAT 등록 후)
-- [ ] 위원장 VoiceOver 실기기 실측(편집 흐름 전체) — 리뷰로 대체 불가
+- [ ] 위원장 VoiceOver 실기기 실측(편집 흐름 전체): 리뷰로 대체 불가

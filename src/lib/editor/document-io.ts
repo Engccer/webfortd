@@ -6,7 +6,7 @@ import { serializeKbContent } from '../kb-mdx.ts'
 /**
  * slug to content 파일 경로 화이트리스트.
  * 클라이언트는 slug만 보내고 경로는 서버가 kb-index에서 해석한다(spec 6).
- * kb-index는 빌드 산출물이라 stale일 수 있다 — 소비자는 GET 404를 별도 처리(Task 5).
+ * kb-index는 빌드 산출물이라 stale일 수 있다. 소비자는 GET 404를 별도 처리(Task 5).
  */
 interface KbIndexDoc { slug: string; filePath: string }
 
@@ -28,14 +28,22 @@ export function resolveContentPath(slug: string): string | null {
   return normalized
 }
 
-/** frontmatter 원본 바이트 보존 분리 — YAML 파싱·재직렬화 금지(주석·순서·줄바꿈 보존). */
+/**
+ * frontmatter 원본 바이트 보존 분리.
+ * YAML 파싱·재직렬화 금지하여 주석·순서·줄바꿈을 보존한다.
+ * LF(unix) 및 CRLF(windows) 개행을 모두 지원한다.
+ */
 export function splitDocument(
   raw: string,
 ): { frontmatterRaw: string; body: string } | null {
-  if (!raw.startsWith('---\n')) return null
-  const closeIdx = raw.indexOf('\n---\n', 4)
+  const eol = raw.startsWith('---\r\n') ? '\r\n' : '\n'
+  const openDelim = `---${eol}`
+  const closeDelim = `${eol}---${eol}`
+
+  if (!raw.startsWith(openDelim)) return null
+  const closeIdx = raw.indexOf(closeDelim, openDelim.length)
   if (closeIdx === -1) return null
-  const end = closeIdx + '\n---\n'.length
+  const end = closeIdx + closeDelim.length
   return { frontmatterRaw: raw.slice(0, end), body: raw.slice(end) }
 }
 
@@ -46,7 +54,7 @@ export function mergeDocument(frontmatterRaw: string, body: string): string {
 export const BODY_MAX_BYTES = 200 * 1024
 
 /**
- * 반영 전 본문 검증 — 구문 결함 차단(빌드 성공의 완전 보장 아님, spec 7).
+ * 반영 전 본문 검증. 구문 결함을 차단한다(빌드 성공의 완전 보장은 아님, spec 7).
  * serialize는 프로덕션 렌더와 동일 경로(kb-mdx)라 여기서 실패하면 렌더도 실패한다.
  */
 export async function validateBody(

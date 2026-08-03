@@ -33,6 +33,13 @@ describe('splitDocument / mergeDocument', () => {
     assert.equal(parts.body, '본문\n')
     assert.equal(mergeDocument(parts.frontmatterRaw, parts.body), raw)
   })
+  it('CRLF 문서도 바이트 보존으로 지원한다', () => {
+    const raw = '---\r\ntitle: x\r\n---\r\n본문\r\n'
+    const parts = splitDocument(raw)
+    assert.ok(parts)
+    assert.equal(parts.body, '본문\r\n')
+    assert.equal(mergeDocument(parts.frontmatterRaw, parts.body), raw)
+  })
   it('frontmatter 없는 문서는 null', () => {
     assert.equal(splitDocument('본문뿐'), null)
   })
