@@ -32,6 +32,7 @@
    - GitHub Actions Secrets 3종 + PAT 1종 등록(Task 9 실계약 확인, 이름 정확히 일치): `NEXT_PUBLIC_SUPABASE_URL`·`SUPABASE_SECRET_KEY`·`GOOGLE_GENERATIVE_AI_API_KEY` + repo variable 쓰기용 `VAR_RW_TOKEN`(Variables write 권한, `VAR_RW_TOKEN` 발급이 선행돼야 `gh variable set` 스텝이 403 없이 동작)
    - 연구보조원 이메일 `editor_roles` seed
    - 감수자 안내(`docs/EDITOR_GUIDE.md`) 전달
+   - 런북: Vercel 빌드 실패 이메일 수신 시 대응(revert 절차), 긴급 수정 시 RAG 즉시 갱신은 수동 `kb:sync`+`kb:embed`
    - 마일스톤 마감 게이트: cross-cutting 리뷰 + 전체 테스트·lint·build green + 함수 수 실측(≤12) → PR 생성 → Vercel preview 실호출 게이트(편집 → 커밋 접수 → 빌드 → 페이지 반영 1회, 위원장 또는 테스트 계정) → 위원장 VoiceOver 실기기 실측(편집 흐름 전체, 리뷰로 대체 불가)
 
 ## 미결 결정 (위원장)
