@@ -1,3 +1,5 @@
+import 'server-only'
+
 /**
  * GitHub Contents API 얇은 래퍼(fetch 직접, octokit 불추가, 호출 2종뿐).
  * master 고정: 감수자 반영 경로는 master 직행이 위원장 확정 결정(spec §2).
