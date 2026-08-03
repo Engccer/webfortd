@@ -16,12 +16,22 @@ function deps(overrides: Partial<Record<string, unknown>> = {}) {
 }
 
 describe('loadDocumentCore', () => {
-  it('권한자는 본문과 baseSha를 받는다', async () => {
+  it('권한자는 본문과 baseSha와 문서 URL을 받는다', async () => {
     const r = await loadDocumentCore(deps(), '2020-ca-1-2')
     assert.equal(r.status, 'ok')
     if (r.status === 'ok') {
       assert.equal(r.body, '원래 본문\n')
       assert.equal(r.baseSha, 'sha-1')
+      assert.equal(r.docPath, '/agreements/2020-ca-1-2')
+    }
+  })
+  it('nested resource(resources/law 등)도 축 단순 합성이 아닌 실제 경로로 해석된다 (C2 회귀 방지)', async () => {
+    // codex-rescue PR #31 P1과 동일한 함정: `/${axis}/${slug}` 단순 합성은
+    // content/resources/law/ordinance-comparison.md 같은 nested 경로에서 404를 낸다.
+    const r = await loadDocumentCore(deps(), 'ordinance-comparison')
+    assert.equal(r.status, 'ok')
+    if (r.status === 'ok') {
+      assert.equal(r.docPath, '/resources/law/ordinance-comparison')
     }
   })
   it('무권한은 forbidden', async () => {

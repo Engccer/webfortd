@@ -12,8 +12,8 @@
  *   서버 반환 message 그대로 출력.
  * - 충돌 시 textarea는 latestBody로 교체 + baseSha를 latestSha로 갱신, 내 편집본은
  *   별도 <section>(읽기 전용 textarea)에 보존.
- * - 단축키(Cmd/Ctrl+S 반영, Cmd/Ctrl+E 프리뷰 토글)는 래퍼 div의 onKeyDown에서만 처리
- *   (전역 window 리스너 금지) — 모든 기능은 버튼만으로도 완결.
+ * - 단축키(Cmd/Ctrl+S 반영, Cmd/Ctrl+E 프리뷰 토글)는 래퍼 div의 onKeyDown에서만 처리.
+ *   (전역 window 리스너 금지) 모든 기능은 버튼만으로도 완결.
  */
 
 import { Component, useEffect, useRef, useState, type ReactNode } from "react"
@@ -26,6 +26,8 @@ interface EditorClientProps {
   title: string
   body: string
   baseSha: string
+  /** 서버(loadDocumentCore)가 해석한 문서 URL. nested resource도 정확히 해소된 canonical 경로. */
+  docPath: string
 }
 
 // MDXContent 렌더 실패(예: 예상 밖 compiledSource)가 편집기 전체를 무너뜨리지 않도록 격리.
@@ -47,11 +49,20 @@ function draftKey(slug: string, baseSha: string) {
   return `editor-draft:${slug}:${baseSha}`
 }
 
-export function EditorClient({ slug, title, body: initialBody, baseSha: initialBaseSha }: EditorClientProps) {
+export function EditorClient({
+  slug,
+  title,
+  body: initialBody,
+  baseSha: initialBaseSha,
+  docPath,
+}: EditorClientProps) {
   const [body, setBody] = useState(initialBody)
   const [baseSha, setBaseSha] = useState(initialBaseSha)
   const [mode, setMode] = useState<"edit" | "preview">("edit")
-  const [notice, setNotice] = useState("")
+  // seq를 매번 증가시켜 동일 문구가 연달아 와도 live region의 텍스트 노드가 매번
+  // 새로 생성되도록 한다. 같은 문자열이면 React가 DOM을 갱신하지 않아 재낭독이
+  // 안 되는 문제 회피(예: 두 번 연속 같은 rejected 메시지).
+  const [notice, setNoticeState] = useState({ text: "", seq: 0 })
   const [conflictBackup, setConflictBackup] = useState<string | null>(null)
   const [previewSource, setPreviewSource] = useState<MDXRemoteSerializeResult | null>(null)
   const [draftAvailable, setDraftAvailable] = useState(false)
@@ -60,29 +71,50 @@ export function EditorClient({ slug, title, body: initialBody, baseSha: initialB
   const submitInFlightRef = useRef(false)
   const previewInFlightRef = useRef(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const previewToggleRef = useRef<HTMLButtonElement>(null)
+  // 마운트 시점에 읽은 초안 원본. restoreDraft가 이후 저장 effect의 덮어쓰기와 무관하게
+  // 항상 이 캡처값을 복원 대상으로 쓴다(C1 수정, 상세는 아래 dirtyRef 주석).
+  const draftAtMountRef = useRef<string | null>(null)
+  // 사용자가 실제로 편집(또는 초안 복원)하기 전에는 저장 effect가 동작하지 않는다.
+  // 이 가드가 없으면 마운트 직후 로드된 initialBody가 500ms 뒤 그대로 저장되어
+  // 기존 초안을 덮어써 버려 "초안 복원"이 항상 no-op이 되는 결함이 있었다.
+  const dirtyRef = useRef(false)
 
-  // 마운트 시 저장하지 않은 초안 확인 — 로드 본문과 다른 경우에만 안내.
+  function announce(text: string) {
+    setNoticeState((prev) => ({ text, seq: prev.seq + 1 }))
+  }
+
+  // 마운트 시 저장하지 않은 초안 확인. 로드 본문과 다른 경우에만 안내.
   useEffect(() => {
     const saved = localStorage.getItem(draftKey(slug, initialBaseSha))
     if (saved !== null && saved !== initialBody) {
+      draftAtMountRef.current = saved
       setDraftAvailable(true)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 마운트 1회만 확인
   }, [])
 
-  // localStorage 초안 자동 백업 — 500ms debounce, 자동 반영이 아닌 로컬 임시 저장뿐.
+  // localStorage 초안 자동 백업. 500ms debounce, 자동 반영이 아닌 로컬 임시 저장뿐.
+  // dirtyRef가 true인 동안만 동작(위 주석 참고).
   useEffect(() => {
+    if (!dirtyRef.current) return
     const t = setTimeout(() => {
       localStorage.setItem(draftKey(slug, baseSha), body)
     }, 500)
     return () => clearTimeout(t)
   }, [slug, baseSha, body])
 
+  function handleBodyChange(value: string) {
+    dirtyRef.current = true
+    setBody(value)
+  }
+
   function restoreDraft() {
-    const saved = localStorage.getItem(draftKey(slug, initialBaseSha))
-    if (saved !== null) setBody(saved)
+    if (draftAtMountRef.current !== null) {
+      handleBodyChange(draftAtMountRef.current)
+    }
     setDraftAvailable(false)
-    // 복원 버튼이 속한 안내 배너가 이 클릭으로 사라진다 — 포커스가 body로 떨어지지
+    // 복원 버튼이 속한 안내 배너가 이 클릭으로 사라진다. 포커스가 body로 떨어지지
     // 않도록 계속 존재하는 textarea로 옮긴다 (WCAG 2.4.3).
     textareaRef.current?.focus()
   }
@@ -90,6 +122,8 @@ export function EditorClient({ slug, title, body: initialBody, baseSha: initialB
   async function handleTogglePreview() {
     if (mode === "preview") {
       setMode("edit")
+      // textarea가 새로 마운트되는 동안 포커스는 계속 존재하는 토글 버튼에 둔다.
+      previewToggleRef.current?.focus()
       return
     }
     if (previewInFlightRef.current) return
@@ -99,8 +133,11 @@ export function EditorClient({ slug, title, body: initialBody, baseSha: initialB
       if (result.status === "ok") {
         setPreviewSource(result.source)
         setMode("preview")
+        // 전환 직전 포커스가 textarea(또는 그 안 어딘가)에 있었다면 이 전환으로
+        // 그 요소가 언마운트된다. 포커스가 body로 이탈하지 않도록 토글 버튼에 유지.
+        previewToggleRef.current?.focus()
       } else {
-        setNotice(result.message)
+        announce(result.message)
       }
     } finally {
       previewInFlightRef.current = false
@@ -113,12 +150,12 @@ export function EditorClient({ slug, title, body: initialBody, baseSha: initialB
     setSubmitting(true)
     try {
       const result = await submitBody({ slug, baseSha, body })
-      setNotice(result.message)
+      announce(result.message)
       if (result.status === "accepted") {
         localStorage.removeItem(draftKey(slug, baseSha))
       } else if (result.status === "conflict") {
         setConflictBackup(body)
-        setBody(result.latestBody)
+        handleBodyChange(result.latestBody)
         setBaseSha(result.latestSha)
       }
     } finally {
@@ -162,7 +199,7 @@ export function EditorClient({ slug, title, body: initialBody, baseSha: initialB
             ref={textareaRef}
             id="editor-body"
             value={body}
-            onChange={(e) => setBody(e.target.value)}
+            onChange={(e) => handleBodyChange(e.target.value)}
             rows={20}
             className="w-full rounded-lg border border-input bg-background p-3 font-mono text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
           />
@@ -177,6 +214,7 @@ export function EditorClient({ slug, title, body: initialBody, baseSha: initialB
 
       <div className="mt-4 flex flex-wrap gap-2">
         <button
+          ref={previewToggleRef}
           type="button"
           onClick={() => void handleTogglePreview()}
           className="min-h-11 rounded-lg border border-input px-4 py-2 text-sm font-medium hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring"
@@ -192,7 +230,7 @@ export function EditorClient({ slug, title, body: initialBody, baseSha: initialB
           수정 반영
         </button>
         <a
-          href={`/${slug}`}
+          href={docPath}
           className="inline-flex min-h-11 items-center rounded-lg border border-input px-4 py-2 text-sm font-medium hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring"
         >
           {title} 문서로 돌아가기
@@ -213,7 +251,7 @@ export function EditorClient({ slug, title, body: initialBody, baseSha: initialB
       )}
 
       <div role="status" className="mt-4 min-h-6 text-sm">
-        {notice}
+        <span key={notice.seq}>{notice.text}</span>
       </div>
     </div>
   )

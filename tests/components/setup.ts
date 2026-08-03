@@ -30,7 +30,7 @@ beforeAll(() => {
   }
   // Node 26의 실험적 전역 localStorage(--localstorage-file 미지정 시 undefined 반환)가
   // jsdom 자체 구현을 가려 window.localStorage가 undefined로 남는 환경 버그 회피.
-  // 실제 Storage 인터페이스와 동형인 메모리 폴리필로 대체 — editor-client 등
+  // 실제 Storage 인터페이스와 동형인 메모리 폴리필로 대체한다. editor-client 등
   // localStorage를 쓰는 컴포넌트 테스트가 jsdom 정상 동작을 가정할 수 있게 한다.
   if (typeof window.localStorage === 'undefined') {
     class MemoryStorage {

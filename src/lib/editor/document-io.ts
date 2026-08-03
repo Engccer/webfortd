@@ -29,6 +29,18 @@ export function resolveContentPath(slug: string): string | null {
 }
 
 /**
+ * content 경로(resolveContentPath가 반환한 `content/<axis>/.../<slug>.md` 형태) → 문서 URL.
+ * `src/lib/rag/retrieval.ts`의 sourcePathToHref와 동일한 변환 규칙(축 분리 없이 경로 그대로
+ * 슬래시 보존, nested resource도 정확히 해소). 그 모듈은 supabase 클라이언트를 끌고 오므로
+ * import하지 않고 규칙만 복제한다. 입력은 이미 resolveContentPath의 정규식으로 검증된
+ * 형태만 들어오지만, 방어적으로 형식이 어긋나면 홈으로 폴백한다.
+ */
+export function contentPathToHref(contentPath: string): string {
+  if (!contentPath.startsWith('content/') || !contentPath.endsWith('.md')) return '/'
+  return '/' + contentPath.slice('content/'.length, -'.md'.length)
+}
+
+/**
  * frontmatter 원본 바이트 보존 분리.
  * YAML 파싱·재직렬화 금지하여 주석·순서·줄바꿈을 보존한다.
  * LF(unix) 및 CRLF(windows) 개행을 모두 지원한다.

@@ -3,7 +3,7 @@ import type { EditorStatus } from '../auth/editor.ts'
 import { editorIdShort } from '../auth/editor.ts'
 import type { GithubResult } from '../github/contents.ts'
 import {
-  resolveContentPath, splitDocument, mergeDocument, validateBody,
+  resolveContentPath, contentPathToHref, splitDocument, mergeDocument, validateBody,
 } from './document-io.ts'
 
 export interface EditDeps {
@@ -23,7 +23,7 @@ const MSG = {
 } as const
 
 export type LoadResult =
-  | { status: 'ok'; body: string; baseSha: string; title: string }
+  | { status: 'ok'; body: string; baseSha: string; title: string; docPath: string }
   | { status: 'forbidden' | 'not_found' | 'system' | 'rate_limited'; message: string }
 
 export type SubmitResult =
@@ -59,6 +59,7 @@ export async function loadDocumentCore(deps: EditDeps, slug: string): Promise<Lo
     body: parts.body,
     baseSha: file.value.sha,
     title: titleMatch?.[1] ?? slug,
+    docPath: contentPathToHref(path),
   }
 }
 
