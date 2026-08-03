@@ -21,6 +21,7 @@ import { FocusManager } from "@/components/accessibility/FocusManager"
 import { AccessibilityToolbar } from "@/components/accessibility/AccessibilityToolbar"
 import { KbSourceFooter } from "./KbSourceFooter"
 import { StatusBadge } from "./StatusBadge"
+import { EditButton } from "./EditButton"
 import { UnderReviewNotice } from "./UnderReviewNotice"
 import { getPreviewActive } from "@/lib/admin/preview"
 import { shouldRenderUnderReview } from "@/lib/admin/preview-policy"
@@ -105,6 +106,7 @@ export async function KbPageLayout({ axis, slug }: KbPageLayoutProps) {
             </div>
             <div className="flex shrink-0 items-center gap-2">
               <StatusBadge status={fm.status} />
+              <EditButton slug={slug} />
               <AccessibilityToolbar />
             </div>
           </div>
