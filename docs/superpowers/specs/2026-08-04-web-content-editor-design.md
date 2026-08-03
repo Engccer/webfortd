@@ -55,7 +55,7 @@ KB 문서 페이지 [편집] 버튼 (editor/admin에게만 노출)
 
 | 구성요소 | 내용 |
 |----------|------|
-| 0014 마이그레이션 | `editor_roles`에 'editor' 역할 허용 + **write(insert/update/delete)는 service_role만 가능함을 RLS로 명시**(권한 자기부여 차단). seed는 운영 시점 별도 수행 |
+| editor 역할 인프라 | **마이그레이션 불필요**(플랜 단계 실코드 확인): 0013이 이미 `role in ('editor','admin')`을 허용하고, "자기 role SELECT" 정책 + write 기본 거부(정책 미정의 = deny)가 0002에 존재. 거부·조회 동작은 integration 테스트로 고정한다. seed는 운영 시점 별도 수행 |
 | `src/lib/auth/editor.ts` | editor-or-admin 판정 헬퍼. 기존 admin 게이트는 변경하지 않고 별도 함수로 추가(권한 행렬: `/admin/editor`만 editor 허용, 대시보드·Draft Mode는 admin 불변) |
 | KB 페이지 편집 버튼 | KB 페이지는 정적 prerender라 서버 사용자별 분기 불가 → 클라이언트 컴포넌트가 세션 확인 후 role 조회해 노출. 비로그인·무권한자에게는 DOM 미렌더. `/admin/editor` 직접 접근 시에는 로그인 필요/권한 없음/조회 실패를 구분 메시지로 |
 | `/admin/editor` 페이지 | dynamic 페이지 1개. 로드·프리뷰·반영을 모두 **서버 액션**으로(API 라우트 신설 없음) → Vercel 함수 예상 10/12. **구현 시 빌드 산출물의 실제 함수 수 실측 확인을 acceptance로** |
@@ -66,7 +66,7 @@ KB 문서 페이지 [편집] 버튼 (editor/admin에게만 노출)
 
 - **GitHub 토큰**: fine-grained PAT, `khudt-org/webfortd` 한정 `contents:write`만. Vercel 서버 환경변수(`GITHUB_CONTENT_TOKEN`), 클라이언트 절대 비노출. **수용 한계**: PAT는 경로 단위 제한이 불가능해 탈취 시 repo 전체 쓰기가 열린다 — 시범 규모에서는 서버 측 경로 화이트리스트 + 주기 회전(§11)으로 위험을 수용하고, GitHub App 전환·콘텐츠 repo 분리는 후속 검토로 남긴다(부록 R3).
 - **경로 화이트리스트**: 클라이언트는 slug만 전송. 서버가 kb-index로 slug → 파일 경로를 해석하므로 `content/` 밖·`..` 접근이 구조적으로 불가능. 해석된 경로의 GET이 404면(파일 이동 등 stale index) 명확한 오류로 중단.
-- **MDX 구문 차단**: 본문은 **순수 마크다운만 허용**. 반영 전 remark AST 검사에서 MDX 표현식·`import`/`export`·JSX 노드를 거부한다. 근거: next-mdx-remote는 MDX를 컴파일하므로 편집 계정 탈취 시 본문이 곧 코드 주입 표면이 된다 — 기존 콘텐츠는 위원장 단독 작성이라 없던 위협 모델.
+- **MDX 주입 무력화**: 플랜 단계 실코드 확인 결과, 렌더 계층(KbPageLayout)이 이미 본문의 HTML 주석 제거 + `<`→`&lt;` + `{`/`}` escape를 serialize 전에 일괄 적용해 **MDX 활성 구문(JSX·표현식·import)이 구조적으로 실행 불가능**하다. 별도 AST 거부 대신 이 escape+serialize를 공용 헬퍼로 추출해 프리뷰·반영 전 검증이 프로덕션과 동일 변환을 쓰도록 한다(구현·검증·프리뷰 3곳의 단일 정본).
 - **역할 재검증**: 모든 서버 액션에서 세션 + editor/admin role 확인(클라이언트 노출 여부와 무관하게 서버가 최종 게이트).
 - **자원 제한**: 로드·프리뷰·반영 **전부**에 기존 `rate-limit.ts` 재사용 + 본문 크기 상한(200KB).
 - **frontmatter 비경유**: §4 프로토콜로 status·slug 등 메타데이터 오염 원천 차단.
@@ -104,7 +104,7 @@ KB 문서 페이지 [편집] 버튼 (editor/admin에게만 노출)
 
 1. fine-grained PAT 발급(위원장 GitHub 계정, contents:write 한정) → Vercel 환경변수 등록. **회전 주기(만료일) 캘린더 등록** — 만료 시 전 편집이 "시스템 연결 문제"로 실패한다
 2. master ruleset 등록: force push·브랜치 삭제 금지(감사 이력 보전)
-3. GitHub Actions Secrets 등록: `GEMINI_API_KEY`, Supabase URL·service_role 키 (야간 sync+embed용)
+3. GitHub Actions Secrets 등록: `GEMINI_API_KEY`, Supabase URL·service_role 키 (야간 sync+embed용) + repo variable 갱신용 fine-grained PAT `VAR_RW_TOKEN`(Variables write — 마지막 성공 SHA 기록에 필요, 기본 GITHUB_TOKEN 권한 밖)
 4. 연구보조원 이메일 `editor_roles` seed (0014 이후 운영 쿼리, 가명 식별자 매핑 확인)
 5. 감수자용 1쪽 사용 안내(로그인 → 편집 → 반영 → 몇 분 후 새로고침 확인) + 문제 해결 절차(버튼이 안 보일 때: 로그인 만료/권한 미등록 구분)
 6. 런북: Vercel 빌드 실패 이메일 수신 시 대응(revert 절차), 긴급 수정 시 RAG 즉시 갱신은 수동 `kb:sync`+`kb:embed`
