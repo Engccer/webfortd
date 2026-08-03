@@ -11,7 +11,7 @@ interface EditButtonProps {
 
 /**
  * KB 문서 페이지 sticky 헤더의 편집 진입점. 권한자(editor_roles에 자기 행이
- * 있는 로그인 사용자)에게만 노출한다. 판정은 client-side — RLS "editor read
+ * 있는 로그인 사용자)에게만 노출한다. 판정은 client-side다. RLS "editor read
  * own role"이 본인 행만 SELECT를 허용하므로 조회 자체가 안전하다.
  *
  * 비로그인·로딩 중·조회 실패는 모두 null 렌더(깜빡임 없는 미니멀). 직접 URL
@@ -23,7 +23,7 @@ export function EditButton({ slug }: EditButtonProps) {
 
   useEffect(() => {
     if (!user) {
-      // AuthContext.tryGetClient 케이스와 동일 패턴 — effect 본문 내 동기 setState
+      // AuthContext.tryGetClient 케이스와 동일 패턴. effect 본문 내 동기 setState
       // 회피(react-hooks/set-state-in-effect)를 위해 microtask로 미룬다.
       queueMicrotask(() => setCanEdit(false))
       return

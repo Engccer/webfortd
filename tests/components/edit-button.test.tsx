@@ -1,8 +1,8 @@
 /**
- * EditButton — KB 문서 페이지 sticky 헤더의 편집 진입점.
+ * EditButton: KB 문서 페이지 sticky 헤더의 편집 진입점.
  *
  * 권한 판정은 client-side editor_roles 조회(자기 행만 허용하는 RLS "editor read
- * own role")에 의존한다. 비로그인·무권한·조회 실패는 모두 null 렌더 — 발견 경로가
+ * own role")에 의존한다. 비로그인·무권한·조회 실패는 모두 null 렌더. 발견 경로가
  * 없을 뿐 직접 URL 접근은 /admin/editor 페이지가 별도로 안내한다(Task 6).
  */
 
