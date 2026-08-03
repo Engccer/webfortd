@@ -34,7 +34,7 @@
 
 ```
 KB 문서 페이지 [편집] 버튼 (editor/admin에게만 노출)
-  → /admin/editor?slug=<slug>
+  → /editor?slug=<slug>
   → 서버 액션: GitHub Contents API GET으로 최신 .md + 파일 SHA 확보
   → frontmatter 분리(원본 바이트 prefix), 본문만 textarea로
   → [프리뷰] 토글: 서버 액션이 기존 serialize 함수 재사용해 렌더
@@ -56,9 +56,9 @@ KB 문서 페이지 [편집] 버튼 (editor/admin에게만 노출)
 | 구성요소 | 내용 |
 |----------|------|
 | editor 역할 인프라 | **마이그레이션 불필요**(플랜 단계 실코드 확인): 0013이 이미 `role in ('editor','admin')`을 허용하고, "자기 role SELECT" 정책 + write 기본 거부(정책 미정의 = deny)가 0002에 존재. 거부·조회 동작은 integration 테스트로 고정한다. seed는 운영 시점 별도 수행 |
-| `src/lib/auth/editor.ts` | editor-or-admin 판정 헬퍼. 기존 admin 게이트는 변경하지 않고 별도 함수로 추가(권한 행렬: `/admin/editor`만 editor 허용, 대시보드·Draft Mode는 admin 불변) |
-| KB 페이지 편집 버튼 | KB 페이지는 정적 prerender라 서버 사용자별 분기 불가 → 클라이언트 컴포넌트가 세션 확인 후 role 조회해 노출. 비로그인·무권한자에게는 DOM 미렌더. `/admin/editor` 직접 접근 시에는 로그인 필요/권한 없음/조회 실패를 구분 메시지로 |
-| `/admin/editor` 페이지 | dynamic 페이지 1개. 로드·프리뷰·반영을 모두 **서버 액션**으로(API 라우트 신설 없음) → Vercel 함수 예상 10/12. **구현 시 빌드 산출물의 실제 함수 수 실측 확인을 acceptance로** |
+| `src/lib/auth/editor.ts` | editor-or-admin 판정 헬퍼. 기존 admin 게이트는 변경하지 않고 별도 함수로 추가(권한 행렬: `/editor`만 editor 허용, 대시보드·Draft Mode는 admin 불변) |
+| KB 페이지 편집 버튼 | KB 페이지는 정적 prerender라 서버 사용자별 분기 불가 → 클라이언트 컴포넌트가 세션 확인 후 role 조회해 노출. 비로그인·무권한자에게는 DOM 미렌더. `/editor` 직접 접근 시에는 로그인 필요/권한 없음/조회 실패를 구분 메시지로 |
+| `/editor` 페이지 | dynamic 페이지 1개. 로드·프리뷰·반영을 모두 **서버 액션**으로(API 라우트 신설 없음) → Vercel 함수 예상 10/12. **구현 시 빌드 산출물의 실제 함수 수 실측 확인을 acceptance로** |
 | `src/lib/github/contents.ts` | fetch 기반 얇은 래퍼(GET/PUT 2콜). octokit 의존성 불추가 |
 | `.github/workflows/nightly-embed.yml` | 매일 밤 cron. **트리거 기준은 날짜가 아니라 SHA**: 마지막 성공 실행이 기록한 content SHA와 현재 master의 content SHA가 다를 때만 `kb:sync` → `kb:embed` 순차 실행(같은 잡 안 직렬 실행이라 sync·embed 간 경쟁 없음). 실패 시 SHA가 갱신되지 않아 다음 실행이 자동 재시도 |
 
