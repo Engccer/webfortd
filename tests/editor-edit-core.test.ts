@@ -83,4 +83,25 @@ describe('submitBodyCore', () => {
     const r = await submitBodyCore(deps({ rateLimit: () => false }), args)
     assert.equal(r.status, 'rate_limited')
   })
+  it('PUT 시점 레이스 충돌은 자기 제출값이 아닌 재조회한 서버 최신본을 동봉', async () => {
+    let getFileCalls = 0
+    const LATEST = '---\ntitle: "표본"\nstatus: published\n---\n다른 사람이 고친 본문\n'
+    const r = await submitBodyCore(
+      deps({
+        getFile: async () => {
+          getFileCalls += 1
+          if (getFileCalls === 1) return { ok: true, value: { text: SAMPLE, sha: 'sha-1' } }
+          return { ok: true, value: { text: LATEST, sha: 'sha-2' } }
+        },
+        putFile: async () => ({ ok: false, reason: 'conflict' }),
+      }),
+      args,
+    )
+    assert.equal(r.status, 'conflict')
+    if (r.status === 'conflict') {
+      assert.equal(r.latestSha, 'sha-2')
+      assert.equal(r.latestBody, '다른 사람이 고친 본문\n')
+    }
+    assert.equal(getFileCalls, 2)
+  })
 })

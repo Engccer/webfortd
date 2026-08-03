@@ -103,7 +103,17 @@ export async function submitBodyCore(
   })
   if (!put.ok) {
     if (put.reason === 'conflict') {
-      return { status: 'conflict', message: MSG.conflict, latestBody: args.body, latestSha: args.baseSha }
+      // PUT 시점 레이스: 사전 SHA 비교 통과 후에도 그 사이 원격이 바뀌었을 수 있다.
+      // latestBody/latestSha는 서버의 진짜 최신 상태여야 하므로 재조회한다(자기 제출값 재사용 금지).
+      const refetched = await deps.getFile(path)
+      if (!refetched.ok) return { status: 'system', message: MSG.system }
+      const latest = splitDocument(refetched.value.text)
+      return {
+        status: 'conflict',
+        message: MSG.conflict,
+        latestBody: latest?.body ?? refetched.value.text,
+        latestSha: refetched.value.sha,
+      }
     }
     return { status: 'system', message: MSG.system }
   }
