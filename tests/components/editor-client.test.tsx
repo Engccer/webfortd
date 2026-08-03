@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
-import { EditorClient } from '@/app/(wiki)/admin/editor/EditorClient'
+import { EditorClient } from '@/app/(wiki)/editor/EditorClient'
 
-vi.mock('@/app/(wiki)/admin/editor/actions', () => ({
+vi.mock('@/app/(wiki)/editor/actions', () => ({
   previewBody: vi.fn(async () => ({ status: 'ok', source: { compiledSource: '', scope: {}, frontmatter: {} } })),
   submitBody: vi.fn(async () => ({ status: 'accepted', message: '반영 커밋이 접수되었습니다. 몇 분 후 문서 페이지를 새로고침해 확인해 주세요.' })),
 }))
-import { submitBody } from '@/app/(wiki)/admin/editor/actions'
+import { submitBody } from '@/app/(wiki)/editor/actions'
 
 const props = { slug: 's1', title: '표본', body: '원래 본문', baseSha: 'sha-1', docPath: '/agreements/s1' }
 

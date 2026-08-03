@@ -3,7 +3,7 @@
  *
  * 권한 판정은 client-side editor_roles 조회(자기 행만 허용하는 RLS "editor read
  * own role")에 의존한다. 비로그인·무권한·조회 실패는 모두 null 렌더. 발견 경로가
- * 없을 뿐 직접 URL 접근은 /admin/editor 페이지가 별도로 안내한다(Task 6).
+ * 없을 뿐 직접 URL 접근은 /editor 페이지가 별도로 안내한다(Task 6).
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
@@ -60,7 +60,7 @@ describe('EditButton', () => {
     render(<EditButton slug="s1" />)
 
     const link = await screen.findByRole('link', { name: '편집' })
-    expect(link.getAttribute('href')).toBe('/admin/editor?slug=s1')
+    expect(link.getAttribute('href')).toBe('/editor?slug=s1')
   })
 
   it('조회 error → 렌더 없음', async () => {
