@@ -28,6 +28,36 @@ beforeAll(() => {
       disconnect() {}
     } as unknown as typeof ResizeObserver
   }
+  // Node 26의 실험적 전역 localStorage(--localstorage-file 미지정 시 undefined 반환)가
+  // jsdom 자체 구현을 가려 window.localStorage가 undefined로 남는 환경 버그 회피.
+  // 실제 Storage 인터페이스와 동형인 메모리 폴리필로 대체한다. editor-client 등
+  // localStorage를 쓰는 컴포넌트 테스트가 jsdom 정상 동작을 가정할 수 있게 한다.
+  if (typeof window.localStorage === 'undefined') {
+    class MemoryStorage {
+      private store = new Map<string, string>()
+      getItem(key: string) {
+        return this.store.has(key) ? this.store.get(key)! : null
+      }
+      setItem(key: string, value: string) {
+        this.store.set(key, String(value))
+      }
+      removeItem(key: string) {
+        this.store.delete(key)
+      }
+      clear() {
+        this.store.clear()
+      }
+      key(index: number) {
+        return Array.from(this.store.keys())[index] ?? null
+      }
+      get length() {
+        return this.store.size
+      }
+    }
+    const memoryStorage = new MemoryStorage() as unknown as Storage
+    Object.defineProperty(window, 'localStorage', { value: memoryStorage, configurable: true })
+    Object.defineProperty(globalThis, 'localStorage', { value: memoryStorage, configurable: true })
+  }
 })
 
 // Vitest globals:false 설정에서는 testing-library auto cleanup 미적용

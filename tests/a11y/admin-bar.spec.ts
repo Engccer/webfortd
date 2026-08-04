@@ -33,4 +33,20 @@ test.describe('AdminBar — 비-admin 비노출', () => {
     // redirect 결과 / 또는 어느 라우트든 axe-core 통과해야 함
     await expectNoAxeViolations(page, info, '/')
   })
+
+  // 편집기 트랙: round 2 수정으로 (wiki)/editor는 admin layout 게이트를 쓰지 않는다.
+  // editor 역할 감수자가 대시보드 없이 편집기에만 도달해야 하므로(spec §5 권한 행렬),
+  // admin/* 전용 게이트에서 분리해 자체 게이트(loadDocument forbidden 처리 + 안내 화면)로
+  // 완결한다. slug 없이 접근하면 loadDocument조차 호출하지 않고 안내 문구를 그대로 렌더한다.
+  // redirect가 아니라 그 화면 자체가 비로그인·무권한 사용자의 종착점이다.
+  test('비-admin 사용자가 /editor 접근 시 안내 화면이 그대로 렌더된다(redirect 아님)', async ({ page }) => {
+    const response = await page.goto('/editor')
+    await expect(page).toHaveURL(/\/editor$/)
+    expect(response?.ok()).toBe(true)
+    await expect(page.getByText('편집할 문서 페이지에서 편집 버튼으로 들어와 주세요.')).toBeVisible()
+  })
+
+  test('a11y: /editor 안내 화면 axe-core PASS', async ({ page }, info) => {
+    await expectNoAxeViolations(page, info, '/editor')
+  })
 })

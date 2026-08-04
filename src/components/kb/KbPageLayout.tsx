@@ -10,11 +10,9 @@
 
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
-import { serialize } from "next-mdx-remote/serialize"
-import remarkGfm from "remark-gfm"
-import rehypeSlug from "rehype-slug"
 import { MDXClientWrapper } from "@/components/mdx/MDXClientWrapper"
 import { getKBDocBySlug } from "@/lib/kb"
+import { serializeKbContent } from "@/lib/kb-mdx"
 import { adaptFrontmatterToLegacy } from "@/lib/kb-adapter"
 import { Calendar, Home } from "lucide-react"
 import Link from "next/link"
@@ -23,6 +21,7 @@ import { FocusManager } from "@/components/accessibility/FocusManager"
 import { AccessibilityToolbar } from "@/components/accessibility/AccessibilityToolbar"
 import { KbSourceFooter } from "./KbSourceFooter"
 import { StatusBadge } from "./StatusBadge"
+import { EditButton } from "./EditButton"
 import { UnderReviewNotice } from "./UnderReviewNotice"
 import { getPreviewActive } from "@/lib/admin/preview"
 import { shouldRenderUnderReview } from "@/lib/admin/preview-policy"
@@ -73,26 +72,7 @@ export async function KbPageLayout({ axis, slug }: KbPageLayoutProps) {
     }
   }
 
-  // MDX 호환 정리:
-  // 1) HTML 주석 `<!-- TODO ... -->`는 MDX 비지원 — 렌더 시점에 제거(원본 .md에는 유지,
-  //    M4 검수자가 파일 직접 보면서 처리).
-  // 2) 한국어 본문의 `<표 Ⅴ-4>`, `</표>` 같은 패턴은 MDX가 태그로 오인. 분해 결과 본문에는
-  //    의도된 HTML/JSX 태그가 없으므로 모든 `<`를 `&lt;`로 일괄 escape.
-  //    `>`는 blockquote(`> parent`) 의미를 유지하기 위해 escape 안 함.
-  const escapedContent = doc.content
-    .replace(/<!--[\s\S]*?-->/g, '')
-    .replace(/</g, '&lt;')
-    // LaTeX `\frac{...}` 같은 본문 표기를 MDX가 JSX expression으로 오해해 acorn 오류.
-    // 분해 결과 본문에 의도된 JSX 표현식이 없으므로 `{`도 escape.
-    .replace(/\{/g, '&#123;')
-    .replace(/\}/g, '&#125;')
-
-  const mdxSource = await serialize(escapedContent, {
-    mdxOptions: {
-      remarkPlugins: [remarkGfm],
-      rehypePlugins: [rehypeSlug],
-    },
-  })
+  const mdxSource = await serializeKbContent(doc.content)
 
   return (
     <>
@@ -126,6 +106,7 @@ export async function KbPageLayout({ axis, slug }: KbPageLayoutProps) {
             </div>
             <div className="flex shrink-0 items-center gap-2">
               <StatusBadge status={fm.status} />
+              <EditButton slug={slug} />
               <AccessibilityToolbar />
             </div>
           </div>

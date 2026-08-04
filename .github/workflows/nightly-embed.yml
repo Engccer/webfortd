@@ -1,0 +1,73 @@
+name: nightly-embed
+
+# webfortd: 야간 kb:sync + kb:embed 자동화 (spec: docs/superpowers/specs/2026-08-04-web-content-editor-design.md §5, §11-3, §11-6).
+#
+# 트리거 기준은 날짜가 아니라 content/ 디렉터리 SHA다. 마지막 성공 실행이 repo variable
+# LAST_EMBED_SHA에 기록한 SHA와 현재 브랜치의 content/ SHA가 같으면 건너뛴다. 실패 시
+# LAST_EMBED_SHA를 갱신하지 않으므로 다음 실행이 자동 재시도한다(§11-6 런북과 별개의
+# 자동 회복 경로). kb:sync → kb:embed는 같은 job 안에서 직렬 실행해 writer 경쟁을 원천 차단한다.
+#
+# env 변수명은 scripts/lib/env-loader.ts · scripts/sync-content-to-db.ts ·
+# scripts/embed-content.ts · scripts/lib/gemini-embed.ts의 실계약을 그대로 따른다
+# (NEXT_PUBLIC_SUPABASE_URL · SUPABASE_SECRET_KEY · GOOGLE_GENERATIVE_AI_API_KEY.
+# spec §11-3의 통칭 "SUPABASE_URL"·"service_role 키"·"GEMINI_API_KEY"와 문자열이 다르므로
+# Secrets 등록 시 반드시 아래 이름 그대로 사용할 것). 두 스크립트 모두 --apply 플래그는
+# 없다. 인자 없이 호출하면 실 반영(kb:sync/kb:embed와 동일), --dry-run을 줘야 건너뛴다.
+
+on:
+  schedule:
+    - cron: '0 18 * * *' # KST 03:00
+  workflow_dispatch: {} # 수동 재처리 경로(spec §11-6)
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nightly-embed
+  cancel-in-progress: false
+
+jobs:
+  sync-and-embed:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+
+      - name: content 변경 확인 (마지막 성공 SHA 대비)
+        id: gate
+        run: |
+          CURRENT=$(git log -1 --format=%H -- content/)
+          LAST="${{ vars.LAST_EMBED_SHA }}"
+          echo "current=$CURRENT" >> "$GITHUB_OUTPUT"
+          if [ "$CURRENT" = "$LAST" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup Node.js
+        if: steps.gate.outputs.skip == 'false'
+        uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+
+      - name: 의존성 설치 + 인덱스 생성
+        if: steps.gate.outputs.skip == 'false'
+        run: |
+          npm ci
+          npm run sync:content
+
+      - name: kb:sync + kb:embed (실 반영, 두 스크립트 모두 인자 없으면 apply 모드)
+        if: steps.gate.outputs.skip == 'false'
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          GOOGLE_GENERATIVE_AI_API_KEY: ${{ secrets.GOOGLE_GENERATIVE_AI_API_KEY }}
+        run: |
+          npx tsx scripts/sync-content-to-db.ts
+          npx tsx scripts/embed-content.ts
+
+      - name: 성공 SHA 기록 (실패 시 미기록 → 다음 실행이 자동 재시도)
+        if: steps.gate.outputs.skip == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.VAR_RW_TOKEN }}
+        run: gh variable set LAST_EMBED_SHA --body "${{ steps.gate.outputs.current }}" --repo "$GITHUB_REPOSITORY"

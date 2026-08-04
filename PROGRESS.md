@@ -2,8 +2,9 @@
 
 > 현재 상태·다음 단계·미결 결정만 담는다(자율성 헌장 §문서화 규율). 항구 원칙은 CLAUDE.md, 날짜별 이력은 CHANGELOG.md, PR 단위 상세는 git log.
 
-## 현재 상태 (2026-07-20)
+## 현재 상태 (2026-08-04)
 
+- **✅ 웹 콘텐츠 편집기 트랙 코드 완료 (2026-08-04, Task 1~10, `feat/web-content-editor`)**: 감수자(비개발자, 중부대 연구보조원)가 웹 화면에서 KB 콘텐츠 마크다운을 직접 수정하면 GitHub PAT 경유 커밋으로 반영되는 편집기. 핵심 산출물: `/editor?slug=` 편집 화면(본문 textarea + 프리뷰 + "수정 반영", in-flight 가드, localStorage 초안 자동 백업, 충돌 시 내 편집본 별도 보존) + KB 문서 페이지 "편집" 버튼(`editor_roles` 권한자에게만 client-side 노출) + 서버 코어(`src/lib/editor/edit-core.ts`, stateless 프로토콜. 제출 시점 SHA 재조회로 충돌 판정) + GitHub Contents API 래퍼(`src/lib/github/contents.ts`) + 야간 sync+embed GitHub Actions 워크플로(`LAST_EMBED_SHA` repo variable로 변경분만 처리) + `editor_roles` RLS 거부 integration 테스트(anon insert/update/delete 거부, service_role seed 확인) + `/editor` axe 케이스(`tests/a11y/admin-bar.spec.ts`, 비-admin 접근 시 안내 화면이 그대로 렌더되는 실동작 확인) + 감수자 1쪽 안내(`docs/EDITOR_GUIDE.md`). 정본: spec `docs/superpowers/specs/2026-08-04-web-content-editor-design.md`(적대적 리뷰 28건 처리 기록 포함). **경로 변경(round 2, 2026-08-04)**: `/admin/editor`가 `admin/layout.tsx`의 admin 전용 게이트에 걸려 editor 역할 감수자가 아예 도달 불가한 spec §5 권한 행렬 위반이 발견되어 `(wiki)/editor`로 이동. admin/*는 admin 전용 의미를 유지하고, 편집기는 자체 게이트(loadDocument forbidden 처리 + 안내 화면)로 완결. **잔여는 코드가 아니라 운영 설정과 마일스톤 마감 게이트**(아래 다음 단계 참고).
 - **✅ 받아쓰기 트랙 후속 정비 3건 (2026-07-20)**: ① gildongmu SpeechService 레이스 가드 2건 백포트(gildongmu main `e1f5d2f`, 실기기 배포 — PR #103 잔여 해소) ② iOS 44pt 터치 타깃 정비 7파일(#108 이월 ① 해소) ③ 웹 받아쓰기 §6 신계약 — 결과 원문 통지 + 채팅 전송 버튼 포커스(flushSync, #108 이월 ③ 해소, hero 검색도 원문 통지 정렬). 상세: CHANGELOG 2026-07-20. **남은 실측(위원장)**: List NavigationLink 행 전체 탭 육안, BlockRenderer 리스트 마커 이중 낭독(#108 이월 ②).
 - **✅ iOS WhatsApp식 홀드 받아쓰기 이식 (2026-07-20, PR #109)**: gildongmu 실기기 합격(2026-07-20) 계약 이식 — `HoldDictationButton` 신설(UIKit 인식기 계층, 경합 가드 3종, interrupting 무음 통지, 정적 라벨), 채팅=홀드+잠금+취소 풀 계약(릴리스=초안 병합 즉시 전송)+"텍스트 지우기" 버튼, 위키 검색=홀드 단일 동작. 채팅 리스트·BlockRenderer LazyVStack→eager VStack(gildongmu 실기기 확정 CPU 무한 루프 선제 제거). 리뷰 P1 fix(홀드 중 탭 이탈 늦은 전사 가드). Kit 49·시뮬레이터 빌드 그린, 실기기 배포 + **위원장 VoiceOver 실측 합격**(홀드·잠금·이어쓰기·병합 전송·취소·짧은 탭 전 항목). 상세: CHANGELOG 2026-07-20.
 - **✅ iOS 채팅 VoiceOver 헌장 §6 정렬 (2026-07-19, PR #108)**: dodo R184 확정 계약 이식 — 전송 시 보내기 버튼 포커스 유지·완료 시에만 질문 헤딩 이동(스크롤 가시화 2단계+재시도), 전송·중단 단일 버튼(.disabled 폐기), 질문 헤딩 trait, 마이크 라벨 "받아쓰기 시작/중지", 받아쓰기 완료 통지+전송 버튼 포커스, Announce 단일 채널(15건 일원화)+ChatFocusDiag 계측, 44pt label 내부화(채팅 계열). 시뮬레이터 AX 브리지 실측 통과. **잔여: 위원장 실기기 VO 판정**(전송 유지→완료 질문 헤딩→다음 스와이프 답변 첫 블록; 실패 시 Documents/chat-focus-diag.log 회수). 후속 이월: ~~채팅 외 7개 파일 44pt~~·~~웹 받아쓰기 §6 신계약~~(둘 다 2026-07-20 후속 정비로 해소), BlockRenderer 리스트 마커 실기기 낭독 확인(위원장 잔존).
@@ -25,6 +26,14 @@
    - OTP 로그인 전체 플로(이메일→코드) + 대화 저장·복원 실동작
 2. 게이트 통과 후: Apple Developer Program 가입 결정 → `docs/IOS_DISTRIBUTION.md` 절차 실행 → TestFlight.
 3. 웹 트랙 잔여: FAQ 검수·publish, 콘텐츠 큐레이션(허유진 교수 협업), 이미지 검수 큐 79건.
+4. **웹 콘텐츠 편집기 운영 체크리스트**(spec §11, 코드 완료 이후 배포 시점 항목):
+   - fine-grained PAT 발급(위원장 GitHub 계정, contents:write 한정) → Vercel 환경변수 등록 + 만료일 캘린더 등록
+   - master ruleset 등록: force push·브랜치 삭제 금지
+   - GitHub Actions Secrets 3종 + PAT 1종 등록(Task 9 실계약 확인, 이름 정확히 일치): `NEXT_PUBLIC_SUPABASE_URL`·`SUPABASE_SECRET_KEY`·`GOOGLE_GENERATIVE_AI_API_KEY` + repo variable 쓰기용 `VAR_RW_TOKEN`(Variables write 권한, `VAR_RW_TOKEN` 발급이 선행돼야 `gh variable set` 스텝이 403 없이 동작)
+   - 연구보조원 이메일 `editor_roles` seed
+   - 감수자 안내(`docs/EDITOR_GUIDE.md`) 전달
+   - 런북: Vercel 빌드 실패 이메일 수신 시 대응(revert 절차), 긴급 수정 시 RAG 즉시 갱신은 수동 `kb:sync`+`kb:embed`
+   - 마일스톤 마감 게이트: cross-cutting 리뷰 + 전체 테스트·lint·build green + 함수 수 실측(≤12) → PR 생성 → Vercel preview 실호출 게이트(편집 → 커밋 접수 → 빌드 → 페이지 반영 1회, 위원장 또는 테스트 계정) → 위원장 VoiceOver 실기기 실측(편집 흐름 전체, 리뷰로 대체 불가)
 
 ## 미결 결정 (위원장)
 
