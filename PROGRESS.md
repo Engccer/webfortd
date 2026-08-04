@@ -26,14 +26,16 @@
    - OTP 로그인 전체 플로(이메일→코드) + 대화 저장·복원 실동작
 2. 게이트 통과 후: Apple Developer Program 가입 결정 → `docs/IOS_DISTRIBUTION.md` 절차 실행 → TestFlight.
 3. 웹 트랙 잔여: FAQ 검수·publish, 콘텐츠 큐레이션(허유진 교수 협업), 이미지 검수 큐 79건.
-4. **웹 콘텐츠 편집기 운영 체크리스트**(spec §11, 코드 완료 이후 배포 시점 항목):
-   - fine-grained PAT 발급(위원장 GitHub 계정, contents:write 한정) → Vercel 환경변수 등록 + 만료일 캘린더 등록
-   - master ruleset 등록: force push·브랜치 삭제 금지
-   - GitHub Actions Secrets 3종 + PAT 1종 등록(Task 9 실계약 확인, 이름 정확히 일치): `NEXT_PUBLIC_SUPABASE_URL`·`SUPABASE_SECRET_KEY`·`GOOGLE_GENERATIVE_AI_API_KEY` + repo variable 쓰기용 `VAR_RW_TOKEN`(Variables write 권한, `VAR_RW_TOKEN` 발급이 선행돼야 `gh variable set` 스텝이 403 없이 동작)
-   - 연구보조원 이메일 `editor_roles` seed
-   - 감수자 안내(`docs/EDITOR_GUIDE.md`) 전달
+4. **웹 콘텐츠 편집기 운영 체크리스트**(spec §11 — 2026-08-04 운영 셋업 대부분 완료, PR #113 머지 후 실행):
+   - ~~fine-grained PAT 발급 → Vercel 환경변수 등록~~ ✅ `webfortd-content-editor`(khudt-org 한정 Contents RW, 2027-08-05 만료) 발급·org 승인, Vercel `GITHUB_CONTENT_TOKEN`(Production+Preview) 등록·재배포. **만료일 캘린더 등록은 위원장 잔여**
+   - ~~master ruleset~~ ✅ `master-protect`(deletion·non_fast_forward, Active) 생성. ⚠ 기존 classic 보호(PR 필수+validate 체크, 5월 설정)가 편집기 master 직행 커밋을 거부하는 것이 실호출에서 드러나 **classic 보호는 삭제**(khudt01 승인 하에) — 이후 master 직접 push는 ruleset(강제 push·삭제 금지)만 적용되고 PR 요구 없음. spec의 "보호 규칙 없음 실측"은 admin 권한 없는 토큰의 404를 오독한 것이었음(spec 정정 반영)
+   - ~~Actions Secrets 4종~~ ✅ `NEXT_PUBLIC_SUPABASE_URL`·`SUPABASE_SECRET_KEY`·`GOOGLE_GENERATIVE_AI_API_KEY`·`VAR_RW_TOKEN`(`webfortd-var-rw`, Variables RW, 2027-08-05 만료) 등록
+   - ~~야간 워크플로 실검증~~ ✅ workflow_dispatch 완주(sync 544 + embed 2775 + `LAST_EMBED_SHA` 기록). 최초 실행이 Gemini RPM 쿼터 초과로 실패 → `gemini-embed.ts`에 배치 간 2.5초 지연 + 쿼터 감지 시 65초 대기 재시도 패치(`c52996d`)로 해소
+   - ~~production 실호출 게이트~~ ✅ 편집 버튼 노출 → `/editor` 로드 → 반영("커밋 접수" 통지) → 커밋 `09abc8d`(가명 `[editor:95275c21]`, 이메일 무노출) → **같은 화면 연속 반영 무충돌**(`932ff50`, baseSha 갱신 실증) → 원상 복구까지 확인
+   - 연구보조원 이메일 `editor_roles` seed (위원장이 이메일 주면 실행)
+   - 감수자 안내(`docs/EDITOR_GUIDE.md`) 전달 (위원장)
    - 런북: Vercel 빌드 실패 이메일 수신 시 대응(revert 절차), 긴급 수정 시 RAG 즉시 갱신은 수동 `kb:sync`+`kb:embed`
-   - 마일스톤 마감 게이트: cross-cutting 리뷰 + 전체 테스트·lint·build green + 함수 수 실측(≤12) → PR 생성 → Vercel preview 실호출 게이트(편집 → 커밋 접수 → 빌드 → 페이지 반영 1회, 위원장 또는 테스트 계정) → 위원장 VoiceOver 실기기 실측(편집 흐름 전체, 리뷰로 대체 불가)
+   - **위원장 VoiceOver 실기기 실측**(편집 흐름 전체, 리뷰로 대체 불가) — 마지막 남은 게이트
 
 ## 미결 결정 (위원장)
 
