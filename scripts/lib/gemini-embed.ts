@@ -36,6 +36,11 @@ export function getEmbedDim(): number {
 
 export const BATCH_SIZE = 100
 
+// RPM 한도 방어(2026-08-04): 배치 간 최소 간격 + 쿼터 초과 시 한도 창 리셋 대기 재시도
+const INTER_BATCH_DELAY_MS = 2500
+const QUOTA_RETRY_MAX = 2
+const QUOTA_RETRY_WAIT_MS = 65_000
+
 // backward compat re-exports — load-time evaluated, stale if env changes after import.
 // 주의: OUTPUT_DIMENSIONALITY는 모듈 로드 시점에 getEmbedDim()을 호출하므로,
 // 잘못된 EMBED_DIM 값이 설정되어 있으면 이 파일을 import하는 모든 모듈이 로드 실패함.
@@ -97,22 +102,45 @@ export async function embedTexts(
     const values = batch.map((inp) => inp.text)
 
     // Change 1: Wrap embedMany call in try/catch with batch context
-    let embeddings: number[][]
-    try {
-      const response = await embedMany({
-        model,
-        values,
-        providerOptions: {
-          google: {
-            outputDimensionality: dim,
+    // 배치 간 지연: CI 러너처럼 빠른 네트워크에서 분당 요청 한도(RPM)를 넘지 않게
+    // 완만하게 보낸다(2026-08-04 GitHub Actions 실측: 21배치/25초에 quota exceeded).
+    if (i > 0) {
+      await new Promise((r) => setTimeout(r, INTER_BATCH_DELAY_MS))
+    }
+
+    let embeddings: number[][] | null = null
+    let lastErr: unknown = null
+    for (let attempt = 0; attempt <= QUOTA_RETRY_MAX; attempt++) {
+      try {
+        const response = await embedMany({
+          model,
+          values,
+          providerOptions: {
+            google: {
+              outputDimensionality: dim,
+            },
           },
-        },
-      })
-      embeddings = response.embeddings
-    } catch (err) {
+        })
+        embeddings = response.embeddings
+        break
+      } catch (err) {
+        lastErr = err
+        const msg = err instanceof Error ? err.message : String(err)
+        // 쿼터(RPM) 초과는 일시 상태다: 한도 창이 리셋되도록 대기 후 같은 배치를 재시도
+        if (/quota exceeded|resource_exhausted|429/i.test(msg) && attempt < QUOTA_RETRY_MAX) {
+          console.warn(
+            `[gemini-embed] 쿼터 초과 감지 (batch start=${i}, 시도 ${attempt + 1}/${QUOTA_RETRY_MAX}) — ${QUOTA_RETRY_WAIT_MS / 1000}초 대기 후 재시도`,
+          )
+          await new Promise((r) => setTimeout(r, QUOTA_RETRY_WAIT_MS))
+          continue
+        }
+        break
+      }
+    }
+    if (embeddings === null) {
       const firstRef = batch[0]?.refId ?? '(empty)'
       throw new Error(
-        `embedMany 실패 (model=${modelName}, batch start=${i}, first refId=${firstRef}): ${err instanceof Error ? err.message : String(err)}`,
+        `embedMany 실패 (model=${modelName}, batch start=${i}, first refId=${firstRef}): ${lastErr instanceof Error ? lastErr.message : String(lastErr)}`,
       )
     }
 

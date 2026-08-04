@@ -62,10 +62,6 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
           GOOGLE_GENERATIVE_AI_API_KEY: ${{ secrets.GOOGLE_GENERATIVE_AI_API_KEY }}
-          # 진단용 임시 활성(2026-08-04): error-format이 오류 원문을 가려 러너 실패 원인 규명 불가.
-          # 원인 확정 후 제거할 것(공개 repo 로그에 오류 원문 노출됨 — Supabase row PII 위험은
-          # sync가 아닌 embed 단계라 낮지만 상시 유지 금지).
-          DEBUG: "1"
         run: |
           npx tsx scripts/sync-content-to-db.ts
           npx tsx scripts/embed-content.ts
