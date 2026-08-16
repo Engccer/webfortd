@@ -1,16 +1,17 @@
 # webfortd iOS 앱 TestFlight·App Store 배포 준비
 
-> 이 문서는 **Apple Developer Program 가입 이후 실행할 절차**를 정리한다. 가입 자체는
-> 비용이 발생하는 작업(연 99달러)이라 자율성 헌장의 하드 스톱 4종 중 "비용 발생 작업"에
-> 해당한다. 위원장 승인 없이 결제를 진행하지 않는다.
+> 이 문서는 TestFlight·App Store 배포 절차를 정리한다. Apple Developer Program 가입은
+> **2026-07-12 개인 명의로 승인 완료**됐고(기존 무료 Personal Team이 같은 팀 ID
+> `72JQ7VD4V5`로 유료 승격, 프로파일 1년 만료 — dodo-planet CHANGELOG Round 170), 이
+> 프로젝트의 `DEVELOPMENT_TEAM`도 그 팀이다. 남은 결정은 §1의 판매자명(개인 vs 조직)뿐이다.
 >
 > 대상: `ios/Webfortd`(SwiftUI 네이티브 앱, 번들 ID `kr.khudt.webfortd`). 웹(Next.js)
 > 배포와는 완전히 별개 트랙이다.
 
-## 1. 전제: Apple Developer Program 가입
+## 1. 판매자명 결정 (개인 vs 조직)
 
-App Store에 공개 배포하려면 Apple Developer Program 가입이 필요하다(연 99달러, 지역별
-현지가 가능). 가입 전 다음을 결정해야 한다.
+Program 가입은 개인 명의로 끝나 있다(위 머리말). App Store에 노출될 **판매자명(seller
+name)**을 그대로 개인으로 갈지, 조직(장교조) 계정으로 옮길지는 위원장 결정 사항이다.
 
 - **개인 가입**: 가장 빠르다. 다만 App Store의 판매자명(seller name)에 **가입자의 법적
   개인 이름**이 그대로 노출된다. 위원장 개인 명의(김헌용)로 노출되는 것이 이 앱의 위상
@@ -22,10 +23,10 @@ App Store에 공개 배포하려면 Apple Developer Program 가입이 필요하�
   장기적으로는 조직 가입이 정체성에 더 부합하지만, 시범 단계에서 D-U-N-S 발급을 기다리는
   비용 대비 개인 가입으로 먼저 TestFlight 내부 테스트만 진행하는 절충안도 가능하다.
 
-가입 주체를 정한 뒤 [Apple Developer Program 가입 안내](https://developer.apple.com/programs/enroll/)에서
-결제를 진행한다. 현재 Xcode 프로젝트에는 로컬 개발용 서명 팀(무료 Apple Account 기반,
-시뮬레이터·실기기 디버그 빌드까지만 가능)이 이미 연결되어 있으나, **App Store Connect
-업로드·TestFlight 배포에는 유료 Program 가입이 별도로 필요**하다(무료 팀으로는 진행 불가).
+조직 계정으로 가려면 [Apple Developer Program 가입 안내](https://developer.apple.com/programs/enroll/)에서
+별도 조직 가입(D-U-N-S 필요)을 진행한 뒤 앱을 그 팀으로 옮긴다. 개인 명의를 유지하면
+현재 Xcode 서명 팀(`72JQ7VD4V5`, 유료)으로 App Store Connect 업로드·TestFlight까지 그대로
+진행할 수 있다.
 
 ## 2. 준비물 체크리스트
 
@@ -41,10 +42,10 @@ App Store에 공개 배포하려면 Apple Developer Program 가입이 필요하�
 
 ## 3. 배포 절차
 
-1. **Xcode 서명 팀 전환**: `Webfortd.xcodeproj` → Signing & Capabilities → Team을 유료
-   Program이 활성화된 팀으로 변경(Automatically Manage Signing 유지). 번들 ID는 이미
-   `kr.khudt.webfortd`로 고정돼 있으므로 변경하지 않는다(App Store Connect에 최초 업로드
-   후에는 번들 ID를 바꿀 수 없다).
+1. **서명 팀 확인**: `Webfortd.xcodeproj`의 Team은 이미 유료 팀(`72JQ7VD4V5`,
+   Automatically Manage Signing)이다. 조직 계정으로 옮기는 결정이 났을 때만 전환한다.
+   번들 ID는 이미 `kr.khudt.webfortd`로 고정돼 있으므로 변경하지 않는다(App Store
+   Connect에 최초 업로드 후에는 번들 ID를 바꿀 수 없다).
 2. **App Store Connect 앱 생성**: App Store Connect에서 새 앱 레코드를 만들고 번들 ID
    `kr.khudt.webfortd`를 명시적 App ID로 선택한다(사전에 Certificates, Identifiers &
    Profiles에서 등록되어 있어야 한다). 이름·SKU·기본 언어(한국어)를 지정한다.
@@ -64,10 +65,13 @@ App Store에 공개 배포하려면 Apple Developer Program 가입이 필요하�
   - 이메일 주소: 인증(OTP 로그인)에만 사용, 계정과 연결됨.
   - 대화 내용(채팅 텍스트·첨부 이미지/PDF): 로그인 상태에서만 서버에 저장(대화 이력
     기능), 비로그인 시 저장하지 않음(§ChatStore.startNewThread 익명 휘발 모드).
-  - 위치·마이크·카메라 데이터는 수집하지 않는다(앱이 해당 권한을 아예 요청하지 않음,
-    §5 참고). 광고·트래킹 SDK가 없으므로 App Tracking Transparency 프롬프트도 불필요.
-    단, 보류 중인 M5(라이브 음성 채팅)를 이식하는 시점에는 마이크 권한(Info.plist usage
-    description)과 음성 데이터 항목이 추가되므로 이 신고 내용을 반드시 갱신한다.
+  - **마이크**: 받아쓰기(채팅·위키 검색, PR #103·#109)가 `NSMicrophoneUsageDescription`
+    ("질문을 음성으로 입력하기 위해 마이크를 사용합니다.")으로 권한을 요청한다. 전사는
+    iOS 26 `SpeechAnalyzer` **온디바이스**(ko-KR)라 음성이 서버로 나가지 않는다 — Nutrition
+    Label에는 "수집 안 함"으로 신고 가능하되 심사 노트에 온디바이스 처리임을 명시한다.
+    위치·카메라는 요청하지 않는다. 광고·트래킹 SDK가 없으므로 App Tracking Transparency
+    프롬프트도 불필요. 보류 중인 M5(라이브 음성 채팅)를 이식하면 음성 데이터가 서버(Gemini
+    Live)로 나가므로 그때 신고 내용을 반드시 갱신한다.
 - **Accessibility Nutrition Labels**: VoiceOver 지원을 실기기 검증 후에만 선언한다(검증
   전 항목을 임의로 주장하지 않는다. gildongmu spec과 동일 원칙, §5).
 - **로그인 필요 기능의 심사용 안내**: 채팅 이력 저장·대화 목록 등은 로그인(OTP) 후에만
@@ -95,13 +99,13 @@ webfortd는 출발선 자체가 다르다. gildongmu는 **기존 웹 서비스�
 | 아키텍처 결정 | Capacitor(웹 자산 로컬 번들) vs SwiftUI 전면 재개발 중 저울질(권고: Capacitor) | 이미 SwiftUI 네이티브로 확정·구현 완료. 재포장 여부 논쟁 자체가 없음 |
 | 예상 소요 | 8~24주(UI/API 배포 경계 분리부터 시작) | 배포 절차(§1~§4)만 남음, 코드 트랙은 이미 완료 |
 | 기능 스코프 | 검색·경로·주변정보·음성 STT·다국어 5개·거리 비콘 등 14개 시나리오 | 위키 열람·RAG 채팅·자료실·미디어·계정, 단일 언어(한국어) |
-| 필요 권한 | 위치(When In Use)·마이크(STT), Info.plist usage description 필수 | **권한 요청 자체가 없음**. PhotosPicker(PHPickerViewController)·fileImporter 모두 out-of-process API라 Info.plist 권한 문구가 필요 없다 |
+| 필요 권한 | 위치(When In Use)·마이크(STT), Info.plist usage description 필수 | 마이크만(온디바이스 받아쓰기, `NSMicrophoneUsageDescription` 등록됨). PhotosPicker(PHPickerViewController)·fileImporter는 out-of-process API라 권한 문구 불필요 |
 | 개인정보 항목 | 정밀 위치·검색어·채팅·음성 등 다수, 외부 vendor(Deepgram·Gemini·Perplexity·지도 API) 다수 | 이메일(인증)·대화 내용(로그인 시)만, 외부 vendor는 Gemini(답변 생성)·Supabase(인증·저장)뿐 |
 | CORS/배포 구조 이슈 | 동일 Next 앱에 20개 동적 Route Handler와 정적 번들이 충돌해 UI/API 분리 선행 필요 | 앱이 처음부터 URLSession으로 웹 API(Route Handler)를 직접 호출하는 구조라 이 문제 자체가 없음 |
 | 계정 주체 | 개인 가입으로 충분(조직 가입 요구 없음) | 사업 자산이라는 위치 때문에 조직(장교조) 가입 여지가 더 크다(§1). 다만 D-U-N-S 발급 지연 고려 필요 |
 | 개인정보처리방침 | 별도 페이지 신설 필요(웹 자체에 없었음) | 페이지는 이미 존재하나 **본문이 placeholder**, 채워 넣는 작업만 남음 |
-| 접근성 검증 | 웹 회귀 테스트만 존재, iOS 실기기 VoiceOver 검증 전무 | 시뮬레이터 스모크 축적(M1~M4) + 접근성 헌장 준수 설계, 다만 **실기기 VoiceOver 검증은 동일하게 미완료**(두 프로젝트 공통 잔여 과제) |
+| 접근성 검증 | 웹 회귀 테스트만 존재, iOS 실기기 VoiceOver 검증 전무 | 채팅(포커스 계약·홀드 받아쓰기)은 위원장 실기기 VoiceOver 합격(2026-07-20), 위키·표·OTP 플로 등 잔여는 `docs/BACKLOG.md` §A |
 
-공통점: 두 프로젝트 모두 Apple Developer Program 가입(연 99달러) 여부가 하드 스톱이고,
-Xcode 26+·iOS 26 SDK 제출 요구사항을 따르며, 실기기 VoiceOver·Dynamic Type 검증을 마치기
+공통점: 두 프로젝트 모두 같은 유료 팀(`72JQ7VD4V5`)으로 서명하고, Xcode 26+·iOS 26 SDK
+제출 요구사항을 따르며, 실기기 VoiceOver·Dynamic Type 검증을 마치기
 전에는 Accessibility Nutrition Label을 임의로 주장하지 않는다는 원칙을 공유한다.

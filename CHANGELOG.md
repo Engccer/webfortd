@@ -2,13 +2,19 @@
 
 > 날짜별 변경 이력(마일스톤 경계 갱신). 2026-07-10 이전 이력은 git log와 CLAUDE.md §Phase 진행 요약이 정본(지연 생성 원칙에 따라 이 파일은 iOS 트랙 진입 시점부터 시작).
 
-## 2026-08-04 — 감수자용 git-backed 웹 마크다운 편집기 (feat/web-content-editor)
+## 2026-08-17 — 문서 만료 점검(doc-audit) + 배포 파일 정비
+
+- `docs/BACKLOG.md` 신설(PROGRESS에서 열린 항목·판정 대기·이월 백로그 분리), PROGRESS.md를 현재 상태·다음 단계·미결 결정만으로 재편, README.md를 얇게 재작성(2026-05-17 MDX·GitHub Pages 시절 서술 전면 폐기), `.env.local.example` → `.env.example` 개명 + 실제 사용 env 전수 반영(`!.env.example` 예외). CLAUDE.md·`docs/IOS_DISTRIBUTION.md`의 낡은 서술 정정(outputFileTracingExcludes 삭제 반영, 축 7개·마이그레이션 0013, kb:bootstrap, Apple Developer Program 가입 완료 반영, 마이크 권한 등). 상세는 커밋 메시지.
+
+## 2026-08-04 — 감수자용 git-backed 웹 마크다운 편집기 (PR #113 `a28b314`)
 
 - **배경**: 중부대 연구보조원 등 비개발자 감수자가 git·저장소 개념 없이 웹앱에서 콘텐츠를 직접 수정할 수 있어야 한다는 위원장 결정. 2026-05-29 영구 원칙("마크다운이 정본, DB 직접 편집 UI 금지")을 뒤집지 않고, 당시 예약된 git-backed 어댑터 경로를 구현 — 편집기는 GitHub Contents API로 마크다운 정본(master)에 커밋하고 push→Vercel 빌드가 사이트를 갱신한다. spec에 codex 적대적 리뷰 28건 처리(수용 15계열·기각 7, 실코드 대조) 반영.
 - **구성**: KB 문서 페이지 "편집" 버튼(editor/admin 한정 노출) → `/editor?slug=` 편집 화면(textarea+수동 프리뷰 토글+4상태 polite 통지+충돌 시 내 편집본 분리 보존+localStorage 초안+Cmd/Ctrl+S·E 단축키) → 서버 액션 3종(로드·프리뷰·반영, 전부 권한 재검증+rate limit). frontmatter는 클라이언트 미경유·원본 바이트 보존, 커밋 신원은 가명 식별자(`editor:<uuid8>`, 공개 repo 개인정보 비기재). 프리뷰·검증·프로덕션 렌더가 `kb-mdx` 단일 정본(escape+serialize) 공유. editor 역할 신설(0013 기존 허용 활용, RLS 자기부여 차단 실 DB 고정 테스트). 야간 GitHub Actions가 SHA 게이트로 kb:sync+kb:embed(실패 시 자동 재시도). 감수자 안내 `docs/EDITOR_GUIDE.md`.
 - **리뷰 루프가 잡은 실결함**: 초안 복원이 debounce 경합으로 상시 유실(C) / 돌아가기 링크 전 문서 404(C) / editor 역할이 admin layout 게이트에 막혀 편집기 도달 불가 → `/editor` 이동(적대적 리뷰 지적 17 적중) / PUT 409 레이스가 자기 입력을 최신본으로 반환 / 연속 반영 매번 가짜 충돌(baseSha 미갱신) / transport 실패 시 SR 통지 0 / Cmd+E 포커스 이탈 / 동일 메시지 live region 무발화 / 비로그인·무권한 구분 미구현 등. 태스크별 리뷰 10회+스코프 재리뷰 8회+최종 whole-branch 리뷰로 전부 해소·회귀 테스트 고정.
-- **검증**: unit 411 / component 190 / a11y 35 / integration RLS 5(실 DB) / lint 0 / build 성공(함수 9/12, 신규 0). 잔여 게이트: Vercel preview 실호출(PAT 등록 후)·야간 워크플로 실검증(Secrets 등록 후)·위원장 VoiceOver 실기기. 운영 체크리스트는 PROGRESS.md §다음 단계.
-- **부수 발견**: 기존 tests/migrations 8건이 운영 DB 베이스라인 드리프트로 실패 중(본 트랙 무관, published 535 vs 초기 가정 0 등) — 별도 정리 필요.
+- **검증**: unit 411 / component 190 / a11y 35 / integration RLS 5(실 DB) / lint 0 / build 성공(함수 9/12, 신규 0). 잔여 게이트는 아래 운영 셋업으로 대부분 해소, 위원장 VoiceOver 실기기 실측만 남음(`docs/BACKLOG.md`).
+- **운영 셋업 완료(같은 날, `2a08372`)**: fine-grained PAT `webfortd-content-editor`(khudt-org 한정 Contents RW, 2027-08-05 만료) 발급·org 승인 → Vercel `GITHUB_CONTENT_TOKEN`(Production+Preview) 등록·재배포. master ruleset `master-protect`(deletion·non_fast_forward) 생성. ⚠ 기존 classic 보호(PR 필수+validate 체크, 5월 설정)가 편집기 master 직행 커밋을 거부하는 것이 실호출에서 드러나 classic 보호는 삭제(khudt01 승인) — 이후 master 직접 push는 ruleset(강제 push·삭제 금지)만 적용되고 PR 요구 없음. spec의 "보호 규칙 없음 실측"은 admin 권한 없는 토큰의 404 오독이었음(spec 정정). Actions Secrets 4종(`NEXT_PUBLIC_SUPABASE_URL`·`SUPABASE_SECRET_KEY`·`GOOGLE_GENERATIVE_AI_API_KEY`·`VAR_RW_TOKEN`) 등록. 야간 워크플로 workflow_dispatch 완주(sync 544 + embed 2775 + `LAST_EMBED_SHA` 기록) — 최초 실행이 Gemini RPM 쿼터 초과로 실패해 `gemini-embed.ts`에 배치 간 2.5초 지연 + 쿼터 감지 시 65초 대기 재시도 패치(`c52996d`). production 실호출 게이트: 편집 버튼 노출 → `/editor` 로드 → 반영("커밋 접수") → 커밋 `09abc8d`(가명 `[editor:95275c21]`, 이메일 무노출) → 같은 화면 연속 반영 무충돌(`932ff50`, baseSha 갱신 실증) → 원상 복구 확인.
+- **부수 발견**: 기존 tests/migrations 8건이 운영 DB 베이스라인 드리프트로 실패 중(본 트랙 무관, published 535 vs 초기 가정 0 등) — 별도 정리 필요(`docs/BACKLOG.md`).
+- **iOS 부수**(`f3ecaee`): `ios/deploy-device.sh` 공통본 동기화(세 repo 동일본 — 기기 상태 문자열·CONFIGURATION·서명 훅 분기 개선 2건 + 빌드 구성).
 
 ## 2026-07-20 — 받아쓰기 트랙 후속 정비 3건: gildongmu 백포트 + iOS 44pt 정비 + 웹 §6 신계약
 

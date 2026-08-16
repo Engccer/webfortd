@@ -1,0 +1,76 @@
+# BACKLOG
+
+> 아직 하지 않은 것만 담는다(열린 항목·판정 대기·이월·폐기 근거). 종결되면 CHANGELOG로 보내고 여기서는 지운다(다른 문서가 참조하는 식별자는 §종결 표에 행선지만 남긴다). 현재 상태·미결 결정은 PROGRESS.md, 항구 규칙은 CLAUDE.md. 2026-08-17 PROGRESS.md에서 분리.
+
+## A. 위원장 실측 대기 (리뷰로 대체 불가)
+
+| # | 항목 | 출처 |
+|---|------|------|
+| A1 | iOS 실기기 게이트 잔여: 비행기 모드 위키 열람(표 포함)·검색 완주·자료실 캐시 재열람 | PR #87~#91, 2026-07-10 |
+| A2 | iOS VoiceOver 잔여: 로터 헤딩 점프, 축 카드·검색 결과 한 객체 낭독, 문서 제목 1회 낭독, 표 행 "헤더 값" 낭독(실패 시 폴백은 plan M0 Task 8) | 2026-07-10 |
+| A3 | iOS OTP 로그인 전체 플로(이메일→코드) + 대화 저장·복원 실동작 | PR #90 |
+| A4 | iOS BlockRenderer 리스트 마커 이중 낭독 확인 | PR #108 이월 ② |
+| A5 | iOS List NavigationLink 행 전체 탭 육안 확인 | PR #111 |
+| A6 | 웹 위키 홈 hero 검색 실 마이크 스모크 | PR #106 |
+| A7 | 애니메이션 feel check(reduced-motion 토글·채팅 자동 스크롤·모바일 드로어) | PR #97·#98 |
+| A8 | 웹 콘텐츠 편집기 VoiceOver 실기기 실측(편집 흐름 전체) | PR #113 |
+| A9 | 라이브 음성 채팅 실 마이크 smoke(`docs/PHASE7_ENV_SETUP.md` §3) | PR #74 |
+
+채팅 VoiceOver(전송 포커스 유지→완료 시 질문 헤딩·홀드 받아쓰기 전 항목)는 2026-07-20 실기기 합격으로 종결(CHANGELOG 2026-07-20).
+
+## B. 편집기 운영 잔여 (spec `docs/superpowers/specs/2026-08-04-web-content-editor-design.md` §11)
+
+- B1 연구보조원 이메일 `editor_roles` seed(위원장이 이메일 주면 service_role로 실행)
+- B2 감수자 안내 `docs/EDITOR_GUIDE.md` 전달(위원장)
+- B3 PAT `webfortd-content-editor` 만료일 2027-08-05 캘린더 등록(위원장)
+- B4 런북: Vercel 빌드 실패 이메일 수신 시 대응(revert 절차), 긴급 수정 시 RAG 즉시 갱신은 수동 `kb:sync`+`kb:embed`
+
+## C. 콘텐츠
+
+- C1 FAQ 9건(`content/faq/`, axis faq) 검수 → published(PR #86, 2026-07-04 이후 draft 대기)
+- C2 콘텐츠 큐레이션(자료실·카드뉴스·위키 — 허유진 교수 협업)
+- C3 이미지 매핑 검수 큐 79건(review 72 + unresolved 7, `docs/image-mapping-disputed.md`) — 위원장 낭독기 청취 워크플로
+- C4 `reviewed_by: ["1차 검토(김헌용)"]` placeholder를 정밀 검수 시 실제 reviewer로 교체(점진)
+
+## D. iOS TestFlight 준비물 (`docs/IOS_DISTRIBUTION.md` §2)
+
+- D1 앱 아이콘 1024×1024 제작(`.xcassets` 자체 부재) — 디자인 방향은 PROGRESS 미결 결정
+- D2 App Store 스크린샷 6.9" 1세트
+- D3 웹 `/privacy` 본문 작성(placeholder — 심사 필수)
+- D4 웹 `/terms` 본문 작성(placeholder — 권장)
+- D5 Support URL 신설(`/support`) 또는 대표 이메일 등록
+- D6 App Store Connect 앱 레코드 생성 → Archive → TestFlight 내부 테스터(판매자명 결정 후, `docs/IOS_DISTRIBUTION.md` §3)
+- D7 M5 라이브 음성 이식(보류 — dodo-planet Live 오류 수정·검증 후, spec §4.4). 이식 시 Privacy Nutrition Label 음성 데이터 항목 추가
+
+## E. 기술 부채 (비차단, 우선순위 낮음)
+
+- E1 iOS M3: 무효 Bearer 시 조용한 미저장(이력 저장 실패 신호 없음) / `GET /api/chat/threads*` rate limit 부재 / 첨부 이력 미보존(저장은 텍스트만)
+- E2 iOS M2: 첨부 단독 전송 미지원(웹은 허용, `ChatStore.swift` 빈 텍스트 guard)
+- E3 iOS M0/M1: 파서 스모크 assertion 보강, `MarkdownBlockParser` HTMLBlock 정규식 협소화, `DocumentView` backlinkSection compactMap 선필터(발현 불가·방어적)
+- E4 iOS M4: 자료실·미디어 빈 목록 상태 뷰(현재 도달 불가), CatalogStore 로더 제네릭 통합
+- E5 `tests/migrations` 8건이 운영 DB 베이스라인 드리프트(published 535 vs 초기 가정 0 등)로 실패 중 — 베이스라인 갱신 또는 fixture 격리(CHANGELOG 2026-08-04 부수 발견)
+- E6 웹 감사 보류분(PR #78): ChatUI `aria-relevant`(위원장 실 VoiceOver 판정) / KB fixed overlay 탭 잔존(구조 대수술) / retrieval 직렬 3왕복(RPC 마이그레이션) / 분산 rate limit·첨부 magic bytes 검사
+- E7 RAG 청크 `char_start`/`char_end` DEFERRED(Phase 3 M1)
+
+## F. 사업·운영 결정 대기 (판정은 PROGRESS §미결 결정)
+
+- F1 LICENSE 파일 부재(README "추후 결정"). 공개 저장소(khudt-org)이자 사업 자산이라 저작권 주체(장교조 vs 개인)·라이선스 선택은 위원장 결정 — 워크스페이스 이식 원장 PORTS.md webfortd 행 참조
+- F2 KHUDT Pro 재활성(월 $20) 실행 시점 — 절차 `docs/VERCEL_RECOVERY_PLAN.md`
+- F3 UPSTAGE_API_KEY production 미등록(HWP/HWPX 첨부만 영향, `docs/M7_ENV_SETUP.md`)
+
+## 폐기 (재조사 방지)
+
+| 항목 | 판정 | 근거 |
+|------|------|------|
+| Phase 4(개정) 소셜 피드 · Phase 5 TTS·alt 자동생성 · Phase 6 다국어·통계 시각화 | 보류(미착수, 트리거 없음) | CLAUDE.md §개발 방향 Phase 표가 원 기록. 2026-06-05 본 사업 분리 이후 webfortd는 레퍼런스 트랙이라 착수 트리거는 위원장 지시 |
+| 멀티모달 임베딩 · 모바일 PWA 강화 | 장기 과제(도입 트리거 미충족) | CLAUDE.md §장기 과제 |
+| KB 문서 파일 라우트 신설 | 영구 금지 | Hobby 함수 12개 제한 — `[...kb]` 파서에 추가(CLAUDE.md) |
+
+## 종결 표 (식별자 → 행선지)
+
+| 식별자 | 행선지 |
+|--------|--------|
+| 편집기 운영 체크리스트 ✅ 5건(PAT·ruleset·Secrets·야간 워크플로·production 실호출) | CHANGELOG 2026-08-04 |
+| Apple Developer Program 가입 결정(연 $99) | 2026-07-12 개인 등록 승인, 팀 ID 72JQ7VD4V5 유료 승격 완료(dodo-planet CHANGELOG Round 170). 남은 판정은 App Store 판매자명(PROGRESS 미결 결정) |
+| iOS 채팅 VoiceOver 실기기 판정(#108·#109) | 2026-07-20 합격, CHANGELOG 2026-07-20 |
+| gildongmu SpeechService 레이스 가드 백포트 | gildongmu `e1f5d2f`, CHANGELOG 2026-07-20 |
