@@ -63,3 +63,4 @@ content/_image-mappings.template.json
 /C:\\*
 supabase/.temp/
 supabase/.branches/
+data/source-hwp/

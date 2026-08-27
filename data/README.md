@@ -29,6 +29,7 @@
 
 | 일자 | 내용 |
 |------|------|
+| 2026-08-28 | 2023 최종보고서 2층을 HWP 원본에서 결정론적으로 재생성(`*_fused_v4_hwpxlocal+hwpxenrich+pdftotext.md`). 경로: hwp2hwpx → hwpx-tomd(`--merge-fill --cell-br`) → docparse `hwpx_enrich.py`(개요 스타일 제목·취소선·파란색 `<mark>`·PDF 인쇄 쪽 `<!-- p.N -->`) → `apply_corrections.py`(정본 수정 목록 CSV). 빌드 스크립트 `scripts/source-v4/build-2023-report.sh`, 스파이크 입력은 `source-hwp/`(gitignore). v3는 기준선으로 유지하되 3층 재생성 입력은 v4. 나머지 3종은 HWP 원본 회신 후 교체 예정 |
 | 2026-05-17 | 자문 디렉터리 `2025/data/`에서 `2026/data/`로 이관, webfortd `data/source-md/`·`data/source-pdf/`에 복사. 출처: 직전 docparse 스킬로 파싱한 최종본. |
 
 ## 작업 규약
