@@ -29,6 +29,7 @@
 
 | 일자 | 내용 |
 |------|------|
+| 2026-08-28 | **인쇄 책자 3종(지원인력·단위학교·인사관리) 2층 v4** — 초안 HWP(구조) + 인쇄 PDF(내용) 하이브리드. `scripts/source-v4/build-3docs.sh <staff|school|hr>` = hwpx-tomd → `hwpx_enrich.py`(스타일·제목 표·번호 정규식 제목, 인쇄 쪽) → `postprocess-hybrid.py`(간지 H1·이미지 대체·명단/판권·초안 표시·PUA 글리프) → `apply-additions.py`(최종본 추가분·그림 전사, `alts/`) → `apply_corrections.py`(CSV). 4종 v4 완비, 3층 재생성 입력은 v4. 기록: 자문 메모 `260828_3종HWP_2층v4_생성검증.md` |
 | 2026-08-28 | 2023 최종보고서 2층을 HWP 원본에서 결정론적으로 재생성(`*_fused_v4_hwpxlocal+hwpxenrich+pdftotext.md`). 경로: hwp2hwpx → hwpx-tomd(`--merge-fill --cell-br`) → docparse `hwpx_enrich.py`(개요 스타일 제목·취소선·파란색 `<mark>`·PDF 인쇄 쪽 `<!-- p.N -->`) → `apply_corrections.py`(정본 수정 목록 CSV). 빌드 스크립트 `scripts/source-v4/build-2023-report.sh`, 스파이크 입력은 `source-hwp/`(gitignore). v3는 기준선으로 유지하되 3층 재생성 입력은 v4. 나머지 3종은 HWP 원본 회신 후 교체 예정 |
 | 2026-05-17 | 자문 디렉터리 `2025/data/`에서 `2026/data/`로 이관, webfortd `data/source-md/`·`data/source-pdf/`에 복사. 출처: 직전 docparse 스킬로 파싱한 최종본. |
 
