@@ -35,6 +35,7 @@
 - C8 2층 제목 승격 누락(3층 범위 경고 실신호, `docs/regression-2026-08-review48.md` 17): 2023 최종보고서 `2023-research-4-3-1-1` 본문의 「(2) 3차 전문가협의회 진행 절차」「(3) 1차~3차 전문가협의회 결과」를 `hwpx_enrich.py` 제목 규칙으로 승격 → v4 재빌드 → `decompose --reset`(2차 검증 전)
 - C9 **4종 일괄 공개·임베딩 재개**(2차 검증 완료 후, 9/7 이후): `npm run kb:bootstrap`(reviewed_by는 2차 검증 결과로) → `content/.embed-paused` 삭제·커밋 → 야간 워크플로(또는 workflow_dispatch)가 kb:sync+kb:embed 1회 실행(구 v3 행 정리는 sync가 source별 delete-then-insert로 처리) → `tests/lib/sitemap.test.ts` 임계값 복원. **재개 전 필수**: `scripts/lib/chunker.ts`가 `## 관련 페이지` 블록을 빼고 `[[slug|제목]]`을 표시명으로 치환하도록(현재는 링크 구문이 그대로 임베딩됨, 리뷰 지적 2026-08-29)
 - C7 2층 v4 2차 검증 대상(콘텐츠팀): 신청 서식 전사 블록(OCR 유래), 인사관리 도표 2종 대체텍스트, `정본 수정 목록.csv` 「확인 필요」 행
+- C10 `source_page` 값 형식 정리(C9 전): 2층 쪽 주석이 섞여 `pdf373`(부록 표지, `source_page_end: 355`와 역전)·`pdf2`·`Ⅰ-8`~`Ⅰ-11` 같은 값이 13건. 드라이브 `문서 목록.csv` 「원본 쪽」과 「관련 페이지」 `(원본 N쪽)`에 그대로 노출된다. `decompose-source.ts` 쪽 주석 파서에서 `pdf` 접두는 `source_page_pdf`로만 보내고 인쇄 쪽이 없으면 비우는 쪽이 맞아 보임
 
 ## D. iOS TestFlight 준비물 (`docs/IOS_DISTRIBUTION.md` §2)
 

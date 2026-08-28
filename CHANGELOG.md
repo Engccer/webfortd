@@ -11,6 +11,7 @@
 - **대응표·참조 갱신**: `scripts/slug-migration.ts`(제목·소제목 일치 327 + 본문 포함도 128, 미매칭 30 = v3 잔재) → `docs/slug-migration-2026-08.csv`; `scripts/apply-slug-migration.ts`가 `_axis-overrides.json`(24 → 17키)·인기/역할 진입·미디어 카탈로그·FAQ 위키링크·테스트 고정값 치환. 회귀 표 `docs/regression-2026-08-review48.md`.
 - **검증 게이트**(`validate-frontmatter.ts`): 파서 잔존 태그·허용 태그 불균형·끊긴 위키링크·출처 내 제목 중복·100자 미만/5만 자 초과·순번 주소 재발 → 빌드 실패. 이미지 매핑 키는 `<slug>#<source>#<alt 해시>`로 재설계(`scripts/lib/image-key.ts`), v3 매핑 104건·래스터 후보 79건은 `content/_archive-v3/`에 보존.
 - **공개·임베딩**: 위원장 결정(8/28)대로 4종 363건 전부 draft(2차 검증 뒤 `kb:bootstrap` 일괄 공개). 그동안 production에서 4종 문서는 「검토 중」으로 숨겨지고 채팅 RAG는 DB의 v3 published 청크를 그대로 쓴다. 야간 sync+embed는 `content/.embed-paused`로 일시정지(파일 삭제 시 자동 재개).
+- **드라이브 공유 폴더 갱신**(자문 메모 8/27 §6 6단계): `scripts/drive/export-wiki-snapshot.py`(신설)로 `6. 콘텐츠 편집/3. 위키 문서/`를 412건(4종 363 + 단체협약 49)으로 교체하고 `문서 목록.csv`를 새 주소·원본 쪽 기준으로 재생성(구 485건은 `이전 버전(v3 3층, 2026-08)/`). 2차 검수 표본 50건(1차 문제 보고 30 + 무작위 20, 시드 20260829)으로 검수 시트 v2·읽기 docx·안내문 초안 작성. `source_page` 형식 혼재 발견 → BACKLOG C10.
 - **리뷰**(별도 컨텍스트, 실측 기반 12건): Important 2건 수정 — `kb-mdx` 허용 태그 복원이 대문자 태그를 살려 MDX 컴포넌트 참조(빌드 실패 자기 DoS)가 되던 것, 개요 페이지가 관련 페이지 형제 목록에서 고아가 되던 것(부록 슬러그 역파싱). Minor 7건 같은 커밋(참고 제목 정규식 한국어 경계·5만 자 예산·source_page_end 범위·H1 제거 정규식·병합 조각 소제목 강등·`Object.hasOwn`·적대 테스트), 3건 BACKLOG(C9 청커·E8).
 - **검증**: unit 409 / component 190 / lint 0 error / validate 422 / build 성공 / 실렌더 경로 MDX 컴파일 스윕 422건 전부 성공. 분해 경고: 범위 4(research 2건은 2층 제목 승격 누락 → BACKLOG C8), 원본 번호 중복 2, 분할 2(델파이 조사지).
 
