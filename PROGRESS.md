@@ -19,7 +19,7 @@
 1. **위원장 실측 게이트 일괄**(BACKLOG §A): iOS 실기기(비행기 모드·VoiceOver 로터/표·OTP 플로), 편집기 VoiceOver 편집 흐름, 웹 hero 검색·라이브 음성 실 마이크, 애니메이션 feel check.
 2. 게이트 통과 후 iOS TestFlight: 판매자명 결정(§미결 결정) → App Store Connect 앱 레코드 → Archive → 내부 테스터(`docs/IOS_DISTRIBUTION.md` §3). 준비물은 BACKLOG §D.
 3. 편집기 운영 잔무(BACKLOG §B): 연구보조원 `editor_roles` seed(이메일 수령 시), 안내 전달, PAT 만료 캘린더, 런북.
-4. **3층 후속(8/27 메모 §6 6~11단계)**: 드라이브 `3. 위키 문서/` 스냅샷 교체·검수 시트 v2(대응표 CSV 적용)·재생성 안내문 게시(8/30) → 2차 검수팀 회의 → 2차 검수 마감(9/6) → `kb:bootstrap` 일괄 공개 + `.embed-paused` 삭제 → 수행사 전달(9/7 회의 이후). 2층 제목 승격 누락 2건(BACKLOG C8)은 2차 검증 전 반영.
+4. **3층 후속(8/27 메모 §6 7~11단계)**: 6단계 완료(8/29: 드라이브 `3. 위키 문서/` 412건 스냅샷·`문서 목록.csv`·검수 시트 v2·2차 표본 50건 읽기 자료·안내문 초안, 스크립트 `scripts/drive/export-wiki-snapshot.py`). 안내문 게시(8/30, 위원장) → 2차 검수팀 회의 → 2차 검수 마감(9/6) → `kb:bootstrap` 일괄 공개 + `.embed-paused` 삭제 → 수행사 전달(9/7 회의 이후). 2층 제목 승격 누락 2건(BACKLOG C8)·`source_page` 형식 혼재(C10)는 공개 전 반영.
 
 ## 미결 결정 (위원장)
 
