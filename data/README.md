@@ -6,17 +6,17 @@
 
 | 폴더 | 용도 | git 추적 |
 |------|------|----------|
-| `source-md/` | docparse 스킬로 파싱한 마크다운 최종본 5개. 파일 단위 monolithic 문서. M3 `scripts/decompose-source.ts`의 입력. | 추적 (콘텐츠 분해 입력 가시화) |
+| `source-md/` | 2층 마크다운 정본 v4 4종 + 2020 단체협약(분해 입력, 최상위 `.md`만 읽는다). `v3/`는 2026-05-14 docparse v3 4종 보존본(기준선·대조용, 입력 아님). | 추적 (콘텐츠 분해 입력 가시화) |
 | `source-pdf/` | 위 마크다운의 원본 PDF 4개. M3 `scripts/extract-pdf-images.py`의 입력(이미지·도표 복구용). | 미추적 (`.gitignore`로 제외 — 크기·저작권) |
 
 ## 출처
 
 | 파일 | 원본 발행 기관 | 발행 연도 |
 |------|----------------|-----------|
-| `2023 장애유형별 장애인교원 근무 지원 방안_최종보고서_fused_v3.md` | 교육부 위탁 연구 | 2023 |
-| `2023 장애인교원 인사관리안내서(단면)_fused_v3.md` | 교육부 | 2023 |
-| `241210_책자_내지_중부대학교_장애인교원_근무지원_안내자료_V4_fused_v3.md` | 중부대학교 | 2024 |
-| `내지_장애인교원_지원인력_직무_수행_안내자료인쇄용_156P_수정_fused_v3.md` | 교육부 | 미확정(추정 2024) |
+| `2023 장애유형별 장애인교원 근무 지원 방안_최종보고서_fused_v4_*.md` | 교육부 위탁 연구 | 2023 |
+| `2023 장애인교원 인사관리안내서(단면)_fused_v4_*.md` | 교육부 | 2023 |
+| `241210_책자_내지_중부대학교_장애인교원_근무지원_안내자료_V4_fused_v4_*.md` | 중부대학교 | 2024 |
+| `내지_장애인교원_지원인력_직무_수행_안내자료인쇄용_156P_수정_fused_v4_*.md` | 교육부 | 미확정(추정 2024) |
 | `교육부와 함께하는장애인교원노동조합 간 2020 단체협약.md` | 교육부·장교조 단체협약 | 2020 |
 
 각 PDF 4개의 발행 기관도 위 표와 일치.
@@ -29,6 +29,7 @@
 
 | 일자 | 내용 |
 |------|------|
+| 2026-08-29 | 3층 재생성 입력을 v4로 전환하며 v3 4종을 `source-md/v3/`로 이동. `decompose-source.ts`의 `SOURCE_FILE_MAP` 키는 v4 파일명 |
 | 2026-08-28 | **인쇄 책자 3종(지원인력·단위학교·인사관리) 2층 v4** — 초안 HWP(구조) + 인쇄 PDF(내용) 하이브리드. `scripts/source-v4/build-3docs.sh <staff|school|hr>` = hwpx-tomd → `hwpx_enrich.py`(스타일·제목 표·번호 정규식 제목, 인쇄 쪽) → `postprocess-hybrid.py`(간지 H1·이미지 대체·명단/판권·초안 표시·PUA 글리프) → `apply-additions.py`(최종본 추가분·그림 전사, `alts/`) → `apply_corrections.py`(CSV). 4종 v4 완비, 3층 재생성 입력은 v4. 기록: 자문 메모 `260828_3종HWP_2층v4_생성검증.md` |
 | 2026-08-28 | 2023 최종보고서 2층을 HWP 원본에서 결정론적으로 재생성(`*_fused_v4_hwpxlocal+hwpxenrich+pdftotext.md`). 경로: hwp2hwpx → hwpx-tomd(`--merge-fill --cell-br`) → docparse `hwpx_enrich.py`(개요 스타일 제목·취소선·파란색 `<mark>`·PDF 인쇄 쪽 `<!-- p.N -->`) → `apply_corrections.py`(정본 수정 목록 CSV). 빌드 스크립트 `scripts/source-v4/build-2023-report.sh`, 스파이크 입력은 `source-hwp/`(gitignore). v3는 기준선으로 유지하되 3층 재생성 입력은 v4. 나머지 3종은 HWP 원본 회신 후 교체 예정 |
 | 2026-05-17 | 자문 디렉터리 `2025/data/`에서 `2026/data/`로 이관, webfortd `data/source-md/`·`data/source-pdf/`에 복사. 출처: 직전 docparse 스킬로 파싱한 최종본. |

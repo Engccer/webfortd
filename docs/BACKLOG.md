@@ -29,10 +29,11 @@
 
 - C1 FAQ 9건(`content/faq/`, axis faq) 검수 → published(PR #86, 2026-07-04 이후 draft 대기)
 - C2 콘텐츠 큐레이션(자료실·카드뉴스·위키 — 허유진 교수 협업)
-- C3 이미지 매핑 검수 큐 79건(review 72 + unresolved 7, `docs/image-mapping-disputed.md`) — 위원장 낭독기 청취 워크플로
+- C3 ~~이미지 매핑 검수 큐 79건~~ → 폐기(2026-08-29): v3 LLM alt 기반 매핑은 2층 v4가 그림을 전사·대체텍스트로 흡수해 실체가 사라짐. 자산은 `content/_archive-v3/`에 보존, 새 매핑은 alt 해시 키로 `image:template`부터 시작(현재 마커 4건)
 - C4 `reviewed_by: ["1차 검토(김헌용)"]` placeholder를 정밀 검수 시 실제 reviewer로 교체(점진)
-- C5 **3층 위키 문서 485건 재생성**(2층 v4 4종 완비 2026-08-28 → 착수 가능): 원자화 규칙 개정(제목 범위·유일성·쪽수 제거·참고 박스 제외·대형 표 분할·빈 조각 병합), 순번 fallback 없는 슬러그 체계 + `docs/slug-migration-2026-08.csv` 대응표 + 내부 참조 일괄 갱신, 8/24 검수 48건 회귀 표. 정본: 자문 메모 `260827_재생성전략…` §4~§6, `260828_3층_원자화규칙_슬러그체계_설계.md`
 - C6 지원인력 안내자료 부록2 기기 사진 12장 대체텍스트: v4는 `(사진: 기기명)` 자리표시(표 안 이미지라 HWPX 추출 불가). v3 LLM alt 11건 이식 또는 `generate_alt_text.py` 생성 — 3층 단계에서 처리
+- C8 2층 제목 승격 누락(3층 범위 경고 실신호, `docs/regression-2026-08-review48.md` 17): 2023 최종보고서 `2023-research-4-3-1-1` 본문의 「(2) 3차 전문가협의회 진행 절차」「(3) 1차~3차 전문가협의회 결과」를 `hwpx_enrich.py` 제목 규칙으로 승격 → v4 재빌드 → `decompose --reset`(2차 검증 전)
+- C9 **4종 일괄 공개·임베딩 재개**(2차 검증 완료 후, 9/7 이후): `npm run kb:bootstrap`(reviewed_by는 2차 검증 결과로) → `content/.embed-paused` 삭제·커밋 → 야간 워크플로(또는 workflow_dispatch)가 kb:sync+kb:embed 1회 실행(구 v3 행 정리는 sync가 source별 delete-then-insert로 처리) → `tests/lib/sitemap.test.ts` 임계값 복원. **재개 전 필수**: `scripts/lib/chunker.ts`가 `## 관련 페이지` 블록을 빼고 `[[slug|제목]]`을 표시명으로 치환하도록(현재는 링크 구문이 그대로 임베딩됨, 리뷰 지적 2026-08-29)
 - C7 2층 v4 2차 검증 대상(콘텐츠팀): 신청 서식 전사 블록(OCR 유래), 인사관리 도표 2종 대체텍스트, `정본 수정 목록.csv` 「확인 필요」 행
 
 ## D. iOS TestFlight 준비물 (`docs/IOS_DISTRIBUTION.md` §2)
@@ -54,6 +55,7 @@
 - E5 `tests/migrations` 8건이 운영 DB 베이스라인 드리프트(published 535 vs 초기 가정 0 등)로 실패 중 — 베이스라인 갱신 또는 fixture 격리(CHANGELOG 2026-08-04 부수 발견)
 - E6 웹 감사 보류분(PR #78): ChatUI `aria-relevant`(위원장 실 VoiceOver 판정) / KB fixed overlay 탭 잔존(구조 대수술) / retrieval 직렬 3왕복(RPC 마이그레이션) / 분산 rate limit·첨부 magic bytes 검사
 - E7 RAG 청크 `char_start`/`char_end` DEFERRED(Phase 3 M1)
+- E8 decompose 리뷰 잔여(2026-08-29): 범위 경고가 자기+부모 kind만 봄(조상 전체로 넓히면 2층 승격 누락 신호 증가) / 분해 규칙(split·merge·range·demote·-d2) 단위 테스트 부재(함수 미export, 현재는 실 content e2e만)
 
 ## F. 사업·운영 결정 대기 (판정은 PROGRESS §미결 결정)
 
@@ -77,3 +79,4 @@
 | Apple Developer Program 가입 결정(연 $99) | 2026-07-12 개인 등록 승인, 팀 ID 72JQ7VD4V5 유료 승격 완료(dodo-planet CHANGELOG Round 170). 남은 판정은 App Store 판매자명(PROGRESS 미결 결정) |
 | iOS 채팅 VoiceOver 실기기 판정(#108·#109) | 2026-07-20 합격, CHANGELOG 2026-07-20 |
 | gildongmu SpeechService 레이스 가드 백포트 | gildongmu `e1f5d2f`, CHANGELOG 2026-07-20 |
+| C5 3층 위키 문서 재생성 | 2026-08-29 완료(363건 draft), CHANGELOG 2026-08-29. 공개·임베딩 재개는 C9 |

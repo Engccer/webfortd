@@ -1,27 +1,42 @@
 #!/usr/bin/env tsx
 /**
- * webfortd 출처 마크다운 자동 분해 스크립트 — M3
+ * webfortd 출처 마크다운 자동 분해 스크립트 — 2026-08 3층 재생성판
  *
- * 입력: data/source-md/*.md (docparse 최종본 5개)
- * 출력: content/<axis>/<page-slug>.md (atomic 페이지, status='draft' 강제)
- *       docs/decompose-report.md (페이지별 신뢰도/근거 리포트)
+ * 입력: data/source-md/*.md (2층 마크다운 정본 v4 4종 + 2020 단체협약)
+ * 출력: content/<axis>/<slug>.md (atomic 페이지, status='draft' 강제)
+ *       docs/decompose-report.md (페이지별 신뢰도·경고 리포트)
  *
  * 실행:
- *   tsx scripts/decompose-source.ts             # 전체 5개 처리
- *   tsx scripts/decompose-source.ts --dry-run   # 파일 쓰기 없이 stdout 리포트만
- *   tsx scripts/decompose-source.ts --file <path>  # 단일 파일 모드
- *   tsx scripts/decompose-source.ts --reset     # 기존 source_origin 일치 파일 전부 삭제 후 재생성
+ *   tsx scripts/decompose-source.ts                 # 입력 폴더 전체(frozen 출처는 건너뜀)
+ *   tsx scripts/decompose-source.ts --dry-run       # 파일 쓰기 없이 stdout 요약만
+ *   tsx scripts/decompose-source.ts --file <path>   # 단일 파일 모드
+ *   tsx scripts/decompose-source.ts --reset         # source_origin 일치 파일 삭제 후 재생성
+ *   tsx scripts/decompose-source.ts --include-frozen  # frozen 출처(단체협약)도 다시 쓴다
  *
- * 핵심 결정 (청사진 §10~§13 반영):
- *  - 단체협약은 splitLevel=4 (#### 제N조 단위), 그 외는 splitLevel=2 (## 단위)
- *  - 슬러그는 ASCII kebab-case만 (validate-frontmatter.ts SLUG_RE 정합).
- *    한글 헤딩은 source_origin prefix + 순번으로 fallback.
- *  - 같은 source 내 슬러그 충돌은 -2/-3 suffix, 서로 다른 source 간은 prefix로 회피.
- *  - 모든 분해 페이지는 status='draft' 강제(휴리스틱 무관).
- *  - 위원장이 수동 작성한 content/resources/* 페이지는 source_origin이 없어
- *    --reset에서도 보호된다.
- *  - 이미지 패턴 "(이미지: ...)"는 manifest 매칭 시도 후 미매칭이면 TODO 마커로 교체.
- *  - idempotency: 동일 입력 두 번 실행 → 동일 출력(슬러그 안정성 + 결정적 정렬).
+ * 설계 정본: docs/DECOMPOSE_V2_DESIGN.md (자문 메모 260828 동일본).
+ *
+ * 핵심 규칙:
+ *  - 슬러그 체계 2종. `outline`(4종): 출처 접두 + 부에서 자기 수준까지 전 조상 번호
+ *    (「Ⅱ부 > 2. > 1) > (1) 교수학습」 → `2023-research-2-2-1-1`). 번호 없는 제목은
+ *    부모 경로 + `x<n>`, 같은 경로에 같은 번호가 두 번이면 `-d2` + 경고, 5만 자 분할은
+ *    `-pt<n>`, 부모 서문 개요 페이지는 부모 경로 그대로. 순번 fallback(`p-NNN`·
+ *    `appendix-NNN`)은 없으며 만들 수 없으면 fatal. `article`(단체협약): 종전 제N조 방식
+ *    그대로(주소 불변, frozen).
+ *  - 분해 단위는 splitLevel 제목. 부모 제목과 첫 자식 사이 서문은 100자 이상이면
+ *    개요 페이지, 미만이면 첫 자식 본문 앞에 붙인다.
+ *  - 제목 후보 제외: `<표 …>`·`<그림 …>`·참고·TIP·Q&A 로 시작하는 제목은 본문 굵게로
+ *    강등(parent_headings 오인 차단).
+ *  - 같은 출처 안에서 title이 중복되면 부모 제목(번호 제거)을 접두로 붙인다.
+ *  - 제목 끝 쪽수(`\s\d{1,3}$`)가 source_page와 같으면 제거.
+ *  - 본문 100자 미만 조각은 다음 형제(없으면 이전 형제) 본문에 `## 원제목` 소절로 병합.
+ *  - 5만 자 초과 본문은 표 블록 경계에서만 분할, 제목 `(1/N)`.
+ *  - 쪽 주석 `<!-- p.X (pdf N) -->`는 frontmatter source_page*로 옮기고 본문에서 제거.
+ *  - 이미지 `(이미지: alt)`는 TODO 마커 다음 줄에 원문을 남긴다(alt가 화면에서 사라지지
+ *    않게). image:apply가 마커와 alt 줄을 함께 치환한다.
+ *  - 같은 부모 경로 아래 형제 목록을 `## 관련 페이지`로 본문 끝에 붙인다(제목 + 원본 쪽).
+ *  - 모든 분해 페이지는 status='draft' 강제. 공개는 2차 검증 뒤 `kb:bootstrap`.
+ *  - 위원장이 수동 작성한 content/resources/* 등은 source_origin이 달라 --reset에서 보호.
+ *  - idempotency: 동일 입력 두 번 실행 → 동일 출력.
  */
 
 import fs from 'node:fs'
@@ -33,6 +48,7 @@ import {
   type ContentAxis,
   type Frontmatter,
 } from '../src/types/kb'
+import { parseOutlineNumber, stripOutlineNumber, type OutlineKind, type OutlineNumber } from './lib/outline'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -45,54 +61,51 @@ const AXIS_OVERRIDES_PATH = path.join(REPO_ROOT, 'content/_axis-overrides.json')
 
 const SLUG_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/
 // 이미지 패턴: 한 줄 안의 `(이미지: ...)`만 검출.
-// non-greedy `+?` + `(?=\s|$)` lookahead — 같은 줄에서 닫는 `)` 뒤에 공백이나
-// 줄끝이 나오는 첫 위치까지 매칭. alt 내부에 `(...)`이 포함돼도 lookahead 조건이
-// 충족되는 가장 짧은 닫는 괄호에서 종료한다.
-// 한계: alt 끝 `)` 다음에 즉시 비공백 문자(`(이미지: foo)bar`)면 매칭 실패.
-// 실측 데이터(104건)에는 그런 케이스가 없어 충분하지만, edge case에 의존하지 말 것.
 const IMAGE_PATTERN_RE = /\(이미지:\s*([^\n]+?)\)(?=\s|$)/gm
+// 2층 v4 쪽 주석: `<!-- p.230 (pdf 254) -->` / `<!-- p.Ⅰ-3 (pdf 15) -->` / `<!-- p.pdf2 (pdf 2) -->`
+const PAGE_COMMENT_RE = /<!--\s*p\.([^\s]+)\s*\(pdf\s*(\d+)\)\s*-->/g
 
 // 코드블록 마스킹용 정규식 (sync-content.ts와 동일 정책 + indent 코드블록 추가).
-// 펜스드: ```...```
-// indent: 줄 시작 4-space 또는 tab가 연속되는 블록
 const FENCED_CODE_RE = /```[\s\S]*?```/g
 const INLINE_CODE_RE = /`[^`\n]*`/g
 const INDENT_CODE_RE = /(^|\n)((?:[ ]{4}|\t)[^\n]*(?:\n(?:[ ]{4}|\t)[^\n]*)*)/g
 
+/** 2층 v4가 남기는 HTML 태그 중 3층·렌더가 허용하는 것(속성 없음). validate·kb-mdx와 동일 목록. */
+export const ALLOWED_HTML_TAGS = ['br', 'mark', 'sub', 'sup'] as const
+/** 파서 잔존 태그 — 본문에 남아 있으면 2층 승격 누락 신호(validate가 오류로 잡는다). */
+export const FORBIDDEN_HTML_TAGS = ['page_header', 'page_number', 'page_footer', 'u', 'figure', 'span'] as const
+
+const OVERVIEW_MIN_CHARS = 100
+const MERGE_MAX_CHARS = 100
+const SPLIT_MAX_CHARS = 50_000
+/** 분할 판정 예산 — 분할 뒤에 붙는 관련 페이지 블록·이미지 alt 줄(최대 ~2,000자)을 미리 뺀다 */
+const SPLIT_BUDGET_CHARS = SPLIT_MAX_CHARS - 2_500
+const RELATED_MAX = 20
+
 // ---------- 입력 파일 → source 메타 매핑 ----------
-//
-// 한글 파일명을 자동 변환하면 정보 손실이 크고 슬러그 안정성도 떨어진다.
-// 5개 입력 파일에 대해서만 명시적으로 source_origin + slug prefix + source 메타를 박는다.
-// 새 입력이 추가되면 이 표에 항목을 추가해야 한다 (intentional bottleneck).
 
 interface SourceFileMeta {
-  /** frontmatter.source_origin 값 (kebab-case, 영문) */
   sourceOrigin: string
-  /** 슬러그 prefix — 한글 헤딩 fallback 시 사용 */
   slugPrefix: string
   /** 분해 단위 헤딩 레벨 */
   splitLevel: 2 | 3 | 4
-  /** frontmatter.year */
+  /** 주소 체계. outline = 번호 경로(4종), article = 제N조(단체협약, 종전 방식 보존) */
+  slugScheme: 'outline' | 'article'
+  /** true면 --include-frozen 없이는 파일을 다시 쓰지 않는다(편집기 커밋 보호) */
+  frozen?: boolean
   year: number
-  /** frontmatter.type */
   docType: Frontmatter['type']
-  /** frontmatter.source */
-  source: {
-    organization: string
-    citation: string
-    url?: string
-  }
-  /** 기본 disability_types (헤딩·본문에서 더 구체적 매칭이 없을 때 fallback) */
+  source: { organization: string; citation: string; url?: string }
   defaultDisabilityTypes: Frontmatter['disability_types']
-  /** 강제 axis (단체협약 등은 자동 분류 결과를 무시하고 고정) */
   forcedAxis?: ContentAxis
 }
 
 const SOURCE_FILE_MAP: Record<string, SourceFileMeta> = {
-  '2023 장애유형별 장애인교원 근무 지원 방안_최종보고서_fused_v3.md': {
+  '2023 장애유형별 장애인교원 근무 지원 방안_최종보고서_fused_v4_hwpxlocal+hwpxenrich+pdftotext.md': {
     sourceOrigin: '2023-disability-types-work-support-report',
     slugPrefix: '2023-research',
-    splitLevel: 2,
+    splitLevel: 4,
+    slugScheme: 'outline',
     year: 2023,
     docType: '연구보고서',
     source: {
@@ -101,10 +114,11 @@ const SOURCE_FILE_MAP: Record<string, SourceFileMeta> = {
     },
     defaultDisabilityTypes: ['전체'],
   },
-  '2023 장애인교원 인사관리안내서(단면)_fused_v3.md': {
+  '2023 장애인교원 인사관리안내서(단면)_fused_v4_hwpxlocal+hwpxenrich+pdftotext.md': {
     sourceOrigin: '2023-hr-guide',
     slugPrefix: '2023-hr',
-    splitLevel: 2,
+    splitLevel: 4,
+    slugScheme: 'outline',
     year: 2023,
     docType: '안내서',
     source: {
@@ -113,10 +127,11 @@ const SOURCE_FILE_MAP: Record<string, SourceFileMeta> = {
     },
     defaultDisabilityTypes: ['전체'],
   },
-  '241210_책자_내지_중부대학교_장애인교원_근무지원_안내자료_V4_fused_v3.md': {
+  '241210_책자_내지_중부대학교_장애인교원_근무지원_안내자료_V4_fused_v4_hwpxlocal+hwpxenrich+pdftotext.md': {
     sourceOrigin: '2024-jbu-work-support-guide',
     slugPrefix: '2024-jbu',
-    splitLevel: 2,
+    splitLevel: 4,
+    slugScheme: 'outline',
     year: 2024,
     docType: '안내서',
     source: {
@@ -129,6 +144,8 @@ const SOURCE_FILE_MAP: Record<string, SourceFileMeta> = {
     sourceOrigin: '2020-collective-agreement',
     slugPrefix: '2020-ca',
     splitLevel: 4,
+    slugScheme: 'article',
+    frozen: true,
     year: 2020,
     docType: '지침',
     source: {
@@ -138,10 +155,11 @@ const SOURCE_FILE_MAP: Record<string, SourceFileMeta> = {
     defaultDisabilityTypes: ['전체'],
     forcedAxis: 'agreements',
   },
-  '내지_장애인교원_지원인력_직무_수행_안내자료인쇄용_156P_수정_fused_v3.md': {
+  '내지_장애인교원_지원인력_직무_수행_안내자료인쇄용_156P_수정_fused_v4_hwpxlocal+hwpxenrich+pdftotext.md': {
     sourceOrigin: '2024-support-staff-duty-guide',
     slugPrefix: '2024-staff',
-    splitLevel: 2,
+    splitLevel: 3,
+    slugScheme: 'outline',
     year: 2024,
     docType: '안내서',
     source: {
@@ -154,8 +172,6 @@ const SOURCE_FILE_MAP: Record<string, SourceFileMeta> = {
 
 // ---------- 휴리스틱 매핑 테이블 ----------
 
-// domain 키워드 → DomainSchema enum 값 매핑.
-// 헤딩과 본문 첫 500자에서 매칭. 매칭 순서대로 domains 배열 채움 (최대 3개).
 const DOMAIN_KEYWORD_TABLE: Array<{ pattern: RegExp; domain: Frontmatter['domains'][number] }> = [
   { pattern: /(임용|채용|신규발령|임용시험|발령|전보|승진|전직|평정|성과급)/, domain: '인사관리' },
   { pattern: /(휴가|휴직|병가|복무|근무성적|업무분장|직무|복직)/, domain: '복무관리' },
@@ -167,7 +183,6 @@ const DOMAIN_KEYWORD_TABLE: Array<{ pattern: RegExp; domain: Frontmatter['domain
   { pattern: /(인식개선|홍보|카드뉴스|장애이해|이해교육)/, domain: '인식개선' },
 ]
 
-// 장애유형 키워드 매핑 — 단일 장애유형이 명시된 경우만 채택.
 const DISABILITY_KEYWORD_TABLE: Array<{ pattern: RegExp; value: Frontmatter['disability_types'][number] }> = [
   { pattern: /(시각장애|시각 장애|시각교원|시각장애인 교원|시각 장애인)/, value: '시각' },
   { pattern: /(청각장애|청각 장애|청각교원|청각장애인 교원|청각 장애인|난청)/, value: '청각' },
@@ -221,12 +236,19 @@ export interface PageReport {
   todoMarkers: string[]
 }
 
+export interface DecomposeWarning {
+  kind: 'range' | 'dup_number' | 'merged' | 'split' | 'overview' | 'demoted_heading' | 'unnumbered' | 'title_dedup' | 'page_strip'
+  slug: string
+  detail: string
+}
+
 export interface DecomposeResult {
   sourceOrigin: string
   pages: PageOutput[]
   report: PageReport[]
   unmatchedImages: Array<{ slug: string; pattern: string; lineNo: number }>
   slugCollisions: Array<{ original: string; resolved: string; count: number }>
+  warnings: DecomposeWarning[]
 }
 
 interface ImageManifestEntry {
@@ -238,15 +260,12 @@ interface ImageManifestEntry {
 }
 
 // ---------- 코드블록 마스킹 (위치 보존) ----------
-//
-// 같은 길이 공백으로 치환 — 라인 번호와 offset 보존.
+
 function maskCodeBlocks(body: string): string {
   const masker = (m: string) => m.replace(/[^\n]/g, ' ')
   let masked = body.replace(FENCED_CODE_RE, masker)
   masked = masked.replace(INLINE_CODE_RE, masker)
   // indent 코드블록: 줄 단위 list marker 휴리스틱 회피 (codex-rescue P1 #5).
-  // CommonMark는 직전 빈 줄 + 4-space 들여쓰기를 code로 정의하지만 우리는 nested list와
-  // 구분이 안 됨. list marker(-, *, +, 숫자.)가 보이면 마스킹 취소.
   masked = masked.replace(INDENT_CODE_RE, (full: string, leading: string, code: string) => {
     if (/^\s*[-*+]\s|^\s*\d+\.\s/m.test(code)) return full
     return leading + code.replace(/[^\n]/g, ' ')
@@ -254,56 +273,47 @@ function maskCodeBlocks(body: string): string {
   return masked
 }
 
-// ---------- 슬러그 생성기 ----------
+/** 제목 후보에서 제외할 참고 박스·표 캡션(본문 굵게로 강등) */
+const NON_HEADING_RE = /^(<\s*표|〈\s*표|<\s*그림|〈\s*그림|\[\s*그림|참\s*고(?=\s|:|$|[^가-힣])|TIP(?=\s|:|$)|Q\s*&\s*A)/i
+
+// ---------- 슬러그 생성기 (article 스킴, 단체협약 보존) ----------
 
 function asciiKebab(s: string): string {
   return s
     .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, '') // 영숫자·공백·하이픈만 보존 (한글 제거)
+    .replace(/[^a-z0-9\s-]/g, '')
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
     .replace(/^-+|-+$/g, '')
 }
 
-function makeSlug(heading: string, meta: SourceFileMeta, fallbackIndex: number): string {
-  // 1차: 영문 음절이 있다면 그것만 추출
+function makeArticleSlug(heading: string, meta: SourceFileMeta, fallbackIndex: number): string {
   const ascii = asciiKebab(heading)
-  if (ascii && SLUG_RE.test(ascii)) {
-    return `${meta.slugPrefix}-${ascii}`
-  }
-  // 한글 헤딩에서는 "제N조", "제N장", "제N절" 같은 패턴을 영문화
+  if (ascii && SLUG_RE.test(ascii)) return `${meta.slugPrefix}-${ascii}`
   const articleMatch = heading.match(/제\s*(\d+)\s*조/)
-  if (articleMatch) {
-    return `${meta.slugPrefix}-art-${articleMatch[1].padStart(3, '0')}`
-  }
+  if (articleMatch) return `${meta.slugPrefix}-art-${articleMatch[1].padStart(3, '0')}`
   const chapterMatch = heading.match(/제\s*(\d+)\s*장/)
-  if (chapterMatch) {
-    return `${meta.slugPrefix}-ch-${chapterMatch[1].padStart(2, '0')}`
-  }
+  if (chapterMatch) return `${meta.slugPrefix}-ch-${chapterMatch[1].padStart(2, '0')}`
   const sectionMatch = heading.match(/제\s*(\d+)\s*절/)
-  if (sectionMatch) {
-    return `${meta.slugPrefix}-sec-${sectionMatch[1].padStart(2, '0')}`
-  }
-  // 부록·전문 등 특수 케이스
+  if (sectionMatch) return `${meta.slugPrefix}-sec-${sectionMatch[1].padStart(2, '0')}`
   if (/전\s*문/.test(heading)) return `${meta.slugPrefix}-preamble`
   if (/부\s*칙/.test(heading)) return `${meta.slugPrefix}-supplementary`
   if (/부\s*록/.test(heading)) return `${meta.slugPrefix}-appendix-${String(fallbackIndex).padStart(3, '0')}`
-  // 마지막 fallback — 순번
   return `${meta.slugPrefix}-p-${String(fallbackIndex).padStart(3, '0')}`
 }
 
-// ---------- 헤딩 추출 (마스킹된 본문 기준) ----------
+// ---------- 헤딩 추출 ----------
 
 interface HeadingMatch {
   level: number
   text: string
   offset: number
   lineNo: number
+  /** 이 제목 줄의 끝 offset(다음 줄 시작 직전) */
+  lineEnd: number
 }
 
-function extractHeadings(body: string, masked: string, maxLevel: number): HeadingMatch[] {
-  // 마스킹된 본문에서 줄 시작 #+ 공백 헤딩만 추출.
-  // YAML frontmatter는 이미 gray-matter가 분리한 뒤 body가 들어오므로 무시 가능.
+function extractHeadings(masked: string, maxLevel: number): HeadingMatch[] {
   const HEADING_LINE_RE = /^(#{1,6})\s+(.+?)\s*$/gm
   const out: HeadingMatch[] = []
   let m: RegExpExecArray | null
@@ -312,10 +322,7 @@ function extractHeadings(body: string, masked: string, maxLevel: number): Headin
     if (level > maxLevel) continue
     const offset = m.index
     const lineNo = masked.slice(0, offset).split('\n').length
-    // 원본 본문에서 실제 텍스트 추출 (마스킹은 공백 치환이므로 텍스트는 동일하지만,
-    // 안전을 위해 마스킹된 그룹을 그대로 사용)
-    const text = m[2].trim()
-    out.push({ level, text, offset, lineNo })
+    out.push({ level, text: m[2].trim(), offset, lineNo, lineEnd: offset + m[0].length })
   }
   return out
 }
@@ -360,15 +367,11 @@ function pickAxis(
   fm: Pick<Frontmatter, 'type' | 'disability_types' | 'regions' | 'domains'>,
 ): { axis: ContentAxis; confidence: 'high' | 'medium' | 'low' } {
   if (meta.forcedAxis) return { axis: meta.forcedAxis, confidence: 'high' }
-  // 정책법령 명시
   if (fm.domains.includes('정책법령')) return { axis: 'policies', confidence: 'high' }
-  // 단일 장애유형 (전체 제외)
   const concreteDts = fm.disability_types.filter((d) => d !== '전체' && d !== '기타')
   if (concreteDts.length === 1) return { axis: 'disability-types', confidence: 'high' }
-  // 특정 지역 (전국 제외)
   const concreteRegions = fm.regions.filter((r) => r !== '전국')
   if (concreteRegions.length === 1) return { axis: 'regions', confidence: 'medium' }
-  // 도메인 키워드 매칭
   if (fm.domains.length >= 1) return { axis: 'domains', confidence: 'medium' }
   return { axis: 'uncategorized', confidence: 'low' }
 }
@@ -378,15 +381,12 @@ function pickAxis(
 function processBodyImages(
   body: string,
   source: string,
-  _manifestEntries: ImageManifestEntry[],
   unmatched: Array<{ slug: string; pattern: string; lineNo: number }>,
   slug: string,
 ): { body: string; imagePatternCount: number; todoMarkers: string[] } {
-  // M3 안전 정책 (codex-rescue P0 #1·#2 반영):
-  // 본문의 "(이미지: ...)" 패턴은 PDF page 번호 없이는 정확한 매핑이 불가능.
-  // 이전 구현은 source manifest의 첫 이미지를 모든 페이지에 재사용해 데이터 무결성 사고.
-  // → M3에서는 자동 ![](path) 삽입을 전면 중단. 원본 alt를 그대로 TODO 마커로 보존.
-  // 실제 이미지 매핑은 M4 수동 검수에서 manifest.json + PDF 페이지 anchor를 보고 1:1 결정.
+  // 분해 단계에서 자동 ![](path) 삽입은 하지 않는다(codex-rescue M3 P0). TODO 마커 다음 줄에
+  // 원문 `(이미지: alt)`를 남겨 alt가 화면·RAG에서 사라지지 않게 한다(2026-08 개정).
+  // image:apply가 마커와 이 alt 줄을 함께 `![alt](path)`로 치환한다.
   const todoMarkers: string[] = []
   let imagePatternCount = 0
   const result = body.replace(IMAGE_PATTERN_RE, (_full, alt: string) => {
@@ -394,64 +394,364 @@ function processBodyImages(
     const trimmedAlt = alt.trim()
     unmatched.push({ slug, pattern: trimmedAlt.slice(0, 100), lineNo: 0 })
     todoMarkers.push(`image-pending: ${trimmedAlt.slice(0, 40)}`)
-    // 원본 alt를 HTML 주석에 그대로 보존. M4 검수자가 manifest와 대조해 ![](path)로 교체.
-    return `<!-- TODO: image-link source=${source} -- 원본: (이미지: ${trimmedAlt}) -->`
+    return `<!-- TODO: image-link source=${source} -- 원본: (이미지: ${trimmedAlt}) -->\n(이미지: ${trimmedAlt})`
   })
   return { body: result, imagePatternCount, todoMarkers }
 }
 
-// ---------- 페이지 빌드 ----------
+function stripPageComments(body: string): string {
+  return body
+    .replace(new RegExp(PAGE_COMMENT_RE.source + '[ \t]*\n?', 'g'), '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
+
+/** 본문 안 제목 수준을 가장 얕은 것이 `##`이 되도록 평행 이동(페이지 H1 아래 h2부터). */
+function normalizeBodyHeadings(body: string): string {
+  const masked = maskCodeBlocks(body)
+  const levels: number[] = []
+  const re = /^(#{1,6})\s+\S/gm
+  let m: RegExpExecArray | null
+  while ((m = re.exec(masked)) !== null) levels.push(m[1].length)
+  if (levels.length === 0) return body
+  const min = Math.min(...levels)
+  const shift = 2 - min
+  if (shift === 0) return body
+  const lines = body.split('\n')
+  const maskedLines = masked.split('\n')
+  for (let i = 0; i < lines.length; i++) {
+    const hm = maskedLines[i].match(/^(#{1,6})(\s+\S.*)$/)
+    if (!hm) continue
+    const newLevel = Math.min(6, Math.max(2, hm[1].length + shift))
+    lines[i] = '#'.repeat(newLevel) + lines[i].slice(hm[1].length)
+  }
+  return lines.join('\n')
+}
+
+/** 표 블록 경계에서만 자르는 5만 자 분할. 단일 표가 한도를 넘으면 그대로 두고 경고. */
+function splitLargeBody(body: string): { parts: string[]; oversizedTable: boolean } {
+  if (body.length <= SPLIT_BUDGET_CHARS) return { parts: [body], oversizedTable: false }
+  const lines = body.split('\n')
+  // 블록 = 표(연속 `|` 줄) 또는 빈 줄로 구분되는 문단
+  const blocks: string[] = []
+  let cur: string[] = []
+  let inTable = false
+  for (const line of lines) {
+    const isTableLine = /^\s*\|/.test(line)
+    if (isTableLine) {
+      if (!inTable && cur.length > 0) { blocks.push(cur.join('\n')); cur = [] }
+      inTable = true
+      cur.push(line)
+      continue
+    }
+    if (inTable) { blocks.push(cur.join('\n')); cur = []; inTable = false }
+    if (line.trim() === '') {
+      if (cur.length > 0) { blocks.push(cur.join('\n')); cur = [] }
+      continue
+    }
+    cur.push(line)
+  }
+  if (cur.length > 0) blocks.push(cur.join('\n'))
+  const parts: string[] = []
+  let acc: string[] = []
+  let accLen = 0
+  let oversizedTable = false
+  for (const b of blocks) {
+    if (b.length > SPLIT_MAX_CHARS) oversizedTable = true
+    if (accLen + b.length > SPLIT_BUDGET_CHARS && acc.length > 0) {
+      parts.push(acc.join('\n\n'))
+      acc = []
+      accLen = 0
+    }
+    acc.push(b)
+    accLen += b.length + 2
+  }
+  if (acc.length > 0) parts.push(acc.join('\n\n'))
+  return { parts, oversizedTable }
+}
+
+function textLength(body: string): number {
+  return body.replace(/\s+/g, '').length
+}
+
+// ---------- outline 트리 구축 ----------
+
+interface OutlineNode {
+  heading: HeadingMatch
+  number: OutlineNumber
+  /** 경로 세그먼트(부에서 자기까지) */
+  segs: string[]
+  parent: OutlineNode | null
+  children: OutlineNode[]
+  /** 이 제목 직후 ~ 첫 자식(또는 다음 형제/상위) 직전의 본문 */
+  preface: string
+  /** 이 노드 범위의 본문 끝 offset */
+  endOffset: number
+}
+
+interface PagePlan {
+  slug: string
+  title: string
+  body: string
+  parentHeadings: string[]
+  parentPath: string
+  /** 관련 페이지 형제 그룹 키(= 부모 노드 경로). 슬러그 역파싱 금지 */
+  groupPath: string
+  /** 이 절의 원문 끝 offset(쪽 주석 범위 계산용) */
+  endOffset: number
+  /** 문서 순서 */
+  order: number
+  isOverview: boolean
+  headingOffset: number
+  level: number
+  numberKind: OutlineKind
+}
+
+interface PageRef { slug: string; title: string; page?: string }
+
+function findPageComment(body: string, beforeOffset: number): { page: string; pdf: number } | null {
+  const re = new RegExp(PAGE_COMMENT_RE.source, 'g')
+  let last: { page: string; pdf: number } | null = null
+  let m: RegExpExecArray | null
+  while ((m = re.exec(body)) !== null) {
+    if (m.index >= beforeOffset) break
+    last = { page: m[1], pdf: Number(m[2]) }
+  }
+  return last
+}
+
+function lastPageCommentIn(body: string, start: number, end: number): string | null {
+  const re = new RegExp(PAGE_COMMENT_RE.source, 'g')
+  re.lastIndex = start
+  let last: string | null = null
+  let m: RegExpExecArray | null
+  while ((m = re.exec(body)) !== null) {
+    if (m.index >= end) break
+    last = m[1]
+  }
+  return last
+}
+
+/** 제목 후보 제외 줄을 굵게로 강등한 본문(위치 보존을 위해 길이 유지 안 함 — 분해 전에 한 번만 적용). */
+function demoteNonHeadings(body: string, warnings: DecomposeWarning[]): string {
+  const masked = maskCodeBlocks(body)
+  const lines = body.split('\n')
+  const maskedLines = masked.split('\n')
+  for (let i = 0; i < lines.length; i++) {
+    const hm = maskedLines[i].match(/^(#{1,6})\s+(.+?)\s*$/)
+    if (!hm) continue
+    if (NON_HEADING_RE.test(hm[2])) {
+      lines[i] = `**${lines[i].slice(hm[1].length).trim()}**`
+      warnings.push({ kind: 'demoted_heading', slug: '', detail: `L${i + 1} ${hm[2].slice(0, 60)}` })
+    }
+  }
+  return lines.join('\n')
+}
+
+function buildOutlinePages(
+  body: string,
+  meta: SourceFileMeta,
+  warnings: DecomposeWarning[],
+): PagePlan[] {
+  const masked = maskCodeBlocks(body)
+  const headings = extractHeadings(masked, meta.splitLevel)
+  if (headings.length === 0) return []
+
+  // 1) 트리 + 경로 세그먼트
+  const roots: OutlineNode[] = []
+  const stack: OutlineNode[] = []
+  const unnumberedCount = new Map<string, number>()
+  for (let i = 0; i < headings.length; i++) {
+    const h = headings[i]
+    while (stack.length > 0 && stack[stack.length - 1].heading.level >= h.level) stack.pop()
+    const parent = stack[stack.length - 1] ?? null
+    const number = parseOutlineNumber(h.text)
+    const parentSegs = parent ? parent.segs : []
+    const parentKey = parentSegs.join('-')
+    let seg: string
+    if (number.kind === 'appendix-root') {
+      seg = 'app'
+    } else if (number.kind === 'appendix') {
+      const underApp = parent?.segs.includes('app')
+      const base = number.sub !== undefined ? String(number.sub) : String(number.value)
+      // `[부록 1-2]`는 부모(◇ 부록1.)가 이미 app-1이므로 sub만, 부모가 부록 루트가 아니면 app-N 접두
+      seg = underApp ? base : `app-${base}`
+    } else if (number.kind === 'none') {
+      const n = (unnumberedCount.get(parentKey) ?? 0) + 1
+      unnumberedCount.set(parentKey, n)
+      seg = `x${n}`
+      warnings.push({ kind: 'unnumbered', slug: `${meta.slugPrefix}-${[...parentSegs, seg].join('-')}`, detail: h.text.slice(0, 60) })
+    } else {
+      seg = String(number.value)
+    }
+    // 같은 부모 아래 같은 세그먼트 → -d2, -d3 …(원본 번호 오류)
+    const siblings = parent ? parent.children : roots
+    let finalSeg = seg
+    let d = 2
+    while (siblings.some((s) => s.segs[s.segs.length - 1] === finalSeg)) {
+      finalSeg = `${seg}-d${d}`
+      d += 1
+    }
+    if (finalSeg !== seg) {
+      warnings.push({ kind: 'dup_number', slug: `${meta.slugPrefix}-${[...parentSegs, finalSeg].join('-')}`, detail: `「${h.text.slice(0, 50)}」 번호 중복 → ${finalSeg}` })
+    }
+    // 자기 범위의 끝: 다음 제목 중 level ≤ 자기 level
+    const next = headings.slice(i + 1).find((n) => n.level <= h.level)
+    const endOffset = next ? next.offset : body.length
+    const node: OutlineNode = {
+      heading: h,
+      number,
+      segs: [...parentSegs, finalSeg],
+      parent,
+      children: [],
+      preface: '',
+      endOffset,
+    }
+    siblings.push(node)
+    stack.push(node)
+  }
+
+  // 2) 서문(preface): 제목 다음 줄 ~ 첫 자식 제목 직전
+  const walk = (node: OutlineNode) => {
+    const bodyStart = body.indexOf('\n', node.heading.offset)
+    const start = bodyStart < 0 ? body.length : bodyStart + 1
+    const end = node.children.length > 0 ? node.children[0].heading.offset : node.endOffset
+    node.preface = body.slice(start, end)
+    node.children.forEach(walk)
+  }
+  roots.forEach(walk)
+
+  // 3) 페이지 계획
+  const plans: PagePlan[] = []
+  let order = 0
+  const pathOf = (n: OutlineNode | null): string => (n ? `${meta.slugPrefix}-${n.segs.join('-')}` : meta.slugPrefix)
+  const pushPlan = (node: OutlineNode, bodyText: string, isOverview: boolean) => {
+    const parentChain = ancestors(node)
+    plans.push({
+      slug: pathOf(node),
+      title: node.heading.text,
+      body: bodyText,
+      parentHeadings: parentChain.map((a) => a.heading.text),
+      parentPath: pathOf(node.parent),
+      // 개요 페이지는 그 절 자체를 대표하므로 형제 그룹도 같은 부모 아래(일반 페이지와 동일)
+      groupPath: pathOf(node.parent),
+      endOffset: isOverview ? (node.children[0]?.heading.offset ?? node.endOffset) : node.endOffset,
+      order: order++,
+      isOverview,
+      headingOffset: node.heading.offset,
+      level: node.heading.level,
+      numberKind: node.number.kind,
+    })
+  }
+  const ancestors = (node: OutlineNode): OutlineNode[] => {
+    const out: OutlineNode[] = []
+    let p = node.parent
+    while (p) { out.unshift(p); p = p.parent }
+    return out
+  }
+  const visit = (node: OutlineNode) => {
+    if (node.children.length === 0) {
+      // 분해 단위(또는 자식이 없는 상위 제목) → 페이지
+      pushPlan(node, node.preface, false)
+      return
+    }
+    // 부모: 서문이 100자 이상이면 개요 페이지, 미만이면 첫 자식 앞에 붙인다
+    if (textLength(stripPageComments(node.preface)) >= OVERVIEW_MIN_CHARS) {
+      pushPlan(node, node.preface, true)
+      warnings.push({ kind: 'overview', slug: `${meta.slugPrefix}-${node.segs.join('-')}`, detail: node.heading.text.slice(0, 60) })
+    } else if (textLength(stripPageComments(node.preface)) > 0) {
+      node.children[0].preface = node.preface.trimEnd() + '\n\n' + node.children[0].preface
+    }
+    node.children.forEach(visit)
+  }
+  roots.forEach(visit)
+  return plans
+}
+
+// ---------- article 스킴 (단체협약, 종전 로직) ----------
 
 interface RawSection {
   heading: HeadingMatch
-  body: string // 원본 본문 (마스킹 X)
+  body: string
   parentHeadings: HeadingMatch[]
 }
 
-function buildSections(
-  body: string,
-  splitLevel: number,
-): RawSection[] {
+function buildArticleSections(body: string, splitLevel: number): RawSection[] {
   const masked = maskCodeBlocks(body)
-  const headings = extractHeadings(body, masked, splitLevel)
+  const headings = extractHeadings(masked, splitLevel)
   if (headings.length === 0) return []
-  // 부모 헤딩 트래킹 (splitLevel보다 얕은 헤딩만 부모 후보)
   const sections: RawSection[] = []
   const parentStack: HeadingMatch[] = []
   for (let i = 0; i < headings.length; i++) {
     const h = headings[i]
-    // parentStack 정리: 현재 h.level 이상인 항목은 pop
-    while (parentStack.length > 0 && parentStack[parentStack.length - 1].level >= h.level) {
-      parentStack.pop()
-    }
-    if (h.level < splitLevel) {
-      // 부모 헤딩
-      parentStack.push(h)
-      continue
-    }
-    // splitLevel 헤딩이면 페이지가 된다
-    const next = headings.slice(i + 1).find((next) => next.level <= h.level)
+    while (parentStack.length > 0 && parentStack[parentStack.length - 1].level >= h.level) parentStack.pop()
+    if (h.level < splitLevel) { parentStack.push(h); continue }
+    const next = headings.slice(i + 1).find((n) => n.level <= h.level)
     const endOffset = next ? next.offset : body.length
-    // 본문은 헤딩 라인 다음부터 endOffset까지
     const bodyStart = body.indexOf('\n', h.offset)
     const sectionBody = body.slice(bodyStart + 1, endOffset).trim()
-    sections.push({
-      heading: h,
-      body: sectionBody,
-      parentHeadings: [...parentStack],
-    })
+    sections.push({ heading: h, body: sectionBody, parentHeadings: [...parentStack] })
   }
   return sections
 }
 
-// 짧은 메타 헤딩(본문 100자 미만) 병합 정책.
-// 청사진 §13: 단체협약 등에서 #### 제N조 본문이 너무 짧으면 상위 절·장에 병합.
-// M3에서는 너무 공격적인 병합을 피하고, 본문이 빈 경우만 skip.
-function shouldSkipSection(section: RawSection): boolean {
-  const stripped = section.body.replace(/\s+/g, '')
-  // 완전히 비어있고 부모도 없으면 skip (예: 단체협약의 ## 2023. 6. 2. 같은 날짜 헤딩)
-  if (stripped.length === 0) return true
-  return false
+function buildArticlePlans(body: string, meta: SourceFileMeta): PagePlan[] {
+  const sections = buildArticleSections(body, meta.splitLevel)
+  const usedSlugs = new Set<string>()
+  const plans: PagePlan[] = []
+  let fallbackIndex = 0
+  let order = 0
+  for (const section of sections) {
+    if (section.body.replace(/\s+/g, '').length === 0) continue
+    fallbackIndex += 1
+    let baseSlug = makeArticleSlug(section.heading.text, meta, fallbackIndex)
+    if (!SLUG_RE.test(baseSlug)) baseSlug = `${meta.slugPrefix}-p-${String(fallbackIndex).padStart(3, '0')}`
+    let finalSlug = baseSlug
+    if (usedSlugs.has(finalSlug)) {
+      let n = 2
+      while (usedSlugs.has(`${baseSlug}-${n}`)) n++
+      finalSlug = `${baseSlug}-${n}`
+    }
+    usedSlugs.add(finalSlug)
+    plans.push({
+      slug: finalSlug,
+      title: section.heading.text,
+      body: section.body,
+      parentHeadings: section.parentHeadings.map((h) => h.text),
+      parentPath: meta.slugPrefix,
+      groupPath: meta.slugPrefix,
+      endOffset: section.heading.offset + section.body.length,
+      order: order++,
+      isOverview: false,
+      headingOffset: section.heading.offset,
+      level: section.heading.level,
+      numberKind: 'none',
+    })
+  }
+  return plans
+}
+
+// ---------- 후처리: 병합·분할·제목·관련 페이지 ----------
+
+function outlineKindsAtOrAbove(plan: PagePlan, planKinds: Map<string, OutlineKind>): Set<OutlineKind> {
+  const kinds = new Set<OutlineKind>()
+  if (plan.numberKind !== 'none' && plan.numberKind !== 'appendix' && plan.numberKind !== 'appendix-root') kinds.add(plan.numberKind)
+  const parentKind = planKinds.get(plan.parentPath)
+  if (parentKind && parentKind !== 'none') kinds.add(parentKind)
+  return kinds
+}
+
+function detectRangeViolations(body: string, kinds: Set<OutlineKind>): string[] {
+  if (kinds.size === 0) return []
+  const masked = maskCodeBlocks(body)
+  const hits: string[] = []
+  for (const line of masked.split('\n')) {
+    const t = line.trim()
+    if (!t || t.startsWith('#') || t.startsWith('|') || t.startsWith('-') || t.startsWith('*') || t.startsWith('>')) continue
+    const n = parseOutlineNumber(t)
+    if (n.kind !== 'none' && kinds.has(n.kind)) hits.push(t.slice(0, 50))
+  }
+  return hits
 }
 
 // ---------- 단일 파일 분해 ----------
@@ -461,7 +761,7 @@ export function decomposeFile(args: {
   imageManifest: ImageManifestEntry[]
   axisOverrides?: Record<string, ContentAxis>
 }): DecomposeResult {
-  const { filePath, imageManifest, axisOverrides = {} } = args
+  const { filePath, axisOverrides = {} } = args
   const fileName = path.basename(filePath)
   const meta = SOURCE_FILE_MAP[fileName]
   if (!meta) {
@@ -469,60 +769,196 @@ export function decomposeFile(args: {
   }
 
   const fileContent = fs.readFileSync(filePath, 'utf-8')
-  // 입력 마크다운에 frontmatter가 있을 수 있으니 gray-matter로 분리
-  const { content: body } = matter(fileContent)
+  const { content: rawBody } = matter(fileContent)
+  const warnings: DecomposeWarning[] = []
 
-  const sections = buildSections(body, meta.splitLevel)
+  let plans: PagePlan[]
+  let body = rawBody
+  if (meta.slugScheme === 'outline') {
+    body = demoteNonHeadings(rawBody, warnings)
+    plans = buildOutlinePages(body, meta, warnings)
+  } else {
+    plans = buildArticlePlans(body, meta)
+  }
+
+  // 쪽 정보(본문 제거 전에 계산)
+  const pageInfo = new Map<string, { page?: string; end?: string; pdf?: number }>()
+  for (const p of plans) {
+    const start = findPageComment(body, p.headingOffset)
+    const bodyStart = body.indexOf('\n', p.headingOffset) + 1
+    const end = lastPageCommentIn(body, bodyStart, p.endOffset)
+    pageInfo.set(p.slug, { page: start?.page, end: end ?? start?.page, pdf: start?.pdf })
+  }
+
+  // 본문 정리: 쪽 주석 제거 + 제목 수준 정규화
+  for (const p of plans) {
+    p.body = normalizeBodyHeadings(stripPageComments(p.body))
+  }
+
+  // 제목 끝 쪽수 제거(source_page와 같을 때만)
+  for (const p of plans) {
+    const m = p.title.match(/^(.*\S)\s(\d{1,3})$/)
+    const info = pageInfo.get(p.slug)
+    if (m && info?.page && String(Number(info.page.replace(/^.*?(\d+)$/, '$1'))) === m[2]) {
+      warnings.push({ kind: 'page_strip', slug: p.slug, detail: `「${p.title}」 → 「${m[1]}」` })
+      p.title = m[1]
+    }
+  }
+
+  // 빈 조각 병합(100자 미만 → 다음 형제, 없으면 이전 형제). 개요 페이지는 이미 100자 이상.
+  if (meta.slugScheme === 'outline') {
+    const merged = new Set<string>()
+    for (let i = 0; i < plans.length; i++) {
+      const p = plans[i]
+      if (merged.has(p.slug)) continue
+      if (textLength(p.body) >= MERGE_MAX_CHARS) continue
+      const sibling = (dir: 1 | -1): PagePlan | undefined => {
+        for (let j = i + dir; j >= 0 && j < plans.length; j += dir) {
+          if (merged.has(plans[j].slug)) continue
+          if (plans[j].parentPath === p.parentPath && !plans[j].isOverview) return plans[j]
+          if (plans[j].level < p.level) break
+        }
+        return undefined
+      }
+      const target = sibling(1) ?? sibling(-1)
+      if (!target) continue
+      const demoted = p.body.replace(/^(#{2,5})(\s+\S)/gm, '#$1$2')
+      const fragment = `## ${p.title}\n\n${demoted}`.trim()
+      const targetIsAfter = target.order > p.order
+      target.body = targetIsAfter ? `${fragment}\n\n${target.body}`.trim() : `${target.body}\n\n${fragment}`.trim()
+      merged.add(p.slug)
+      warnings.push({ kind: 'merged', slug: p.slug, detail: `「${p.title}」(${textLength(p.body)}자) → ${target.slug}` })
+    }
+    plans = plans.filter((p) => !merged.has(p.slug))
+  }
+
+  // 5만 자 분할(표 경계)
+  const expanded: PagePlan[] = []
+  for (const p of plans) {
+    const { parts, oversizedTable } = splitLargeBody(p.body)
+    if (parts.length === 1) { expanded.push(p); continue }
+    if (oversizedTable) warnings.push({ kind: 'split', slug: p.slug, detail: '단일 표가 5만 자를 넘어 그 블록은 자르지 못함' })
+    parts.forEach((part, idx) => {
+      const clone: PagePlan = { ...p, slug: `${p.slug}-pt${idx + 1}`, title: `${p.title} (${idx + 1}/${parts.length})`, body: part }
+      expanded.push(clone)
+      pageInfo.set(clone.slug, pageInfo.get(p.slug) ?? {})
+    })
+    warnings.push({ kind: 'split', slug: p.slug, detail: `${parts.length}개로 분할` })
+  }
+  plans = expanded
+
+  // 제목 유일성(출처 내): 중복 그룹을 구분해 주는 가장 얕은 조상 제목(번호 제거) 하나를
+  // 접두로 붙인다(「뇌병변장애 고려 사항」). 부모 하나로 안 갈리면 한 단계 위 조상으로,
+  // 그래도 안 갈리면 두 조상을 함께 붙인다.
+  if (meta.slugScheme === 'outline') {
+    const byTitle = new Map<string, PagePlan[]>()
+    for (const p of plans) {
+      const arr = byTitle.get(p.title) ?? []
+      arr.push(p)
+      byTitle.set(p.title, arr)
+    }
+    const prefixAt = (p: PagePlan, depth: number): string | undefined => {
+      const h = p.parentHeadings[p.parentHeadings.length - depth]
+      return h ? stripOutlineNumber(h) : undefined
+    }
+    for (const [, group] of byTitle) {
+      if (group.length < 2) continue
+      const candidates: Array<(p: PagePlan) => string | undefined> = [
+        (p) => prefixAt(p, 1),
+        (p) => prefixAt(p, 2),
+        (p) => {
+          const a = prefixAt(p, 2)
+          const b = prefixAt(p, 1)
+          return a && b ? `${a} ${b}` : undefined
+        },
+      ]
+      let applied = false
+      for (const cand of candidates) {
+        const titles = group.map((p) => {
+          const prefix = cand(p)
+          return prefix ? `${prefix} ${p.title}` : p.title
+        })
+        if (new Set(titles).size === group.length) {
+          group.forEach((p, i) => {
+            if (titles[i] !== p.title) {
+              warnings.push({ kind: 'title_dedup', slug: p.slug, detail: `「${p.title}」 → 「${titles[i]}」` })
+              p.title = titles[i]
+            }
+          })
+          applied = true
+          break
+        }
+      }
+      if (!applied) {
+        for (const p of group) warnings.push({ kind: 'title_dedup', slug: p.slug, detail: `「${p.title}」 조상 접두로도 유일하지 않음` })
+      }
+    }
+  }
+
+  // 관련 페이지 블록: 같은 그룹(groupPath) 아래 형제. 부모의 개요 페이지가 있으면 첫 항목,
+  // 형제 중 개요 페이지(자식을 가진 절)도 목록에 포함한다(설계 §3.4).
+  if (meta.slugScheme === 'outline') {
+    const byGroup = new Map<string, PagePlan[]>()
+    for (const p of plans) {
+      const arr = byGroup.get(p.groupPath) ?? []
+      arr.push(p)
+      byGroup.set(p.groupPath, arr)
+    }
+    const overviewBySlug = new Map(plans.filter((p) => p.isOverview).map((p) => [p.slug, p]))
+    for (const p of plans) {
+      const refs: PageRef[] = []
+      const parentOverview = overviewBySlug.get(p.groupPath)
+      if (parentOverview && parentOverview.slug !== p.slug) {
+        refs.push({ slug: parentOverview.slug, title: parentOverview.title, page: pageInfo.get(parentOverview.slug)?.page })
+      }
+      for (const s of byGroup.get(p.groupPath) ?? []) {
+        if (s.slug === p.slug) continue
+        refs.push({ slug: s.slug, title: s.title, page: pageInfo.get(s.slug)?.page })
+      }
+      if (refs.length === 0) continue
+      let shown = refs
+      if (refs.length > RELATED_MAX) shown = [...refs.slice(0, RELATED_MAX / 2), ...refs.slice(-RELATED_MAX / 2)]
+      const lines = shown.map((r) => `- [[${r.slug}|${linkLabel(r.title)}]]${r.page ? ` (원본 ${formatPage(r.page)})` : ''}`)
+      p.body = `${p.body}\n\n## 관련 페이지\n\n${lines.join('\n')}`.trim()
+    }
+  }
+
+  const planKinds = new Map(plans.map((p) => [p.slug, p.numberKind]))
 
   const pages: PageOutput[] = []
   const report: PageReport[] = []
   const unmatchedImages: Array<{ slug: string; pattern: string; lineNo: number }> = []
-  // 같은 source 내 최종 슬러그(final) 전부 추적 — base "x"의 3번째 사용이
-  // "x-3"가 되는데 base "x-3"의 1번째 사용 "x-3"와 충돌하는 케이스 방지.
   const usedSlugs = new Set<string>()
-  const slugCollisions: Array<{ original: string; resolved: string; count: number }> = []
 
-  let fallbackIndex = 0
-  for (const section of sections) {
-    if (shouldSkipSection(section)) continue
-    fallbackIndex += 1
-
-    // 슬러그 생성 + 충돌 해소 (같은 source 내, final 단위)
-    let baseSlug = makeSlug(section.heading.text, meta, fallbackIndex)
-    if (!SLUG_RE.test(baseSlug)) {
-      baseSlug = `${meta.slugPrefix}-p-${String(fallbackIndex).padStart(3, '0')}`
+  for (const plan of plans) {
+    const finalSlug = plan.slug
+    if (!SLUG_RE.test(finalSlug)) {
+      throw new Error(`[decompose] 주소가 kebab-case가 아님: '${finalSlug}' (제목 「${plan.title}」). 순번 fallback은 없으므로 번호 파서를 고쳐야 한다.`)
     }
-    let finalSlug = baseSlug
     if (usedSlugs.has(finalSlug)) {
-      let n = 2
-      while (usedSlugs.has(`${baseSlug}-${n}`)) n++
-      finalSlug = `${baseSlug}-${n}`
-      slugCollisions.push({ original: baseSlug, resolved: finalSlug, count: n })
+      throw new Error(`[decompose] 주소 중복: '${finalSlug}' (제목 「${plan.title}」). 경로 체계상 생길 수 없는 충돌 — 번호 파서·-d 규칙 점검.`)
     }
     usedSlugs.add(finalSlug)
 
-    // 본문 + 이미지 처리
+    if (meta.slugScheme === 'outline') {
+      const hits = detectRangeViolations(plan.body, outlineKindsAtOrAbove(plan, planKinds))
+      for (const h of hits) warnings.push({ kind: 'range', slug: finalSlug, detail: h })
+    }
+
     const { body: processedBody, imagePatternCount, todoMarkers } = processBodyImages(
-      section.body,
+      plan.body,
       meta.sourceOrigin,
-      imageManifest,
       unmatchedImages,
       finalSlug,
     )
 
-    // 휴리스틱 추론
-    const headingPath = [...section.parentHeadings.map((h) => h.text), section.heading.text]
-    const bodySample = section.body.slice(0, 500)
-
+    const headingPath = [...plan.parentHeadings, plan.title]
+    const bodySample = plan.body.slice(0, 500)
     const inferredDomains = inferDomainsForSection(headingPath, bodySample)
     const hasInferredDomains = inferredDomains.length > 0
-    // frontmatter용 fallback (schema는 domains 최소 1개 요구).
-    // codex-rescue P1 #3: axis 판단에는 raw inferred를 쓰고 finalDomains 승격은 별도.
-    const finalDomains: Frontmatter['domains'] =
-      hasInferredDomains ? inferredDomains : ['정책법령']
-
+    const finalDomains: Frontmatter['domains'] = hasInferredDomains ? inferredDomains : ['정책법령']
     const inferredDts = inferDisabilityTypes(headingPath, bodySample, meta.defaultDisabilityTypes)
-    const inferredRegions = inferRegions(section.body)
+    const inferredRegions = inferRegions(plan.body)
 
     const lowConfidenceFields: string[] = []
     if (!hasInferredDomains) lowConfidenceFields.push('domains')
@@ -534,14 +970,9 @@ export function decomposeFile(args: {
       lowConfidenceFields.push('disability_types')
     }
     if (inferredRegions.length === 1 && inferredRegions[0] === '전국') {
-      // 본문에 지역 키워드가 있는데 매칭 못한 케이스 detect
-      if (/(시·도교육청|시도교육청|지역|광역|특별시|광역시)/.test(section.body)) {
-        lowConfidenceFields.push('regions')
-      }
+      if (/(시·도교육청|시도교육청|지역|광역|특별시|광역시)/.test(plan.body)) lowConfidenceFields.push('regions')
     }
 
-    // axis 결정 — raw inferred를 그대로 전달.
-    // hasInferredDomains===false면 axis가 uncategorized로 떨어져 검수 큐에 잡힘.
     const { axis: heuristicAxis, confidence: axisConfidence } = pickAxis(meta, {
       type: meta.docType,
       disability_types: inferredDts,
@@ -549,13 +980,6 @@ export function decomposeFile(args: {
       domains: hasInferredDomains ? inferredDomains : ([] as Frontmatter['domains']),
     })
 
-    // M4 axis overrides — 위원장(또는 검수자) 수동 결정이 휴리스틱을 덮어씀.
-    // content/_axis-overrides.json에서 로드. 해당 slug 매핑 발견 시 axis 교체.
-    //
-    // codex-rescue M4 P1 #2 — forcedAxis vs override 충돌 차단:
-    // 단체협약 source는 meta.forcedAxis='agreements'로 분류 무결성 보호.
-    // override가 forcedAxis와 다른 값으로 덮으면 단체협약 페이지가 agreements 라우트에서
-    // 빠지는 사고. fatal exit으로 막는다.
     const overrideAxis = axisOverrides[finalSlug]
     if (overrideAxis && meta.forcedAxis && overrideAxis !== meta.forcedAxis) {
       process.stderr.write(
@@ -567,9 +991,7 @@ export function decomposeFile(args: {
     }
     const axis: ContentAxis = overrideAxis ?? heuristicAxis
     const isOverridden = overrideAxis !== undefined && overrideAxis !== heuristicAxis
-    if (isOverridden) {
-      lowConfidenceFields.push(`axis-overridden:${heuristicAxis}->${overrideAxis}`)
-    }
+    if (isOverridden) lowConfidenceFields.push(`axis-overridden:${heuristicAxis}->${overrideAxis}`)
 
     const confidence: 'high' | 'medium' | 'low' =
       isOverridden
@@ -580,14 +1002,9 @@ export function decomposeFile(args: {
             ? 'low'
             : 'medium'
 
-    // 부모 헤딩 컨텍스트는 frontmatter parent_headings 필드로 보존 (M4-B).
-    // 이전 M3 구현은 본문 앞에 `> 부모1 > 부모2` blockquote으로 prepend했으나
-    // MDX 렌더 시 인용처럼 보이는 시맨틱 문제 발생 — KbPageLayout이 breadcrumb UI로 별도 렌더.
-    const parentHeadings = section.parentHeadings.map((h) => h.text)
-
-    // frontmatter 조립 (status는 무조건 draft)
+    const info = pageInfo.get(finalSlug) ?? {}
     const fm: Frontmatter = {
-      title: section.heading.text,
+      title: plan.title,
       type: meta.docType,
       disability_types: inferredDts,
       domains: finalDomains,
@@ -596,7 +1013,10 @@ export function decomposeFile(args: {
       status: 'draft',
       source: meta.source,
       source_origin: meta.sourceOrigin,
-      parent_headings: parentHeadings,
+      parent_headings: plan.parentHeadings,
+      ...(info.page ? { source_page: info.page } : {}),
+      ...(info.end && info.end !== info.page ? { source_page_end: info.end } : {}),
+      ...(info.pdf ? { source_page_pdf: info.pdf } : {}),
       authors: [],
       reviewed_by: [],
       references: [],
@@ -609,54 +1029,43 @@ export function decomposeFile(args: {
     }
 
     const relativePath = `content/${axis}/${finalSlug}.md`
-    const outputPath = path.join(REPO_ROOT, relativePath)
-
-    // 본문에는 더 이상 parent breadcrumb를 prepend하지 않음 (frontmatter로 이전).
-    const fullBody = processedBody
-
     pages.push({
-      outputPath,
+      outputPath: path.join(REPO_ROOT, relativePath),
       relativePath,
       slug: finalSlug,
       axis,
       frontmatter: fm,
-      body: fullBody,
+      body: processedBody,
       confidence,
       lowConfidenceFields,
       imagePatternCount,
     })
-
-    report.push({
-      slug: finalSlug,
-      relativePath,
-      axis,
-      confidence,
-      lowConfidenceFields,
-      unmatchedImages: 0,
-      todoMarkers,
-    })
+    report.push({ slug: finalSlug, relativePath, axis, confidence, lowConfidenceFields, unmatchedImages: 0, todoMarkers })
   }
 
-  // unmatched 카운트를 페이지별 리포트에 합산
   for (const item of unmatchedImages) {
     const r = report.find((r) => r.slug === item.slug)
     if (r) r.unmatchedImages += 1
   }
 
-  return {
-    sourceOrigin: meta.sourceOrigin,
-    pages,
-    report,
-    unmatchedImages,
-    slugCollisions,
-  }
+  return { sourceOrigin: meta.sourceOrigin, pages, report, unmatchedImages, slugCollisions: [], warnings }
+}
+
+/** 위키링크 표시명에 `]`·`|`가 들어가면 링크 구문이 깨지므로 전각 괄호·슬래시로 바꾼다(frontmatter title은 원문 유지). */
+function linkLabel(title: string): string {
+  return title.replace(/\[/g, '〔').replace(/\]/g, '〕').replace(/\|/g, '/')
+}
+
+/** `<!-- p.X -->`의 X를 사람이 읽는 표기로: 숫자 → N쪽, pdfN → PDF N쪽, Ⅰ-3 같은 장 쪽수 → 그대로 */
+function formatPage(page: string): string {
+  const pdf = page.match(/^pdf(\d+)$/i)
+  if (pdf) return `PDF ${pdf[1]}쪽`
+  return `${page}쪽`
 }
 
 // ---------- 마크다운 출력 ----------
 
 function serializeFrontmatter(fm: Frontmatter): string {
-  // gray-matter는 stringify도 제공하지만 출력 일관성을 위해 직접 작성.
-  // 키 순서 고정 → idempotency.
   const lines: string[] = ['---']
   lines.push(`title: ${JSON.stringify(fm.title)}`)
   lines.push(`type: ${fm.type}`)
@@ -670,14 +1079,15 @@ function serializeFrontmatter(fm: Frontmatter): string {
   lines.push(`  citation: ${JSON.stringify(fm.source.citation)}`)
   if (fm.source.url) lines.push(`  url: ${JSON.stringify(fm.source.url)}`)
   lines.push(`source_origin: ${JSON.stringify(fm.source_origin)}`)
-  // parent_headings 직렬화 — 비어있을 수도 있으나 키 자체는 항상 출력해 idempotency 유지.
-  // YAML flow scalar로 출력 (한국어 포함 문자열은 JSON.stringify로 안전 escape).
   const parentHeadings = fm.parent_headings ?? []
   if (parentHeadings.length === 0) {
     lines.push('parent_headings: []')
   } else {
     lines.push(`parent_headings: [${parentHeadings.map((v) => JSON.stringify(v)).join(', ')}]`)
   }
+  if (fm.source_page) lines.push(`source_page: ${JSON.stringify(fm.source_page)}`)
+  if (fm.source_page_end) lines.push(`source_page_end: ${JSON.stringify(fm.source_page_end)}`)
+  if (fm.source_page_pdf) lines.push(`source_page_pdf: ${fm.source_page_pdf}`)
   lines.push('reviewed_by: []')
   lines.push('references: []')
   lines.push('accessibility:')
@@ -698,54 +1108,61 @@ function writePage(page: PageOutput): void {
 
 // ---------- 리포트 ----------
 
+const WARNING_LABEL: Record<DecomposeWarning['kind'], string> = {
+  range: '제목 범위 밖 번호(2층 승격 누락 의심)',
+  dup_number: '같은 경로에 같은 번호(-d 접미)',
+  merged: '빈 조각 병합(100자 미만)',
+  split: '5만 자 분할',
+  overview: '개요 페이지(부모 서문 100자 이상)',
+  demoted_heading: '제목 후보 제외(굵게 강등)',
+  unnumbered: '번호 없는 제목(x<n>)',
+  title_dedup: '제목 중복 해소(부모 접두)',
+  page_strip: '제목 끝 쪽수 제거',
+}
+
 function writeReport(allResults: DecomposeResult[]): void {
   const lines: string[] = []
-  lines.push('# webfortd 출처 마크다운 분해 리포트 — M3')
+  lines.push('# webfortd 출처 마크다운 분해 리포트')
   lines.push('')
-  lines.push('자동 생성. `tsx scripts/decompose-source.ts` 실행 결과.')
+  lines.push('자동 생성. `tsx scripts/decompose-source.ts` 실행 결과. 규칙 정본: `docs/DECOMPOSE_V2_DESIGN.md`.')
   lines.push('')
   for (const result of allResults) {
     lines.push(`## ${result.sourceOrigin}`)
     lines.push('')
     lines.push(`- 분해 페이지: ${result.pages.length}개`)
-    lines.push(`- 슬러그 충돌 해소: ${result.slugCollisions.length}건`)
     lines.push(`- 이미지 미매칭: ${result.unmatchedImages.length}건`)
     const byAxis = new Map<string, number>()
     const byConfidence = new Map<string, number>()
+    let totalChars = 0
     for (const p of result.pages) {
       byAxis.set(p.axis, (byAxis.get(p.axis) ?? 0) + 1)
       byConfidence.set(p.confidence, (byConfidence.get(p.confidence) ?? 0) + 1)
+      totalChars += p.body.length
     }
     lines.push(`- axis 분포: ${[...byAxis.entries()].map(([a, n]) => `${a}=${n}`).join(', ')}`)
     lines.push(`- 신뢰도 분포: ${[...byConfidence.entries()].map(([c, n]) => `${c}=${n}`).join(', ')}`)
+    lines.push(`- 평균 본문 길이: ${result.pages.length ? Math.round(totalChars / result.pages.length) : 0}자`)
     lines.push('')
+    const byKind = new Map<DecomposeWarning['kind'], DecomposeWarning[]>()
+    for (const w of result.warnings) {
+      const arr = byKind.get(w.kind) ?? []
+      arr.push(w)
+      byKind.set(w.kind, arr)
+    }
+    for (const kind of Object.keys(WARNING_LABEL) as DecomposeWarning['kind'][]) {
+      const arr = byKind.get(kind)
+      if (!arr || arr.length === 0) continue
+      lines.push(`### ${WARNING_LABEL[kind]} (${arr.length}건)`)
+      lines.push('')
+      for (const w of arr.slice(0, 40)) lines.push(`- \`${w.slug || '-'}\` — ${w.detail}`)
+      if (arr.length > 40) lines.push(`- ... 외 ${arr.length - 40}건`)
+      lines.push('')
+    }
     const lowPages = result.pages.filter((p) => p.confidence === 'low')
     if (lowPages.length > 0) {
       lines.push('### 신뢰도 low 페이지 (검수 우선)')
       lines.push('')
-      for (const p of lowPages) {
-        lines.push(`- \`${p.relativePath}\` — 낮은 필드: ${p.lowConfidenceFields.join(', ') || '(없음, axis만 low)'}`)
-      }
-      lines.push('')
-    }
-    const mediumPages = result.pages.filter((p) => p.confidence === 'medium')
-    if (mediumPages.length > 0) {
-      lines.push(`### 신뢰도 medium 페이지 (${mediumPages.length}건)`)
-      lines.push('')
-      lines.push('주요 점검 대상:')
-      for (const p of mediumPages.slice(0, 20)) {
-        lines.push(`- \`${p.relativePath}\` — 낮은 필드: ${p.lowConfidenceFields.join(', ') || '(axis 추론)'}`)
-      }
-      if (mediumPages.length > 20) lines.push(`- ... 외 ${mediumPages.length - 20}건`)
-      lines.push('')
-    }
-    if (result.slugCollisions.length > 0) {
-      lines.push('### 슬러그 충돌 해소')
-      lines.push('')
-      for (const c of result.slugCollisions.slice(0, 30)) {
-        lines.push(`- \`${c.original}\` → \`${c.resolved}\``)
-      }
-      if (result.slugCollisions.length > 30) lines.push(`- ... 외 ${result.slugCollisions.length - 30}건`)
+      for (const p of lowPages) lines.push(`- \`${p.relativePath}\` — 낮은 필드: ${p.lowConfidenceFields.join(', ') || '(없음, axis만 low)'}`)
       lines.push('')
     }
   }
@@ -756,8 +1173,6 @@ function writeReport(allResults: DecomposeResult[]): void {
 // ---------- --reset 처리 ----------
 
 function resetSourcePages(sourceOrigin: string): number {
-  // content/<axis>/*.md 중 frontmatter.source_origin === sourceOrigin인 파일만 삭제.
-  // 위원장 수동 작성 파일(source_origin 없음 또는 다름)은 보호.
   let count = 0
   for (const axis of CONTENT_AXES) {
     const dir = path.join(CONTENT_DIR, axis)
@@ -782,9 +1197,6 @@ function resetSourcePages(sourceOrigin: string): number {
 
 // ---------- 매니페스트 로딩 ----------
 
-// content/_axis-overrides.json 로딩 (M4 수동 검수 결과 반영).
-// 형식: { "overrides": { "<slug>": "<axis>" } }
-// 알 수 없는 키(`_comment`, `_schema`)는 무시. 잘못된 axis 값은 에러로 종료.
 function loadAxisOverrides(): Record<string, ContentAxis> {
   if (!fs.existsSync(AXIS_OVERRIDES_PATH)) return {}
   try {
@@ -793,18 +1205,14 @@ function loadAxisOverrides(): Record<string, ContentAxis> {
     const validated: Record<string, ContentAxis> = {}
     for (const [slug, axis] of Object.entries(overrides)) {
       if (typeof axis !== 'string' || !(CONTENT_AXES as readonly string[]).includes(axis)) {
-        process.stderr.write(
-          `[decompose] _axis-overrides.json 잘못된 axis 값: '${slug}' → '${axis}'\n`,
-        )
+        process.stderr.write(`[decompose] _axis-overrides.json 잘못된 axis 값: '${slug}' → '${axis}'\n`)
         process.exit(2)
       }
       validated[slug] = axis as ContentAxis
     }
     return validated
   } catch (e) {
-    process.stderr.write(
-      `[decompose] _axis-overrides.json 파싱 실패: ${(e as Error).message}\n`,
-    )
+    process.stderr.write(`[decompose] _axis-overrides.json 파싱 실패: ${(e as Error).message}\n`)
     process.exit(2)
   }
 }
@@ -825,18 +1233,16 @@ async function main(): Promise<void> {
   const argv = process.argv.slice(2)
   const dryRun = argv.includes('--dry-run')
   const reset = argv.includes('--reset')
+  const includeFrozen = argv.includes('--include-frozen')
   const fileArgIdx = argv.indexOf('--file')
   const fileArg = fileArgIdx >= 0 ? argv[fileArgIdx + 1] : null
 
-  // SOURCE_FILE_MAP의 slugPrefix 유일성 invariant (codex-rescue P1 #4).
-  // 새 source 추가 시 prefix 충돌이 조용히 파일을 덮어쓰지 않도록 시작 시점에 검사.
+  // SOURCE_FILE_MAP prefix 충돌 검사 (codex-rescue P1 #4)
   const seenPrefixes = new Map<string, string>()
   for (const [fileName, meta] of Object.entries(SOURCE_FILE_MAP)) {
     const prev = seenPrefixes.get(meta.slugPrefix)
     if (prev) {
-      process.stderr.write(
-        `[decompose] SOURCE_FILE_MAP prefix 충돌: '${meta.slugPrefix}' — ${prev} vs ${fileName}\n`,
-      )
+      process.stderr.write(`[decompose] SOURCE_FILE_MAP prefix 충돌: '${meta.slugPrefix}' — ${prev} vs ${fileName}\n`)
       process.exit(2)
     }
     seenPrefixes.set(meta.slugPrefix, fileName)
@@ -877,62 +1283,60 @@ async function main(): Promise<void> {
       process.stderr.write(`[decompose] SKIP ${fileName} (SOURCE_FILE_MAP에 없음)\n`)
       continue
     }
+    const writable = !meta.frozen || includeFrozen
+    if (!writable && !dryRun) {
+      process.stdout.write(`[decompose] SKIP ${fileName} (frozen — 편집기 커밋 보호. 다시 쓰려면 --include-frozen)\n`)
+      continue
+    }
     if (reset && !dryRun) {
       const removed = resetSourcePages(meta.sourceOrigin)
       process.stdout.write(`[decompose] reset: ${meta.sourceOrigin} → ${removed}개 삭제\n`)
     }
     const result = decomposeFile({ filePath, imageManifest: manifestEntries, axisOverrides })
     allResults.push(result)
+    const count = (k: DecomposeWarning['kind']) => result.warnings.filter((w) => w.kind === k).length
+    const avg = result.pages.length ? Math.round(result.pages.reduce((s, p) => s + p.body.length, 0) / result.pages.length) : 0
     process.stdout.write(
-      `[decompose] ${fileName} → ${result.pages.length}개 페이지, 슬러그 충돌 ${result.slugCollisions.length}건, 이미지 미매칭 ${result.unmatchedImages.length}건\n`,
+      `[decompose] ${fileName} → ${result.pages.length}개 페이지(평균 ${avg}자), 개요 ${count('overview')}, 병합 ${count('merged')}, 분할 ${count('split')}, ` +
+      `범위 경고 ${count('range')}, 번호 중복 ${count('dup_number')}, 번호 없음 ${count('unnumbered')}, 제목 중복 해소 ${count('title_dedup')}, 이미지 ${result.unmatchedImages.length}건\n`,
     )
     if (!dryRun) {
-      for (const page of result.pages) {
-        writePage(page)
-      }
+      for (const page of result.pages) writePage(page)
+    } else {
+      const largest = [...result.pages].sort((a, b) => b.body.length - a.body.length).slice(0, 8)
+      process.stdout.write(`           가장 긴 페이지: ${largest.map((p) => `${p.slug}(${p.body.length})`).join(', ')}\n`)
     }
   }
 
-  // 글로벌 path 유일성 검사 (codex-rescue P1 #4) — 다른 source가 같은
-  // relativePath를 만들면 후행 source가 선행을 조용히 덮어씀.
+  // 글로벌 path 유일성 검사 (codex-rescue P1 #4)
   const pathSeen = new Map<string, string>()
   for (const r of allResults) {
     for (const p of r.pages) {
       const prev = pathSeen.get(p.relativePath)
       if (prev) {
-        process.stderr.write(
-          `[decompose] 글로벌 path 충돌: ${p.relativePath} — ${prev} (source A) vs ${r.sourceOrigin} (source B)\n`,
-        )
+        process.stderr.write(`[decompose] 글로벌 path 충돌: ${p.relativePath} — ${prev} (source A) vs ${r.sourceOrigin} (source B)\n`)
         process.exit(3)
       }
       pathSeen.set(p.relativePath, r.sourceOrigin)
     }
   }
 
-  // codex-rescue M4 P1 #1 — axis override stale slug 검출.
-  // _axis-overrides.json의 모든 key가 실제 분해 결과 slug와 매칭되어야 함.
-  // 오타(예: `2024-jbu-p-071x`)가 들어가면 decompose는 silent skip해 검수자가
-  // override가 적용됐다고 착각. fail-loud로 막는다.
-  //
-  // 단, `--file` 모드는 단일 source만 처리하므로 다른 source의 override 키가
-  // 정상적으로 "분해 결과 외" 상태. 이 모드에서는 stale 검사 skip (개발/디버깅 용도).
-  // 전체 실행(`--reset` 또는 인자 없는 풀 빌드)에서만 검증.
+  // axis override stale slug 검출 (codex-rescue M4 P1 #1) — 전체 실행에서만
   if (!fileArg && Object.keys(axisOverrides).length > 0) {
     const allSlugs = new Set<string>()
-    for (const r of allResults) {
-      for (const p of r.pages) allSlugs.add(p.slug)
-    }
-    const staleKeys = Object.keys(axisOverrides).filter((k) => !allSlugs.has(k))
+    for (const r of allResults) for (const p of r.pages) allSlugs.add(p.slug)
+    // 이번 실행에서 건너뛴(frozen) 출처의 키는 판정 대상이 아니다.
+    const processed = new Set(allResults.map((r) => r.sourceOrigin))
+    const skippedPrefixes = Object.values(SOURCE_FILE_MAP)
+      .filter((m) => !processed.has(m.sourceOrigin))
+      .map((m) => `${m.slugPrefix}-`)
+    const staleKeys = Object.keys(axisOverrides).filter(
+      (k) => !allSlugs.has(k) && !skippedPrefixes.some((p) => k.startsWith(p)),
+    )
     if (staleKeys.length > 0) {
-      process.stderr.write(
-        `[decompose] FATAL: _axis-overrides.json에 분해 결과와 매칭 안 되는 slug ${staleKeys.length}건:\n`,
-      )
-      for (const k of staleKeys) {
-        process.stderr.write(`         · '${k}' → '${axisOverrides[k]}'\n`)
-      }
-      process.stderr.write(
-        `         오타이거나 source 변경으로 slug가 사라진 경우. _axis-overrides.json에서 항목 제거 또는 정정.\n`,
-      )
+      process.stderr.write(`[decompose] FATAL: _axis-overrides.json에 분해 결과와 매칭 안 되는 slug ${staleKeys.length}건:\n`)
+      for (const k of staleKeys) process.stderr.write(`         · '${k}' → '${axisOverrides[k]}'\n`)
+      process.stderr.write(`         오타이거나 source 변경으로 slug가 사라진 경우. _axis-overrides.json에서 항목 제거 또는 정정.\n`)
       process.exit(4)
     }
   }
@@ -941,7 +1345,6 @@ async function main(): Promise<void> {
     writeReport(allResults)
     process.stdout.write(`[decompose] 리포트: ${path.relative(REPO_ROOT, REPORT_PATH)}\n`)
   } else {
-    // dry-run에서는 stdout 요약만
     let totalPages = 0
     let totalLow = 0
     let totalMedium = 0
@@ -950,9 +1353,7 @@ async function main(): Promise<void> {
       totalLow += r.pages.filter((p) => p.confidence === 'low').length
       totalMedium += r.pages.filter((p) => p.confidence === 'medium').length
     }
-    process.stdout.write(
-      `[decompose] DRY RUN 요약 — 페이지 ${totalPages}, low ${totalLow}, medium ${totalMedium}\n`,
-    )
+    process.stdout.write(`[decompose] DRY RUN 요약 — 페이지 ${totalPages}, low ${totalLow}, medium ${totalMedium}\n`)
   }
 }
 

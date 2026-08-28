@@ -24,6 +24,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import matter from 'gray-matter'
+import { altHash } from './lib/image-key'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -53,8 +54,12 @@ const REPORT_PATH = path.join(REPO_ROOT, 'docs/image-mapping-status.md')
 
 // TODO 마커 정규식 — decompose-source.ts processBodyImages 출력 형식과 정합.
 // 예: <!-- TODO: image-link source=2024-support-staff-duty-guide -- 원본: (이미지: 흐름도...) -->
+// 2026-08 3층 재생성부터 마커 다음 줄에 원문 `(이미지: alt)`가 남는다(alt 보존). apply는 마커와
+// 그 alt 줄을 함께 치환한다. 구 산출물(alt 줄 없음)도 매칭되도록 alt 줄은 선택.
 const TODO_MARKER_RE =
-  /<!--\s*TODO:\s*image-link\s+source=([\w-]+)\s+--\s*원본:\s*\(이미지:\s*([\s\S]*?)\)\s*-->/g
+  /<!--\s*TODO:\s*image-link\s+source=([\w-]+)\s+--\s*원본:\s*\(이미지:\s*([\s\S]*?)\)\s*-->(?:\n\(이미지:[^\n]*\))?/g
+
+// 매핑 키 = `<slug>#<source>#<altHash>`(scripts/lib/image-key.ts). 순번 키는 페이지 경계가 바뀌면 어긋나 폐기(설계 §3.5).
 
 interface ManifestEntry {
   source: string
@@ -67,13 +72,13 @@ interface ManifestEntry {
 interface TodoOccurrence {
   /** content/<axis>/<slug>.md 상대 경로 */
   filePath: string
-  /** 파일 내 이 source의 N번째 TODO 마커 (0-base) */
+  /** 파일 내 이 source의 N번째 TODO 마커 (0-base) — 순서 기반 교체에만 쓴다 */
   indexInFile: number
   /** TODO 마커가 명시한 source identifier */
   source: string
   /** 원본 alt 텍스트 */
   alt: string
-  /** 매핑 키 (apply에서 사용) — `<slug>#<source>#<indexInFile>` */
+  /** 매핑 키 (apply에서 사용) — `<slug>#<source>#<altHash>` */
   key: string
 }
 
@@ -141,7 +146,7 @@ function collectTodoOccurrences(files: string[]): TodoOccurrence[] {
         indexInFile: idx,
         source,
         alt,
-        key: `${slug}#${source}#${idx}`,
+        key: `${slug}#${source}#${altHash(alt)}`,
       })
     }
   }

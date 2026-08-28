@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""slug→raster index 매핑 사전 구축.
+"""slug→raster index 매핑 사전 구축. ⚠ v3 이미지 매핑 자산(2026-08-29 3층 재생성으로 content/_archive-v3/에 보존, 읽기 전용).
 
 알고리즘 (controller 사전 조사 후 plan §3.1.1에 더해 보강):
 1. KNOWN_ANSWERS (7건 ground truth, PR A A8 검증): hardcode 매핑
@@ -9,8 +9,8 @@
 4. unresolved JSON 분리 — closed-loop 검수 큐 routing.
 
 출력:
-- content/_slug-raster-map.json
-- content/_slug-raster-unresolved.json
+- content/_archive-v3/_slug-raster-map.json
+- content/_archive-v3/_slug-raster-unresolved.json
 
 acceptance: 매핑 성공률 >= 60% (test에서 강제).
 """
@@ -27,9 +27,9 @@ import fitz
 ROOT = Path(__file__).resolve().parents[1]
 PDF_DIR = ROOT / "data" / "source-pdf"
 CONTENT_DIR = ROOT / "content"
-MAPPINGS_PATH = CONTENT_DIR / "_image-mappings.json"
-MAP_OUT = CONTENT_DIR / "_slug-raster-map.json"
-UNRESOLVED_OUT = CONTENT_DIR / "_slug-raster-unresolved.json"
+MAPPINGS_PATH = CONTENT_DIR / "_archive-v3" / "_image-mappings.json"
+MAP_OUT = CONTENT_DIR / "_archive-v3" / "_slug-raster-map.json"
+UNRESOLVED_OUT = CONTENT_DIR / "_archive-v3" / "_slug-raster-unresolved.json"
 
 SOURCE_TO_PDF = {
     "2023-disability-types-work-support-report": "2023 장애유형별 장애인교원 근무 지원 방안_최종보고서.pdf",

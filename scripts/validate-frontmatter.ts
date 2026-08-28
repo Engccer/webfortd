@@ -14,6 +14,8 @@
  *   1. zod 스키마 (src/types/kb.ts)
  *   2. 슬러그(파일명 stem)가 kebab-case
  *   3. <axis>(부모 디렉터리)가 CONTENT_AXES 목록에 속함
+ *   4. 본문 게이트(2026-08 3층 재생성, DECOMPOSE_V2_DESIGN §3.6): 파서 잔존 태그 / 허용 태그 불균형 /
+ *      끊긴 위키링크 / 출처별 제목 중복 / 본문 100자 미만·5만 자 초과 / 4종 주소의 `-p-`·`appendix-` 재발
  */
 
 import fs from 'node:fs'
@@ -34,6 +36,15 @@ const CONTENT_ROOT = process.env.WEBFORTD_CONTENT_DIR
   : REPO_ROOT
 
 const SLUG_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/
+// 본문 게이트 상수(decompose-source.ts ALLOWED/FORBIDDEN_HTML_TAGS와 같은 목록)
+const FORBIDDEN_TAG_RE = /<\/?(page_header|page_number|page_footer|u|figure|span)\b[^>]*>/i
+const BALANCED_TAGS = ['mark', 'sub', 'sup'] as const
+const WIKILINK_RE = /\[\[([^\]|#]+)(?:#[^\]|]+)?(?:\|[^\]]+)?\]\]/g
+const BODY_MIN_CHARS = 100
+const BODY_MAX_CHARS = 50_000
+/** 순번 fallback 주소가 다시 생기면 안 되는 출처(4종) 접두 */
+const OUTLINE_PREFIX_RE = /^(2023-research|2023-hr|2024-jbu|2024-staff)-/
+const LEGACY_SLUG_RE = /-(p|appendix)-\d{3}(-|$)/
 
 interface ValidationError {
   filePath: string
@@ -177,6 +188,89 @@ function validateSlugAndAxis(
   }
 }
 
+// ---------- 본문 게이트 ----------
+
+function lineOf(body: string, index: number, fmLines: number): number {
+  return fmLines + body.slice(0, index).split('\n').length
+}
+
+function validateBody(rel: string, body: string, errors: ValidationError[]): void {
+  const fmLines = 0
+  const stem = slugStem(rel)
+  if (OUTLINE_PREFIX_RE.test(stem) && LEGACY_SLUG_RE.test(stem)) {
+    errors.push({ filePath: rel, line: 1, field: '(slug)', message: `4종 출처 주소에 순번 fallback(-p-NNN·-appendix-NNN)이 다시 생겼습니다: '${stem}' — decompose-source.ts 번호 파서 점검`, code: 'legacy_slug' })
+  }
+  const bodyWithoutComments = body.replace(/<!--[\s\S]*?-->/g, '')
+  const forbidden = bodyWithoutComments.match(FORBIDDEN_TAG_RE)
+  if (forbidden) {
+    errors.push({ filePath: rel, line: lineOf(body, body.indexOf(forbidden[0]), fmLines), field: '(body)', message: `파서 잔존 태그 '${forbidden[0]}' — 2층 정본에서 제거 후 재생성`, code: 'forbidden_html_tag' })
+  }
+  for (const tag of BALANCED_TAGS) {
+    const opens = (bodyWithoutComments.match(new RegExp(`<${tag}>`, 'g')) ?? []).length
+    const closes = (bodyWithoutComments.match(new RegExp(`</${tag}>`, 'g')) ?? []).length
+    if (opens !== closes) {
+      errors.push({ filePath: rel, line: 1, field: '(body)', message: `<${tag}> 여닫이 불일치(열림 ${opens}, 닫힘 ${closes}) — 렌더 시 MDX 컴파일 실패`, code: 'unbalanced_html_tag' })
+    }
+  }
+  // 본문 길이는 관련 페이지 블록·마커·위키링크 표기를 뺀 실질 글자 수(공백 제외)로 판정.
+  const effective = bodyWithoutComments
+    .replace(/\n## 관련 페이지[\s\S]*$/, '')
+    .replace(/^\s*#\s+[^\n]*\n/, '')
+    .replace(/\s+/g, '')
+  if (OUTLINE_PREFIX_RE.test(stem) && effective.length < BODY_MIN_CHARS) {
+    errors.push({ filePath: rel, line: 1, field: '(body)', message: `본문이 ${effective.length}자(공백 제외)로 ${BODY_MIN_CHARS}자 미만 — 빈 조각은 형제에 병합돼야 합니다`, code: 'body_too_short' })
+  }
+  if (body.length > BODY_MAX_CHARS) {
+    errors.push({ filePath: rel, line: 1, field: '(body)', message: `본문 ${body.length}자로 ${BODY_MAX_CHARS}자 초과 — 표 경계 분할(-ptN) 대상`, code: 'body_too_long' })
+  }
+}
+
+/** 위키링크 대상이 실제 슬러그인지(끊긴 링크 → 오류). sync-content는 기록만 하므로 여기서 막는다. */
+function detectBrokenWikilinks(files: string[]): ValidationError[] {
+  const slugs = new Set(files.map(slugStem))
+  const errors: ValidationError[] = []
+  for (const file of files) {
+    const rel = relativeTo(file, CONTENT_ROOT)
+    let body: string
+    try { body = matter(fs.readFileSync(file, 'utf-8')).content } catch { continue }
+    const masked = body.replace(/```[\s\S]*?```/g, (m) => m.replace(/[^\n]/g, ' ')).replace(/`[^`\n]*`/g, (m) => ' '.repeat(m.length))
+    let m: RegExpExecArray | null
+    WIKILINK_RE.lastIndex = 0
+    while ((m = WIKILINK_RE.exec(masked)) !== null) {
+      const target = m[1].trim()
+      if (!slugs.has(target)) {
+        errors.push({ filePath: rel, line: lineOf(masked, m.index, 0), field: '(wikilink)', message: `끊긴 위키링크 [[${target}]] — 대상 슬러그가 없습니다`, code: 'broken_wikilink' })
+      }
+    }
+  }
+  return errors
+}
+
+/** 같은 출처(source_origin) 안의 title 중복 → 오류(분해 스크립트의 제목 유일성 규칙 위반). */
+function detectDuplicateTitles(files: string[]): ValidationError[] {
+  const byKey = new Map<string, string[]>()
+  for (const file of files) {
+    let data: Record<string, unknown>
+    try { data = matter(fs.readFileSync(file, 'utf-8')).data } catch { continue }
+    const origin = String(data.source_origin ?? '')
+    const title = String(data.title ?? '')
+    if (!origin || origin === 'pre-phase-1' || !title) continue
+    const key = `${origin}\u0000${title}`
+    const arr = byKey.get(key) ?? []
+    arr.push(relativeTo(file, CONTENT_ROOT))
+    byKey.set(key, arr)
+  }
+  const errors: ValidationError[] = []
+  for (const [key, paths] of byKey) {
+    if (paths.length < 2) continue
+    const title = key.split('\u0000')[1]
+    for (const p of paths) {
+      errors.push({ filePath: p, line: 1, field: 'title', message: `같은 출처 안에서 제목 '${title}'이(가) ${paths.length}개 파일에 중복: ${paths.join(', ')}`, code: 'duplicate_title' })
+    }
+  }
+  return errors
+}
+
 // 전역 슬러그 중복 검사 (CONTENT_CONVENTIONS §2 충돌 방지 규칙).
 // slug 충돌은 위키링크 외래키 무결성을 깨뜨림.
 function detectSlugCollisions(files: string[]): ValidationError[] {
@@ -226,7 +320,7 @@ function validateFile(filePath: string): ValidationResult {
   const { raw: rawFrontmatter, startLine } = extractRawFrontmatter(fileContent)
   const fieldLineMap = buildFieldLineMap(rawFrontmatter, startLine)
 
-  let parsed: { data: Record<string, unknown> }
+  let parsed: { data: Record<string, unknown>; content: string }
   try {
     parsed = matter(fileContent)
   } catch (e) {
@@ -241,6 +335,7 @@ function validateFile(filePath: string): ValidationResult {
   }
 
   validateSlugAndAxis(filePath, errors)
+  validateBody(rel, parsed.content, errors)
 
   const result = FrontmatterSchema.safeParse(parsed.data)
   if (!result.success) {
@@ -355,6 +450,13 @@ function main(): void {
       const extra = byFile.get(result.filePath)
       if (extra) result.errors.push(...extra)
     }
+  }
+
+  // 본문 게이트(전역): 끊긴 위키링크·출처별 제목 중복 — 파일 단위 결과에 합쳐 보고.
+  for (const err of [...detectBrokenWikilinks(files), ...detectDuplicateTitles(files)]) {
+    const target = results.find((r) => r.filePath === err.filePath)
+    if (target) target.errors.push(err)
+    else results.push({ filePath: err.filePath, errors: [err] })
   }
 
   // codex-rescue M4 P1 #3 — axis override 정합성. 파일 단위 결과에 합쳐 보고.

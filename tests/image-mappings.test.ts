@@ -17,6 +17,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import os from 'node:os'
 import { execFileSync, spawnSync } from 'node:child_process'
+import { altHash } from '../scripts/lib/image-key'
 
 const REPO_ROOT = path.resolve(import.meta.dirname, '..')
 const TSX_BIN = path.join(REPO_ROOT, 'node_modules/.bin/tsx')
@@ -138,7 +139,7 @@ describe('image-mappings apply — 무결성 가드', () => {
         },
       ],
       mappings: {
-        'test-doc#test-src#0': {
+        [`test-doc#test-src#${altHash('정상 그림 alt')}`]: {
           manifest_path: 'public/source-images/test-src/page-010-fig-01.png',
           _alt_original: '정상 그림 alt',
         },
@@ -166,7 +167,7 @@ describe('image-mappings apply — 무결성 가드', () => {
         },
       ],
       mappings: {
-        'test-ov#test-src#0': {
+        [`test-ov#test-src#${altHash('원본 alt')}`]: {
           manifest_path: 'public/source-images/test-src/page-005-fig-01.png',
           _alt_original: '원본 alt',
           alt_override: '정제된 alt',
@@ -197,7 +198,7 @@ describe('image-mappings apply — 무결성 가드', () => {
       ],
       mappings: {
         // src-A TODO에 src-B의 raster를 매핑 (잘못된 매핑)
-        'test-srcmix#src-A#0': {
+        [`test-srcmix#src-A#${altHash('A의 그림')}`]: {
           manifest_path: 'public/source-images/src-B/page-001-fig-01.png',
           _alt_original: 'A의 그림',
         },
@@ -224,7 +225,7 @@ describe('image-mappings apply — 무결성 가드', () => {
       ],
       mappings: {
         // mappings의 _alt_original은 본문 alt와 다름 — stale indexInFile 시나리오
-        'test-stale#test-src#0': {
+        [`test-stale#test-src#${altHash('현재 본문에 있는 alt (다른 그림)')}`]: {
           manifest_path: 'public/source-images/test-src/page-010-fig-01.png',
           _alt_original: '오래된 PoC 시점 alt (이미 inserted된 다른 그림)',
         },
@@ -251,7 +252,7 @@ describe('image-mappings apply — 무결성 가드', () => {
         },
       ],
       mappings: {
-        'test-noalt#test-src#0': {
+        [`test-noalt#test-src#${altHash('아무 alt')}`]: {
           manifest_path: 'public/source-images/test-src/page-007-fig-01.png',
           // _alt_original 일부러 생략
         },
@@ -275,7 +276,7 @@ describe('image-mappings apply — 무결성 가드', () => {
         },
       ],
       mappings: {
-        'test-null#test-src#0': {
+        [`test-null#test-src#${altHash('미매핑 그림')}`]: {
           manifest_path: null,
           _alt_original: '미매핑 그림',
         },
@@ -306,7 +307,7 @@ describe('image-mappings apply — 무결성 가드', () => {
         },
       ],
       mappings: {
-        'test-norm#test-src#0': {
+        [`test-norm#test-src#${altHash(altInBody)}`]: {
           manifest_path: 'public/source-images/test-src/page-012-fig-01.png',
           _alt_original: altInJson,
         },
@@ -347,7 +348,7 @@ describe('image-mappings apply — 무결성 가드', () => {
         },
       ],
       mappings: {
-        'test-missing#test-src#0': {
+        [`test-missing#test-src#${altHash('alt')}`]: {
           manifest_path: 'public/source-images/test-src/page-999-fig-99.png',
           _alt_original: 'alt',
         },

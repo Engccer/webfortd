@@ -2,9 +2,11 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import sitemap from '../../src/app/sitemap'
 
-test('sitemap — total URL count ≥ 540', async () => {
+// 2026-08-29 3층 재생성으로 4종 파생 페이지는 2차 검증 전까지 draft(사이트맵 제외).
+// published = 단체협약 49 + resources + 정적 라우트. kb:bootstrap 일괄 공개 후 임계값을 다시 올린다.
+test('sitemap — total URL count ≥ 60', async () => {
   const urls = await sitemap()
-  assert.ok(urls.length >= 540, `expected ≥540, got ${urls.length}`)
+  assert.ok(urls.length >= 60, `expected ≥60, got ${urls.length}`)
 })
 
 test('sitemap — 각 entry는 url + lastModified 필드 보유', async () => {
@@ -25,10 +27,10 @@ test('sitemap — 정적 라우트 (wiki entry, library, media) 포함', async (
   }
 })
 
-test('sitemap — atomic 500건 이상 포함', async () => {
+test('sitemap — atomic(단체협약 포함) 40건 이상 포함', async () => {
   const urls = await sitemap()
   const atomicCount = urls.filter((u) =>
     /\/(disability-types|policies|agreements|domains|regions|uncategorized)\//.test(u.url),
   ).length
-  assert.ok(atomicCount >= 500, `atomic ≥500 기대, ${atomicCount}건`)
+  assert.ok(atomicCount >= 40, `atomic ≥40 기대, ${atomicCount}건`)
 })

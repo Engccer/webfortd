@@ -192,6 +192,15 @@ export const FrontmatterSchema = z
      * 분해 페이지가 아닌 수동 작성 페이지에서는 비어있을 수 있음(default []).
      */
     parent_headings: z.array(z.string()).default([]),
+    /**
+     * 원본 인쇄 쪽(2026-08 3층 재생성). 2층 v4의 `<!-- p.230 (pdf 254) -->` 주석에서
+     * 분해 스크립트가 채운다. `source_page`는 「Ⅰ-3」「pdf2」 같은 접두를 허용하는 문자열,
+     * `source_page_end`는 절이 끝나는 쪽, `source_page_pdf`는 PDF 절대 쪽(정수).
+     * 수동 작성 페이지·단체협약에는 없다.
+     */
+    source_page: z.string().optional(),
+    source_page_end: z.string().optional(),
+    source_page_pdf: z.number().int().positive().optional(),
     authors: z.array(z.string()).default([]),
     reviewed_by: z.array(z.string()).default([]),
     reviewed_at: isoDate.optional(),

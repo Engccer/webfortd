@@ -2,6 +2,18 @@
 
 > 날짜별 변경 이력(마일스톤 경계 갱신). 2026-07-10 이전 이력은 git log와 CLAUDE.md §Phase 진행 요약이 정본(지연 생성 원칙에 따라 이 파일은 iOS 트랙 진입 시점부터 시작).
 
+## 2026-08-29 — 3층 위키 문서 재생성 (v4 정본 → outline 주소 체계, 485 → 363건)
+
+- **배경**: BACKLOG C5. 2층 v4 4종(8/28)을 입력으로 `scripts/decompose-source.ts`를 설계 정본 `docs/DECOMPOSE_V2_DESIGN.md`대로 개정해 4종 파생 문서를 전면 재생성. 단체협약(2020-ca)은 `frozen`으로 잠가 편집기 커밋 2건을 보존.
+- **주소 체계**: 순번 fallback(`p-NNN`·`appendix-NNN`) 폐기 → 출처 접두 + 전 조상 번호(`2023-hr-2-2-2-1` = Ⅱ > 2. > 2) > (1)). 번호 없는 제목 `x<n>`, 원본 번호 중복 `-d2`, 5만 자 분할 `-pt<n>`, 부모 서문 개요 페이지는 부모 경로. splitLevel은 실측으로 research·hr·jbu 4, staff 3(평균 본문 8.2k/2.9k/2.8k/1.6k자).
+- **규칙**: 제목 후보 제외(`<표`·`<그림`·참고·TIP·Q&A → 굵게), 출처 내 제목 유일성(구분되는 가장 얕은 조상 접두), 제목 끝 쪽수 제거, 빈 조각(<100자) 형제 병합, 표 경계 5만 자 분할, 쪽 주석 → `source_page`·`source_page_end`·`source_page_pdf`(FrontmatterSchema 신설), 이미지 마커 뒤 원문 `(이미지: alt)` 보존, 본문 소제목 `##`부터 정규화, `## 관련 페이지`(같은 부모 아래 형제 `[[slug|제목]] (원본 N쪽)`, 개요 우선, 20건 초과 앞뒤 10) 신설.
+- **렌더**: `kb-mdx.ts`가 위키링크를 링크로 변환(해석기 `kb-links.ts` 주입, 종전엔 `[[slug]]`가 글자로 노출)하고 허용 태그 `<br>`·`<mark>`·`<sub>`·`<sup>`(속성 없음)만 escape 뒤 복원. 편집기 프리뷰도 동일 경로.
+- **대응표·참조 갱신**: `scripts/slug-migration.ts`(제목·소제목 일치 327 + 본문 포함도 128, 미매칭 30 = v3 잔재) → `docs/slug-migration-2026-08.csv`; `scripts/apply-slug-migration.ts`가 `_axis-overrides.json`(24 → 17키)·인기/역할 진입·미디어 카탈로그·FAQ 위키링크·테스트 고정값 치환. 회귀 표 `docs/regression-2026-08-review48.md`.
+- **검증 게이트**(`validate-frontmatter.ts`): 파서 잔존 태그·허용 태그 불균형·끊긴 위키링크·출처 내 제목 중복·100자 미만/5만 자 초과·순번 주소 재발 → 빌드 실패. 이미지 매핑 키는 `<slug>#<source>#<alt 해시>`로 재설계(`scripts/lib/image-key.ts`), v3 매핑 104건·래스터 후보 79건은 `content/_archive-v3/`에 보존.
+- **공개·임베딩**: 위원장 결정(8/28)대로 4종 363건 전부 draft(2차 검증 뒤 `kb:bootstrap` 일괄 공개). 그동안 production에서 4종 문서는 「검토 중」으로 숨겨지고 채팅 RAG는 DB의 v3 published 청크를 그대로 쓴다. 야간 sync+embed는 `content/.embed-paused`로 일시정지(파일 삭제 시 자동 재개).
+- **리뷰**(별도 컨텍스트, 실측 기반 12건): Important 2건 수정 — `kb-mdx` 허용 태그 복원이 대문자 태그를 살려 MDX 컴포넌트 참조(빌드 실패 자기 DoS)가 되던 것, 개요 페이지가 관련 페이지 형제 목록에서 고아가 되던 것(부록 슬러그 역파싱). Minor 7건 같은 커밋(참고 제목 정규식 한국어 경계·5만 자 예산·source_page_end 범위·H1 제거 정규식·병합 조각 소제목 강등·`Object.hasOwn`·적대 테스트), 3건 BACKLOG(C9 청커·E8).
+- **검증**: unit 409 / component 190 / lint 0 error / validate 422 / build 성공 / 실렌더 경로 MDX 컴파일 스윕 422건 전부 성공. 분해 경고: 범위 4(research 2건은 2층 제목 승격 누락 → BACKLOG C8), 원본 번호 중복 2, 분할 2(델파이 조사지).
+
 ## 2026-08-28 — 2층 마크다운 정본 v4 4종 재생성 (HWP 결정론·하이브리드 경로)
 
 - **배경**: 1차 검수(8/24)가 지적한 2층 결함(병합셀 날조·열 밀림·쪽 경계 잘림·표 누락·파서 태그 잔존)의 뿌리가 LLM 파싱이라, 편집 원본 HWP에서 결정론적으로 재생성. 2023 최종보고서는 HWP=정본 경로(`scripts/source-v4/build-2023-report.sh`, `2590760`), 인쇄 책자 3종은 초안 HWP(구조) + 인쇄 PDF(내용) 하이브리드(`build-3docs.sh`).

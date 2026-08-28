@@ -38,15 +38,15 @@ export const ROLE_ENTRIES: RoleEntry[] = [
     icon: "user",
     recommended: [
       {
-        slug: "2024-staff-p-183",
+        slug: "2024-staff-app-2",
         axis: "disability-types",
-        title: "특수 마우스",
+        title: "보조기기의 종류별 사용법 및 관리법",
         reason: "보조공학기기 신청 가이드",
       },
       {
-        slug: "2024-staff-p-159",
+        slug: "2024-staff-5-4-5",
         axis: "disability-types",
-        title: "비교과 활동 내용 입력 (학교생활기록부)",
+        title: "청각장애인교원 비교과 활동 내용 입력 (학교생활기록부)",
         reason: "학생부 입력 보조 지원",
       },
     ],
@@ -58,9 +58,9 @@ export const ROLE_ENTRIES: RoleEntry[] = [
     icon: "school",
     recommended: [
       {
-        slug: "2024-jbu-p-062",
+        slug: "2024-jbu-4-2-2-1",
         axis: "policies",
-        title: "정서적 학대",
+        title: "장애인 학대 유형",
         reason: "교권 보호 정책",
       },
     ],

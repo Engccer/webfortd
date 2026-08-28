@@ -1,3 +1,5 @@
+> **2026-08-29 갱신**: 매핑 키가 `<slug>#<source>#<indexInFile>`에서 **`<slug>#<source>#<alt 앞 40자 sha1 8자>`**(`scripts/lib/image-key.ts`)로 바뀌었다. 순번 키는 페이지 경계가 바뀔 때마다 어긋났기 때문이다. 3층 재생성 후 TODO 마커 다음 줄에 원문 `(이미지: alt)`가 남으며 `image:apply`가 마커와 그 줄을 함께 `![alt](path)`로 바꾼다. v3 시절 매핑 104건·래스터 후보 79건은 `content/_archive-v3/`에 보존(읽기 전용)하고 `content/_image-mappings.json`은 빈 상태에서 다시 시작한다. 아래 본문의 `#0` 예시는 구 키 형식이다.
+
 # M4-C 본문 이미지 매핑 가이드
 
 ## 배경

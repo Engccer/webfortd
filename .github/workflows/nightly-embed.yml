@@ -33,13 +33,19 @@ jobs:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
 
-      - name: content 변경 확인 (마지막 성공 SHA 대비)
+      - name: content 변경 확인 (마지막 성공 SHA 대비 · 일시정지 파일)
         id: gate
         run: |
           CURRENT=$(git log -1 --format=%H -- content/)
           LAST="${{ vars.LAST_EMBED_SHA }}"
           echo "current=$CURRENT" >> "$GITHUB_OUTPUT"
-          if [ "$CURRENT" = "$LAST" ]; then
+          # content/.embed-paused 가 있으면 sync·embed를 하지 않는다(SHA도 기록하지 않아
+          # 파일을 지운 다음 실행이 밀린 변경을 그대로 따라잡는다). 3층 재생성처럼 주소 체계가
+          # 바뀌어 DB 행이 고아가 되고 임베딩 전량 재생성(유료)이 걸리는 기간에 쓴다.
+          if [ -f content/.embed-paused ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::content/.embed-paused 존재 — kb:sync·kb:embed 건너뜀"
+          elif [ "$CURRENT" = "$LAST" ]; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
           else
             echo "skip=false" >> "$GITHUB_OUTPUT"

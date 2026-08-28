@@ -1,17 +1,18 @@
 #!/usr/bin/env node
 /**
+ * ⚠ v3 이미지 매핑 자산(2026-08-29 3층 재생성으로 content/_archive-v3/에 보존, 읽기 전용).
  * Task B2의 apply 판정 케이스를 _image-mappings.json의 manifest_path에 머지.
  * PR #5 _alt_original 가드는 npm run image:apply가 자체 검증.
  *
- * 입력: content/_image-mappings-candidates.json
- * 갱신: content/_image-mappings.json (manifest_path null → apply 후보 path)
+ * 입력: content/_archive-v3/_image-mappings-candidates.json
+ * 갱신: content/_archive-v3/_image-mappings.json (manifest_path null → apply 후보 path)
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const ROOT = process.cwd();
-const MAPPINGS_PATH = resolve(ROOT, "content/_image-mappings.json");
-const CAND_PATH = resolve(ROOT, "content/_image-mappings-candidates.json");
+const MAPPINGS_PATH = resolve(ROOT, "content/_archive-v3/_image-mappings.json");
+const CAND_PATH = resolve(ROOT, "content/_archive-v3/_image-mappings-candidates.json");
 
 const data = JSON.parse(readFileSync(MAPPINGS_PATH, "utf8"));
 const { candidates } = JSON.parse(readFileSync(CAND_PATH, "utf8"));

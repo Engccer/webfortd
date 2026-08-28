@@ -1,3 +1,4 @@
+// ⚠ v3 이미지 매핑 자산(2026-08-29 3층 재생성으로 content/_archive-v3/에 보존, 읽기 전용)
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
@@ -20,7 +21,7 @@ const GROUND_TRUTH: Array<{
 ];
 
 test("slug-raster-map: 7건 known-answer 매핑 정확", async () => {
-  const mapPath = resolve(process.cwd(), "content/_slug-raster-map.json");
+  const mapPath = resolve(process.cwd(), "content/_archive-v3/_slug-raster-map.json");
   const map = JSON.parse(await readFile(mapPath, "utf8")) as {
     mappings: Record<string, { source: string; raster: string; method: string }>;
   };
@@ -34,7 +35,7 @@ test("slug-raster-map: 7건 known-answer 매핑 정확", async () => {
 });
 
 test("slug-raster-map: unresolved JSON 존재 + 구조 검증", async () => {
-  const unresolvedPath = resolve(process.cwd(), "content/_slug-raster-unresolved.json");
+  const unresolvedPath = resolve(process.cwd(), "content/_archive-v3/_slug-raster-unresolved.json");
   const data = JSON.parse(await readFile(unresolvedPath, "utf8")) as {
     unresolved: Array<{ key: string; source: string; reason: string }>;
   };
@@ -42,9 +43,9 @@ test("slug-raster-map: unresolved JSON 존재 + 구조 검증", async () => {
 });
 
 test("slug-raster-map: 매핑 성공률 >= 60% (spec §3.1.1 acceptance criteria)", async () => {
-  const mapPath = resolve(process.cwd(), "content/_slug-raster-map.json");
+  const mapPath = resolve(process.cwd(), "content/_archive-v3/_slug-raster-map.json");
   const map = JSON.parse(await readFile(mapPath, "utf8")) as { mappings: Record<string, unknown> };
-  const unresolvedPath = resolve(process.cwd(), "content/_slug-raster-unresolved.json");
+  const unresolvedPath = resolve(process.cwd(), "content/_archive-v3/_slug-raster-unresolved.json");
   const unresolved = JSON.parse(await readFile(unresolvedPath, "utf8")) as { unresolved: unknown[] };
 
   const total = Object.keys(map.mappings).length + unresolved.unresolved.length;

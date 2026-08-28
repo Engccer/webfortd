@@ -4,8 +4,8 @@ import { test } from '@playwright/test'
 import { expectNoAxeViolations } from './axe-helper'
 
 const ATOMIC_SAMPLES = [
-  '/disability-types/2023-hr-p-004',
-  '/policies/2023-hr-1-3',
+  '/disability-types/2023-hr-x1-x3',
+  '/policies/2023-hr-2-2-1',
   '/agreements/2020-ca-1-2',
 ]
 

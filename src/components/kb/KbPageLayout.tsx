@@ -13,6 +13,7 @@ import { notFound } from "next/navigation"
 import { MDXClientWrapper } from "@/components/mdx/MDXClientWrapper"
 import { getKBDocBySlug } from "@/lib/kb"
 import { serializeKbContent } from "@/lib/kb-mdx"
+import { hrefForSlug } from "@/lib/kb-links"
 import { adaptFrontmatterToLegacy } from "@/lib/kb-adapter"
 import { Calendar, Home } from "lucide-react"
 import Link from "next/link"
@@ -72,7 +73,7 @@ export async function KbPageLayout({ axis, slug }: KbPageLayoutProps) {
     }
   }
 
-  const mdxSource = await serializeKbContent(doc.content)
+  const mdxSource = await serializeKbContent(doc.content, { resolveWikilink: hrefForSlug })
 
   return (
     <>

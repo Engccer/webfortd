@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 /**
+ * ⚠ v3 이미지 매핑 자산(2026-08-29 3층 재생성으로 content/_archive-v3/에 보존, 읽기 전용).
  * 4종 cross-validation (Phase 1.5b PR B Task B2).
  *
- * 입력: content/_slug-raster-map.json (B1 매핑 사전, 79건)
- *       content/_image-mappings.json  (_alt_original 전체 텍스트 소스)
- * 출력: content/_image-mappings-candidates.json (apply/review 결정)
+ * 입력: content/_archive-v3/_slug-raster-map.json (B1 매핑 사전, 79건)
+ *       content/_archive-v3/_image-mappings.json  (_alt_original 전체 텍스트 소스)
+ * 출력: content/_archive-v3/_image-mappings-candidates.json (apply/review 결정)
  *
  * 합의 게이트:
  *   - 4 YES → apply
@@ -30,10 +31,10 @@ import { execFile } from "node:child_process";
 import Anthropic from "@anthropic-ai/sdk";
 
 const REPO = "/Users/hunyongkim/Mac-Projects/webfortd";
-const MAP_PATH = `${REPO}/content/_slug-raster-map.json`;
-const MAPPINGS_PATH = `${REPO}/content/_image-mappings.json`;
+const MAP_PATH = `${REPO}/content/_archive-v3/_slug-raster-map.json`;
+const MAPPINGS_PATH = `${REPO}/content/_archive-v3/_image-mappings.json`;
 const CACHE_FILE = "/tmp/image-match-poc/cross-validate-cache.json";
-const OUT = `${REPO}/content/_image-mappings-candidates.json`;
+const OUT = `${REPO}/content/_archive-v3/_image-mappings-candidates.json`;
 
 // B1 매핑 사전 (source·raster·method 포함, alt는 truncated)
 const slugMap = JSON.parse(readFileSync(MAP_PATH, "utf8")).mappings;

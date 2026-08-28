@@ -7,6 +7,7 @@ import { loadDocumentCore, submitBodyCore, MSG } from '@/lib/editor/edit-core'
 import type { LoadResult, SubmitResult } from '@/lib/editor/edit-core'
 import { validateBody } from '@/lib/editor/document-io'
 import { serializeKbContent } from '@/lib/kb-mdx'
+import { hrefForSlug } from '@/lib/kb-links'
 import type { MDXRemoteSerializeResult } from 'next-mdx-remote'
 
 const DEPS = {
@@ -43,5 +44,5 @@ export async function previewBody(body: string): Promise<PreviewResult> {
   }
   const valid = await validateBody(body)
   if (!valid.ok) return { status: 'rejected', message: valid.message }
-  return { status: 'ok', source: await serializeKbContent(body) }
+  return { status: 'ok', source: await serializeKbContent(body, { resolveWikilink: hrefForSlug }) }
 }

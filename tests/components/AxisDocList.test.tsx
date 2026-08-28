@@ -5,14 +5,14 @@ import type { AxisDocListItem } from "@/lib/kb-axis"
 
 const ITEMS: AxisDocListItem[] = [
   {
-    slug: "2024-staff-p-183",
-    axis: "disability-types",
+    slug: "2024-staff-app-2",
+    axis: "policies",
     title: "특수 마우스",
     description: "보조공학기기 신청 가이드",
     dateLabel: "2024-03-11",
   },
   {
-    slug: "2023-hr-p-004",
+    slug: "2023-hr-x1-x3",
     axis: "disability-types",
     title: "장애인교원의 이해",
   },
@@ -27,7 +27,7 @@ describe("AxisDocList", () => {
   it("각 문서를 /{axis}/{slug} 링크로 렌더한다", () => {
     render(<AxisDocList items={ITEMS} />)
     const link = screen.getByRole("link", { name: "특수 마우스" })
-    expect(link).toHaveAttribute("href", "/disability-types/2024-staff-p-183")
+    expect(link).toHaveAttribute("href", "/policies/2024-staff-app-2")
   })
 
   it("링크의 접근 가능한 이름은 제목만이다 (날짜·설명이 섞이지 않음)", () => {
@@ -51,6 +51,6 @@ describe("AxisDocList", () => {
     render(<AxisDocList items={ITEMS} />)
     expect(
       screen.getByRole("link", { name: "장애인교원의 이해" }),
-    ).toHaveAttribute("href", "/disability-types/2023-hr-p-004")
+    ).toHaveAttribute("href", "/disability-types/2023-hr-x1-x3")
   })
 })

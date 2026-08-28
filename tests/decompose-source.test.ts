@@ -1,8 +1,8 @@
 /**
- * decompose-source.ts 회귀 테스트
+ * decompose-source.ts 회귀 테스트 (2026-08 3층 재생성판)
  *
- * 입력 5개는 실파일이므로 e2e 형태로 검증.
- * --reset 없는 dry-run으로 멱등성·페이지 수·슬러그 패턴을 검증한다.
+ * 입력은 실파일(data/source-md/ v4 4종 + 단체협약)이므로 e2e 형태로 검증한다.
+ * 규칙 정본: docs/DECOMPOSE_V2_DESIGN.md. 번호 파서 단위 테스트는 scripts/lib/outline.ts 대상.
  */
 
 import { describe, it } from 'node:test'
@@ -10,11 +10,14 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import path from 'node:path'
 import { execFileSync } from 'node:child_process'
+import matter from 'gray-matter'
+import { parseOutlineNumber, stripOutlineNumber } from '../scripts/lib/outline'
 
 const REPO_ROOT = path.resolve(import.meta.dirname, '..')
 const TSX_BIN = path.join(REPO_ROOT, 'node_modules/.bin/tsx')
 const DECOMPOSE_SCRIPT = path.join(REPO_ROOT, 'scripts/decompose-source.ts')
 const SOURCE_DIR = path.join(REPO_ROOT, 'data/source-md')
+const OUTLINE_PREFIXES = ['2023-research', '2023-hr', '2024-jbu', '2024-staff']
 
 function runDecompose(args: string[]): string {
   return execFileSync(TSX_BIN, [DECOMPOSE_SCRIPT, ...args], {
@@ -24,393 +27,290 @@ function runDecompose(args: string[]): string {
   })
 }
 
-describe('A. decompose dry-run', () => {
-  it('5개 입력 파일이 존재해야 한다', () => {
-    const files = fs.readdirSync(SOURCE_DIR).filter((f) => f.endsWith('.md'))
-    assert.equal(files.length, 5, `data/source-md/에 5개 .md가 있어야 함 (현재 ${files.length})`)
+function walkContent(): string[] {
+  const out: string[] = []
+  const stack = [path.join(REPO_ROOT, 'content')]
+  while (stack.length > 0) {
+    const cur = stack.pop()!
+    for (const entry of fs.readdirSync(cur, { withFileTypes: true })) {
+      const full = path.join(cur, entry.name)
+      if (entry.isDirectory()) {
+        if (entry.name === '_archive-v3') continue
+        stack.push(full)
+      } else if (entry.isFile() && entry.name.endsWith('.md')) out.push(full)
+    }
+  }
+  return out
+}
+
+function outlinePages(): Array<{ file: string; slug: string; data: Record<string, unknown>; body: string }> {
+  return walkContent()
+    .filter((f) => OUTLINE_PREFIXES.some((p) => path.basename(f).startsWith(`${p}-`)))
+    .map((file) => {
+      const parsed = matter(fs.readFileSync(file, 'utf-8'))
+      return { file, slug: path.basename(file, '.md'), data: parsed.data, body: parsed.content }
+    })
+}
+
+describe('A. 번호 파서(outline)', () => {
+  it('2층 v4 제목 번호 7계열을 정규화한다', () => {
+    assert.deepEqual(parseOutlineNumber('Ⅱ. 장애인교원 지원 관련 선행연구 분석'), { kind: 'roman', value: 2 })
+    assert.deepEqual(parseOutlineNumber('2. 분석 결과'), { kind: 'dot', value: 2 })
+    assert.deepEqual(parseOutlineNumber('1) 정보접근 분야'), { kind: 'paren-close', value: 1 })
+    assert.deepEqual(parseOutlineNumber('(3) 학교업무'), { kind: 'paren', value: 3 })
+    assert.deepEqual(parseOutlineNumber('⑦ 해외 지원 사례'), { kind: 'circled', value: 7 })
+    assert.deepEqual(parseOutlineNumber('㉣ 진행 및 참여자'), { kind: 'kor-circled', value: 4 })
+    assert.deepEqual(parseOutlineNumber('다. 장애인 교원의 장애유형별 특성'), { kind: 'kor-dot', value: 3 })
+    assert.deepEqual(parseOutlineNumber('라) 청각장애'), { kind: 'kor-close', value: 4 })
   })
 
-  it('--dry-run이 정상 종료해야 한다', () => {
-    const out = runDecompose(['--dry-run'])
-    assert.match(out, /DRY RUN 요약 — 페이지 \d+/)
+  it('부록 계열: 루트·◇ 부록N.·[부록 N-M]·<부록N>', () => {
+    assert.deepEqual(parseOutlineNumber('부록'), { kind: 'appendix-root' })
+    assert.deepEqual(parseOutlineNumber('◇ 부록1. 장애인교원 근무지원 방안 개발 관련 자료'), { kind: 'appendix', value: 1 })
+    assert.deepEqual(parseOutlineNumber('[부록 1- 2] 교사 직무 유형에 따른'), { kind: 'appendix', value: 1, sub: 2 })
+    assert.deepEqual(parseOutlineNumber('<부록3> 장애인교원 관련 유관기관 정보'), { kind: 'appendix', value: 3 })
   })
 
-  it('--dry-run 결과 페이지 수가 500개 이상이어야 한다 (분해 누락 회귀 방지)', () => {
-    const out = runDecompose(['--dry-run'])
-    const m = out.match(/DRY RUN 요약 — 페이지 (\d+)/)
-    assert.ok(m, 'stdout에 페이지 수 보고가 있어야 함')
-    const n = parseInt(m![1], 10)
-    assert.ok(n >= 500, `페이지 수가 500 이상이어야 함 (현재 ${n})`)
+  it('번호 없는 제목(□·평문)은 none', () => {
+    assert.equal(parseOutlineNumber('□ 학생 좌석 배치 지원 절차').kind, 'none')
+    assert.equal(parseOutlineNumber('근로지원인 서비스 신청서').kind, 'none')
   })
 
-  it('두 번 dry-run 결과의 페이지 수가 동일해야 한다 (idempotency 신호)', () => {
-    const a = runDecompose(['--dry-run']).match(/페이지 (\d+)/)
-    const b = runDecompose(['--dry-run']).match(/페이지 (\d+)/)
-    assert.equal(a![1], b![1])
+  it('stripOutlineNumber는 번호 표지만 뗀다', () => {
+    assert.equal(stripOutlineNumber('(2) 뇌병변장애'), '뇌병변장애')
+    assert.equal(stripOutlineNumber('Ⅲ. 시각장애인교원 지원 방안'), '시각장애인교원 지원 방안')
+    assert.equal(stripOutlineNumber('□ 지원 원칙'), '지원 원칙')
   })
 })
 
-describe('B. 단체협약 단일 파일 분해', () => {
-  const caFile = '교육부와 함께하는장애인교원노동조합 간 2020 단체협약.md'
-  const caPath = path.join(SOURCE_DIR, caFile)
-
-  it('단체협약 입력 파일이 존재', () => {
-    assert.ok(fs.existsSync(caPath))
+describe('B. dry-run·입력 파일', () => {
+  it('data/source-md/ 최상위에는 v4 4종 + 단체협약 5개가 있고 v3는 v3/ 하위에 보존된다', () => {
+    const files = fs.readdirSync(SOURCE_DIR).filter((f) => f.endsWith('.md'))
+    assert.equal(files.length, 5, `현재 ${files.length}: ${files.join(', ')}`)
+    assert.equal(files.filter((f) => f.includes('_fused_v4_')).length, 4)
+    const v3 = fs.readdirSync(path.join(SOURCE_DIR, 'v3')).filter((f) => f.endsWith('_fused_v3.md'))
+    assert.equal(v3.length, 4)
   })
 
-  it('--file 모드로 단체협약 분해 시 40개 이상 페이지가 보고되어야 한다', () => {
+  it('--dry-run이 정상 종료하고 페이지 수가 두 번 같다(idempotency 신호)', () => {
+    const a = runDecompose(['--dry-run']).match(/DRY RUN 요약 — 페이지 (\d+)/)
+    const b = runDecompose(['--dry-run']).match(/DRY RUN 요약 — 페이지 (\d+)/)
+    assert.ok(a && b, 'stdout에 페이지 수 보고가 있어야 함')
+    assert.equal(a![1], b![1])
+    assert.ok(parseInt(a![1], 10) >= 300, `4종 재생성 페이지 수가 300 이상이어야 함 (현재 ${a![1]})`)
+  })
+
+  it('단체협약은 frozen — 전체 실행에서 건너뛰고 --file dry-run은 40개 이상 보고', () => {
+    const caPath = path.join(SOURCE_DIR, '교육부와 함께하는장애인교원노동조합 간 2020 단체협약.md')
+    assert.ok(fs.existsSync(caPath))
     const out = runDecompose(['--dry-run', '--file', caPath])
     const m = out.match(/페이지 (\d+)/)
-    assert.ok(m, 'stdout에 페이지 수 보고가 있어야 함')
-    const n = parseInt(m![1], 10)
-    // splitLevel=4 (#### 제N조 단위)로 46개 + 부칙 등 47~50개
-    assert.ok(n >= 40, `단체협약은 H4 분할로 40개 이상 페이지가 나와야 함 (현재 ${n})`)
+    assert.ok(m && parseInt(m[1], 10) >= 40, `단체협약은 H4 분할로 40개 이상 (현재 ${m?.[1]})`)
+    const src = fs.readFileSync(DECOMPOSE_SCRIPT, 'utf-8')
+    assert.match(src, /frozen: true/, '단체협약 frozen 플래그 누락')
+    assert.match(src, /--include-frozen/, 'frozen 해제 플래그 누락')
   })
 })
 
-describe('C. 슬러그·axis 검증', () => {
-  it('content/<axis>/ 하위 모든 .md 슬러그가 ASCII kebab-case', () => {
+describe('C. 주소 체계(outline)', () => {
+  const pages = outlinePages()
+
+  it('4종 파생 페이지가 300건 이상이고 전부 draft·reviewed_by 빈 배열', () => {
+    assert.ok(pages.length >= 300, `현재 ${pages.length}`)
+    for (const p of pages) {
+      assert.equal(p.data.status, 'draft', `${p.slug}: 재생성 페이지는 2차 검증 전까지 draft`)
+      assert.deepEqual(p.data.reviewed_by, [], `${p.slug}: reviewed_by는 비어 있어야 함`)
+    }
+  })
+
+  it('순번 fallback(-p-NNN·-appendix-NNN)이 없고 슬러그는 kebab-case', () => {
     const SLUG_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/
-    const contentRoot = path.join(REPO_ROOT, 'content')
-    const axes = fs.readdirSync(contentRoot).filter((d) =>
-      fs.statSync(path.join(contentRoot, d)).isDirectory(),
-    )
-    for (const axis of axes) {
-      const dir = path.join(contentRoot, axis)
-      // recursive (resources 하위에는 subsection이 있음)
-      const stack = [dir]
-      while (stack.length > 0) {
-        const cur = stack.pop()!
-        for (const entry of fs.readdirSync(cur, { withFileTypes: true })) {
-          const full = path.join(cur, entry.name)
-          if (entry.isDirectory()) stack.push(full)
-          else if (entry.isFile() && entry.name.endsWith('.md')) {
-            const stem = entry.name.replace(/\.md$/, '')
-            assert.ok(SLUG_RE.test(stem), `슬러그가 kebab-case 위반: ${full}`)
-          }
-        }
+    for (const p of pages) {
+      assert.ok(SLUG_RE.test(p.slug), `kebab-case 위반: ${p.slug}`)
+      assert.doesNotMatch(p.slug, /-(p|appendix)-\d{3}(-|$)/, `순번 fallback 재발: ${p.slug}`)
+    }
+  })
+
+  it('경로 주소: 조상 번호가 슬러그에 누적된다(2023-hr 「Ⅱ > 2. > 2) > (1)」 = 2023-hr-2-2-2-1)', () => {
+    const p = pages.find((x) => x.slug === '2023-hr-2-2-2-1')
+    assert.ok(p, '2023-hr-2-2-2-1 없음')
+    assert.equal(p!.data.title, '(1) 개요')
+    assert.deepEqual(p!.data.parent_headings, ['Ⅱ. 장애인교원 인사관리', '2. 장애인교원 인사관리 지원 내용', '2) 전보 임용'])
+  })
+
+  it('부록·분할·개요·번호 없음 주소 형태가 존재한다', () => {
+    const slugs = new Set(pages.map((p) => p.slug))
+    assert.ok(slugs.has('2023-research-app-1-2'), '[부록 1-2] → app-1-2')
+    assert.ok(slugs.has('2023-research-app-3-pt1'), '5만 자 분할 -pt1')
+    assert.ok([...slugs].some((s) => /-x\d+$/.test(s)), '번호 없는 제목 x<n>')
+    const overview = pages.find((p) => p.slug === '2023-hr-1-2-2')
+    assert.ok(overview && overview.data.title === '2) 장애유형', '부모 서문 개요 페이지')
+  })
+
+  it('같은 출처 안에서 title이 유일하다', () => {
+    const byOrigin = new Map<string, Set<string>>()
+    for (const p of pages) {
+      const origin = String(p.data.source_origin)
+      const set = byOrigin.get(origin) ?? new Set()
+      assert.ok(!set.has(String(p.data.title)), `${origin}: 제목 중복 「${p.data.title}」`)
+      set.add(String(p.data.title))
+      byOrigin.set(origin, set)
+    }
+  })
+
+  it('제목 끝에 목차 쪽수가 남지 않는다', () => {
+    for (const p of pages) {
+      const title = String(p.data.title)
+      const m = title.match(/\s(\d{1,3})$/)
+      if (m && p.data.source_page) {
+        assert.notEqual(String(p.data.source_page).replace(/^.*?(\d+)$/, '$1'), m[1], `${p.slug}: 제목 끝 쪽수 잔존 「${title}」`)
+      }
+    }
+  })
+})
+
+describe('D. 본문 규칙', () => {
+  const pages = outlinePages()
+
+  it('쪽 주석은 본문에 없고 frontmatter source_page로 옮겨진다', () => {
+    let withPage = 0
+    for (const p of pages) {
+      assert.doesNotMatch(p.body, /<!--\s*p\./, `${p.slug}: 쪽 주석 잔존`)
+      if (p.data.source_page) {
+        withPage += 1
+        assert.equal(typeof p.data.source_page, 'string')
+        if (p.data.source_page_pdf !== undefined) assert.equal(typeof p.data.source_page_pdf, 'number')
+      }
+    }
+    assert.ok(withPage / pages.length > 0.9, `source_page 보유 비율 ${withPage}/${pages.length}`)
+  })
+
+  it('관련 페이지 블록은 [[slug|제목]] (원본 N쪽) 형식이고 대상이 실제 페이지다', () => {
+    const slugs = new Set(pages.map((p) => p.slug))
+    let blocks = 0
+    for (const p of pages) {
+      const m = p.body.match(/\n## 관련 페이지\n\n([\s\S]*)$/)
+      if (!m) continue
+      blocks += 1
+      for (const line of m[1].trim().split('\n')) {
+        const lm = line.match(/^- \[\[([a-z0-9-]+)\|([^\]]+)\]\]( \(원본 [^)]+쪽\))?$/)
+        assert.ok(lm, `${p.slug}: 관련 페이지 행 형식 위반 — ${line}`)
+        assert.ok(slugs.has(lm![1]), `${p.slug}: 관련 페이지 대상 없음 ${lm![1]}`)
+      }
+    }
+    assert.ok(blocks / pages.length > 0.8, `관련 페이지 블록 비율 ${blocks}/${pages.length}`)
+  })
+
+  it('이미지 마커 다음 줄에 원문 (이미지: alt)가 보존된다', () => {
+    let markers = 0
+    for (const p of pages) {
+      const re = /<!-- TODO: image-link source=[\w-]+ -- 원본: \(이미지: ([^\n]+?)\) -->\n\(이미지: \1\)/g
+      const found = p.body.match(/<!-- TODO: image-link/g)?.length ?? 0
+      const preserved = [...p.body.matchAll(re)].length
+      assert.equal(found, preserved, `${p.slug}: 마커 ${found}건 중 alt 보존 ${preserved}건`)
+      markers += found
+    }
+    assert.ok(markers >= 1, 'v4 이미지 패턴이 최소 1건은 마커로 남아야 함')
+  })
+
+  it('허용 태그만 남고(br·mark·sub·sup) 파서 잔존 태그는 없다', () => {
+    for (const p of pages) {
+      // 소문자 태그명만 검사(`<IV-18>` 같은 본문 표 번호 표기는 태그가 아니다)
+      const tags = p.body.replace(/<!--[\s\S]*?-->/g, '').match(/<\/?[a-z_]+\b[^>]*>/g) ?? []
+      for (const t of tags) {
+        assert.match(t, /^<\/?(br|mark|sub|sup)\s*\/?>$/, `${p.slug}: 허용 밖 태그 ${t}`)
       }
     }
   })
 
-  it('agreements/ 디렉터리에 단체협약 분해 결과가 있어야 한다', () => {
+  it('본문 안 소제목은 ##부터 시작한다(페이지 H1 아래 계층 정규화)', () => {
+    for (const p of pages) {
+      const withoutH1 = p.body.replace(/^\s*# [^\n]*\n/, '')
+      const levels = [...withoutH1.replace(/```[\s\S]*?```/g, '').matchAll(/^(#{1,6})\s+\S/gm)].map((m) => m[1].length)
+      if (levels.length === 0) continue
+      assert.equal(Math.min(...levels), 2, `${p.slug}: 본문 최상위 소제목이 h${Math.min(...levels)}`)
+    }
+  })
+})
+
+describe('E. 단체협약·수동 페이지 보호', () => {
+  it('agreements/는 2020-ca-* 40개 이상이고 published 상태를 유지한다', () => {
     const dir = path.join(REPO_ROOT, 'content/agreements')
     const files = fs.readdirSync(dir).filter((f) => f.endsWith('.md'))
-    assert.ok(files.length >= 40, `agreements/에 40개 이상 페이지가 있어야 함 (현재 ${files.length})`)
-    // 단체협약 슬러그는 2020-ca-* prefix
-    const caFiles = files.filter((f) => f.startsWith('2020-ca-'))
-    assert.equal(caFiles.length, files.length, 'agreements/ 페이지는 전부 2020-ca-* prefix여야 함')
+    assert.ok(files.length >= 40)
+    assert.ok(files.every((f) => f.startsWith('2020-ca-')))
+    const published = files.filter((f) => /status:\s*published/.test(fs.readFileSync(path.join(dir, f), 'utf-8')))
+    assert.equal(published.length, files.length, '단체협약은 재생성 대상이 아니므로 published 유지')
   })
 
-  it('disability-types/ 페이지의 frontmatter가 단일 장애유형을 갖는다', () => {
-    // M4 axis-overrides로 강제 승격된 페이지는 frontmatter 정규화가 M4-D 후속 작업에 위임됨 — 검사 제외.
-    const overridesPath = path.join(REPO_ROOT, 'content/_axis-overrides.json')
-    const overrideSlugs = new Set<string>()
-    if (fs.existsSync(overridesPath)) {
-      try {
-        const parsed = JSON.parse(fs.readFileSync(overridesPath, 'utf-8'))
-        for (const [slug, axis] of Object.entries(parsed.overrides ?? {})) {
-          if (axis === 'disability-types') overrideSlugs.add(slug)
-        }
-      } catch { /* ignore */ }
-    }
-    const dir = path.join(REPO_ROOT, 'content/disability-types')
-    if (!fs.existsSync(dir)) return
-    const files = fs.readdirSync(dir)
-      .filter((f) => f.endsWith('.md'))
-      .filter((f) => !overrideSlugs.has(f.replace(/\.md$/, '')))
-      .slice(0, 5)
-    for (const f of files) {
-      const content = fs.readFileSync(path.join(dir, f), 'utf-8')
-      const m = content.match(/disability_types:\s*\[([^\]]+)\]/)
-      assert.ok(m, `${f} frontmatter에 disability_types가 없음`)
-      const values = m![1].split(',').map((s) => s.trim().replace(/"/g, ''))
-      // disability-types axis는 단일 장애유형(전체/기타 제외)이어야 함
-      const concrete = values.filter((v) => v !== '"전체"' && v !== '"기타"' && v !== '전체' && v !== '기타')
-      assert.ok(concrete.length >= 1, `${f}: disability-types axis는 구체 장애유형 1개 이상 필요`)
-    }
-  })
-
-  it('분해 페이지의 대부분이 draft, published는 published gate 통과 필수', () => {
-    // M4 curation 후 일부 분해 페이지는 위원장 검수 후 status=published로 전환될 수 있음.
-    // 회귀 가드: published 페이지는 반드시 reviewed_by가 비어있지 않아야 함(published gate).
-    // 그리고 분해 페이지 대다수(>=95%)는 여전히 draft여야 함(대량 검수 미완료 상태 정상).
-    const contentRoot = path.join(REPO_ROOT, 'content')
-    const stack = [contentRoot]
-    let drafted = 0
-    let published = 0
-    while (stack.length > 0) {
-      const cur = stack.pop()!
-      for (const entry of fs.readdirSync(cur, { withFileTypes: true })) {
-        const full = path.join(cur, entry.name)
-        if (entry.isDirectory()) stack.push(full)
-        else if (entry.isFile() && entry.name.endsWith('.md')) {
-          const content = fs.readFileSync(full, 'utf-8')
-          // source_origin이 pre-phase-1인 경우는 위원장 수동 작성 페이지라 제외
-          const isManual = /source_origin:\s*["']?pre-phase-1["']?/.test(content)
-          if (isManual) continue
-          if (/status:\s*draft/.test(content)) {
-            drafted += 1
-          } else if (/status:\s*"?published"?/.test(content)) {
-            published += 1
-            // published gate 회귀 가드: reviewed_by가 비어있지 않아야 함
-            const reviewedByMatch = content.match(/reviewed_by:\s*(\[[^\]]*\])/)
-            assert.ok(
-              reviewedByMatch,
-              `${full}: published 페이지는 reviewed_by 필드가 있어야 함`,
-            )
-            const arr = reviewedByMatch![1].trim()
-            assert.notEqual(
-              arr,
-              '[]',
-              `${full}: published 페이지의 reviewed_by가 빈 배열 (published gate 위반)`,
-            )
-          }
-        }
-      }
-    }
-    assert.ok(published >= 500, `published 페이지 수가 500 이상이어야 함 (현재 ${published})`)
-    // 검수 진행률 가드: Phase B M1 bootstrap publish 완료 후 95% 이상 published.
-    const total = drafted + published
-    assert.ok(
-      published / total >= 0.95,
-      `published 비율 ${(published / total * 100).toFixed(1)}%가 95% 미만 — 대량 publish 상태가 유지되고 있는지 확인`,
-    )
-  })
-})
-
-describe('D. indent 코드블록 마스킹 (sync-content + decompose 공유 정책)', () => {
-  it('sync-content.ts에 INDENT_CODE_RE 정의가 있어야 한다', () => {
-    const src = fs.readFileSync(path.join(REPO_ROOT, 'scripts/sync-content.ts'), 'utf-8')
-    assert.match(src, /INDENT_CODE_RE/, 'sync-content.ts에 INDENT_CODE_RE가 정의돼 있어야 함')
-    assert.match(src, /replace\(INDENT_CODE_RE/, 'maskCodeBlocks가 INDENT_CODE_RE를 적용해야 함')
-  })
-
-  it('decompose-source.ts에도 같은 패턴이 있어야 한다', () => {
-    const src = fs.readFileSync(path.join(REPO_ROOT, 'scripts/decompose-source.ts'), 'utf-8')
-    assert.match(src, /INDENT_CODE_RE/)
-    assert.match(src, /Intl\.Segmenter|asciiKebab/)
-  })
-
-  it('sync-content.ts의 makeBodyExcerpt가 Intl.Segmenter 사용', () => {
-    const src = fs.readFileSync(path.join(REPO_ROOT, 'scripts/sync-content.ts'), 'utf-8')
-    assert.match(src, /Intl\.Segmenter/, '한국어 음절 경계 보존을 위해 Intl.Segmenter 사용')
-  })
-})
-
-describe('E. published gate', () => {
-  it('FrontmatterSchema에 published reviewed_by 체크가 있다', () => {
+  it('FrontmatterSchema에 source_page 3필드와 published gate가 있다', () => {
     const src = fs.readFileSync(path.join(REPO_ROOT, 'src/types/kb.ts'), 'utf-8')
-    assert.match(src, /status === 'published'/, "published gate 룰이 누락")
-    assert.match(src, /reviewed_by/, 'reviewed_by 필드 체크가 있어야 함')
+    assert.match(src, /source_page: z\.string\(\)\.optional\(\)/)
+    assert.match(src, /source_page_end: z\.string\(\)\.optional\(\)/)
+    assert.match(src, /source_page_pdf: z\.number\(\)\.int\(\)\.positive\(\)\.optional\(\)/)
+    assert.match(src, /status === 'published'/)
   })
 })
 
-describe('F. M3 codex-rescue P0/P1 패치 회귀 방지', () => {
-  it('![](source-images) 삽입은 _image-mappings.json 매핑 수와 일치 (P0 #1 회귀 가드)', () => {
-    // M3 P0 정책: 분해 단계에서 자동 이미지 삽입 금지. TODO 마커 보존만.
-    // M4-C image:apply는 _image-mappings.json 명세로 의도적으로 ![](path) 교체.
-    // 회귀 가드: 본문의 ![](source-images) 수가 매핑 명세의 매핑 수보다 많으면 비정상.
-    const axes = ['policies', 'domains', 'agreements', 'disability-types', 'regions', 'uncategorized']
-    let bodyImageCount = 0
-    for (const axis of axes) {
-      const dir = path.join(REPO_ROOT, 'content', axis)
-      if (!fs.existsSync(dir)) continue
-      for (const f of fs.readdirSync(dir)) {
-        if (!f.endsWith('.md')) continue
-        const content = fs.readFileSync(path.join(dir, f), 'utf-8')
-        const matches = content.match(/!\[[^\]]+\]\(\/source-images\//g) ?? []
-        bodyImageCount += matches.length
-      }
-    }
-    // _image-mappings.json이 있으면 그 매핑 수와 비교, 없으면 0이어야 함.
-    const mappingsPath = path.join(REPO_ROOT, 'content/_image-mappings.json')
-    let mappedCount = 0
-    if (fs.existsSync(mappingsPath)) {
-      const j = JSON.parse(fs.readFileSync(mappingsPath, 'utf-8'))
-      mappedCount = Object.values(j.mappings ?? {}).filter(
-        (e) => (e as { manifest_path?: string | null }).manifest_path,
-      ).length
-    }
-    assert.equal(
-      bodyImageCount,
-      mappedCount,
-      `본문 ![](source-images) ${bodyImageCount}건 ≠ 매핑 명세 ${mappedCount}건 ` +
-      `— 자동 삽입(P0 위반) 또는 명세 외 수동 삽입 의심`,
-    )
+describe('F. 참조 정합(대응표·이미지 매핑·검증 게이트)', () => {
+  it('slug 대응표 CSV가 있고 4종 구 주소 455건 이상이 새 주소를 가진다', () => {
+    const csv = fs.readFileSync(path.join(REPO_ROOT, 'docs/slug-migration-2026-08.csv'), 'utf-8')
+    const rows = csv.split('\n').slice(1).filter(Boolean)
+    const mapped = rows.filter((r) => !/^[^,]+,,/.test(r))
+    assert.ok(rows.length >= 480, `행 ${rows.length}`)
+    assert.ok(mapped.length >= 450, `대응 ${mapped.length}`)
   })
 
-  it('이미지 TODO 마커가 본문에 보존되어 있어야 한다 (P0 #2)', () => {
-    // 적어도 일부 페이지에 TODO: image-link 마커가 있어야 함 (이미지 패턴이 본문에 있는 경우)
-    const dir = path.join(REPO_ROOT, 'content/policies')
-    const allContents = fs.readdirSync(dir)
-      .filter(f => f.endsWith('.md'))
-      .map(f => fs.readFileSync(path.join(dir, f), 'utf-8'))
-      .join('\n')
-    const todoCount = (allContents.match(/<!-- TODO: image-link source=/g) ?? []).length
-    assert.ok(todoCount >= 1, `policies에 TODO 이미지 마커가 최소 1개 있어야 함 (현재 ${todoCount})`)
-  })
-
-  it('도메인 미검출 시 uncategorized로 분기되거나 axis-overrides로 명시 처리되어야 한다 (P1 #3 / M4)', () => {
-    // M3 P1 #3 정책: domains 매칭 실패 시 axis=uncategorized (placeholder 'policies' 자동 승격 금지).
-    // M4: 위원장 수동 검수가 content/_axis-overrides.json으로 override 가능.
-    //     overrides가 비어있지 않으면 uncategorized는 비어도 됨(수동 처리 완료).
-    //     수동 처리 완료 후 uncategorized 디렉터리 자체가 제거된 상태도 동일하게 허용 —
-    //     아래 OR 조건의 의도가 "디렉터리 있지만 비어 있음 == 디렉터리 자체가 없음"이므로
-    //     존재 강제 assertion은 제거하고 files=[] 처리.
-    const dir = path.join(REPO_ROOT, 'content/uncategorized')
-    const files = fs.existsSync(dir)
-      ? fs.readdirSync(dir).filter(f => f.endsWith('.md'))
-      : []
-    const overridesPath = path.join(REPO_ROOT, 'content/_axis-overrides.json')
-    let overrideCount = 0
-    if (fs.existsSync(overridesPath)) {
-      try {
-        const overrides = JSON.parse(fs.readFileSync(overridesPath, 'utf-8')).overrides ?? {}
-        overrideCount = Object.keys(overrides).length
-      } catch {
-        // ignore parse error — test below will fail-loud
-      }
-    }
-    assert.ok(
-      files.length >= 1 || overrideCount >= 1,
-      `uncategorized 페이지 0개일 땐 axis-overrides가 최소 1건 있어야 함 (files=${files.length}, overrides=${overrideCount})`,
-    )
-  })
-
-  it('decompose-source.ts에 SOURCE_FILE_MAP prefix 유일성 검사가 있어야 한다 (P1 #4)', () => {
-    const src = fs.readFileSync(path.join(REPO_ROOT, 'scripts/decompose-source.ts'), 'utf-8')
-    assert.match(src, /SOURCE_FILE_MAP prefix 충돌/, 'prefix 유일성 invariant 누락')
-    assert.match(src, /글로벌 path 충돌/, '글로벌 path 유일성 invariant 누락')
-  })
-
-  it('maskCodeBlocks가 nested list marker 휴리스틱을 적용해야 한다 (P1 #5)', () => {
-    const syncSrc = fs.readFileSync(path.join(REPO_ROOT, 'scripts/sync-content.ts'), 'utf-8')
-    const decomposeSrc = fs.readFileSync(path.join(REPO_ROOT, 'scripts/decompose-source.ts'), 'utf-8')
-    // 두 스크립트 모두 list marker 휴리스틱이 있어야 함
-    assert.match(syncSrc, /\[-\*\+\]\\s\|.*\\d\+\\\./, 'sync-content.ts에 list marker 휴리스틱 누락')
-    assert.match(decomposeSrc, /\[-\*\+\]\\s\|.*\\d\+\\\./, 'decompose-source.ts에 list marker 휴리스틱 누락')
-  })
-
-  it('decompose-source.ts에 axis-overrides 로딩·적용 로직이 있어야 한다 (M4-A)', () => {
-    const src = fs.readFileSync(path.join(REPO_ROOT, 'scripts/decompose-source.ts'), 'utf-8')
-    assert.match(src, /loadAxisOverrides/, 'loadAxisOverrides 함수 누락')
-    assert.match(src, /axisOverrides\[finalSlug\]/, 'override 적용 코드 누락')
-    assert.match(src, /AXIS_OVERRIDES_PATH/, 'AXIS_OVERRIDES_PATH 상수 누락')
-  })
-
-  it('분해 페이지에 parent_headings frontmatter가 있고 본문 첫 줄이 blockquote가 아니어야 한다 (M4-B)', () => {
-    // 단체협약 페이지(splitLevel=4)는 parent_headings에 상위 H1/H2/H3 헤딩이 들어감.
-    const dir = path.join(REPO_ROOT, 'content/agreements')
-    if (!fs.existsSync(dir)) return
-    const files = fs.readdirSync(dir).filter((f) => f.endsWith('.md')).slice(0, 5)
-    assert.ok(files.length > 0, 'agreements 디렉터리에 페이지가 있어야 함')
-    for (const f of files) {
-      const content = fs.readFileSync(path.join(dir, f), 'utf-8')
-      assert.match(content, /parent_headings:/, `${f}: parent_headings 키 누락`)
-      // 본문 첫 줄(# H1 직후)이 blockquote(> ...)이면 M4-B 이전 구버전 산출물.
-      const bodyMatch = content.match(/^# .*?\n\n([^\n]+)/m)
-      if (bodyMatch) {
-        assert.ok(
-          !bodyMatch[1].startsWith('> '),
-          `${f}: 본문 첫 줄이 blockquote — M4-B parent_headings 이전 미적용`,
-        )
+  it('src 큐레이션·axis override·FAQ 위키링크에 구 주소가 남아 있지 않다', () => {
+    const slugs = new Set(walkContent().map((f) => path.basename(f, '.md')))
+    const targets = [
+      'src/lib/wiki-popular.ts', 'src/lib/wiki-role-entries.ts', 'src/lib/media-curation.ts',
+      'content/_axis-overrides.json',
+      ...fs.readdirSync(path.join(REPO_ROOT, 'content/faq')).map((f) => `content/faq/${f}`),
+    ]
+    for (const t of targets) {
+      const text = fs.readFileSync(path.join(REPO_ROOT, t), 'utf-8')
+      for (const m of text.matchAll(/\b(2023-research|2023-hr|2024-jbu|2024-staff)-[a-z0-9-]+/g)) {
+        if (m[0].endsWith('-seat-assignment-flow')) continue // 미디어 카탈로그 자체 슬러그
+        assert.ok(slugs.has(m[0]), `${t}: 존재하지 않는 주소 ${m[0]}`)
       }
     }
   })
 
-  it('KbPageLayout이 parent_headings을 breadcrumb로 렌더해야 한다 (M4-B)', () => {
-    const src = fs.readFileSync(
-      path.join(REPO_ROOT, 'src/components/kb/KbPageLayout.tsx'),
-      'utf-8',
-    )
-    assert.match(src, /parent_headings/, 'KbPageLayout에 parent_headings 참조 누락')
-    // breadcrumb은 무명 div + 시맨틱 <ol>로 렌더 — nav landmark/aria-label은 제거(미니멀 접근성).
-    assert.match(src, /<ol className="flex flex-wrap items-center/, 'breadcrumb ol 렌더 누락')
-  })
-
-  it('FrontmatterSchema에 parent_headings 필드가 정의되어야 한다 (M4-B)', () => {
-    const src = fs.readFileSync(path.join(REPO_ROOT, 'src/types/kb.ts'), 'utf-8')
-    assert.match(src, /parent_headings: z\.array\(z\.string\(\)\)\.default\(\[\]\)/,
-      'FrontmatterSchema.parent_headings 누락')
-  })
-
-  it('content/_axis-overrides.json이 valid한 schema를 따라야 한다 (M4-A)', () => {
-    const overridesPath = path.join(REPO_ROOT, 'content/_axis-overrides.json')
-    if (!fs.existsSync(overridesPath)) {
-      // overrides 파일이 없는 상태도 허용 (decompose는 빈 객체로 처리).
-      return
-    }
-    const parsed = JSON.parse(fs.readFileSync(overridesPath, 'utf-8'))
-    assert.ok(typeof parsed.overrides === 'object' && parsed.overrides !== null, 'overrides 키가 객체여야 함')
-    const validAxes = new Set([
-      'disability-types', 'domains', 'regions', 'policies',
-      'agreements', 'stories', 'resources', 'uncategorized',
-    ])
-    for (const [slug, axis] of Object.entries(parsed.overrides)) {
-      assert.ok(typeof slug === 'string' && slug.length > 0, `slug가 비어있음: ${slug}`)
-      assert.ok(validAxes.has(axis as string), `${slug}: 알 수 없는 axis '${axis}'`)
-    }
-  })
-
-  it('image-mappings 헬퍼 스크립트와 가이드가 존재해야 한다 (M4-C)', () => {
-    const script = path.join(REPO_ROOT, 'scripts/image-mappings.ts')
-    const guide = path.join(REPO_ROOT, 'docs/IMAGE_MAPPING_GUIDE.md')
-    assert.ok(fs.existsSync(script), 'scripts/image-mappings.ts 누락')
-    assert.ok(fs.existsSync(guide), 'docs/IMAGE_MAPPING_GUIDE.md 누락')
-    const src = fs.readFileSync(script, 'utf-8')
-    // 3개 서브커맨드와 안전 가드 invariant
-    assert.match(src, /'report'/, 'report 서브커맨드 누락')
-    assert.match(src, /'template'/, 'template 서브커맨드 누락')
-    assert.match(src, /'apply'/, 'apply 서브커맨드 누락')
-    // M4 codex-rescue P0 패치 후 변수명 변경: validManifestPaths → manifestByPath (Map for source lookup)
+  it('image-mappings 키는 alt 해시 스킴이고 본문 ![](source-images) 수는 매핑 수와 같다(P0 회귀 가드)', () => {
+    const src = fs.readFileSync(path.join(REPO_ROOT, 'scripts/image-mappings.ts'), 'utf-8')
+    assert.match(src, /altHash\(alt\)/, 'alt 해시 키 누락')
     assert.match(src, /manifestByPath/, '매니페스트 path 정합 가드 누락')
-    assert.match(src, /이미지 파일이 디스크에 없음/, '디스크 존재 가드 누락')
-  })
-
-  it('decompose-source.ts에 forcedAxis vs override 충돌 가드가 있어야 한다 (M4 codex-rescue P1 #2)', () => {
-    const src = fs.readFileSync(path.join(REPO_ROOT, 'scripts/decompose-source.ts'), 'utf-8')
-    assert.match(src, /axis override가 forcedAxis와 충돌/, 'forcedAxis 충돌 가드 누락')
-  })
-
-  it('decompose-source.ts에 stale slug override 검출 가드가 있어야 한다 (M4 codex-rescue P1 #1)', () => {
-    const src = fs.readFileSync(path.join(REPO_ROOT, 'scripts/decompose-source.ts'), 'utf-8')
-    assert.match(src, /_axis-overrides\.json에 분해 결과와 매칭 안 되는 slug/, 'stale slug 가드 누락')
-  })
-
-  it('image-mappings.ts에 source 교차 검증이 있어야 한다 (M4 codex-rescue P0)', () => {
-    const src = fs.readFileSync(path.join(REPO_ROOT, 'scripts/image-mappings.ts'), 'utf-8')
     assert.match(src, /manifestEntry\.source !== occ\.source/, 'source 교차 검증 가드 누락')
-    assert.match(src, /다른 출처 이미지 삽입 차단/, 'source 가드 경고 메시지 누락')
+    const j = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'content/_image-mappings.json'), 'utf-8'))
+    const mappedCount = Object.values(j.mappings ?? {}).filter((e) => (e as { manifest_path?: string | null }).manifest_path).length
+    let bodyImageCount = 0
+    for (const f of walkContent()) bodyImageCount += (fs.readFileSync(f, 'utf-8').match(/!\[[^\]]+\]\(\/source-images\//g) ?? []).length
+    assert.equal(bodyImageCount, mappedCount)
+    assert.ok(fs.existsSync(path.join(REPO_ROOT, 'content/_archive-v3/_image-mappings.json')), 'v3 매핑 archive 누락')
   })
 
-  it('image-mappings.ts가 frontmatter raw block을 보존해야 한다 (M4 codex-rescue P1 #4)', () => {
-    const src = fs.readFileSync(path.join(REPO_ROOT, 'scripts/image-mappings.ts'), 'utf-8')
-    // matter.stringify는 코멘트에서 언급은 허용(why-not 설명), 실제 호출 라인은 금지.
-    // 라인별 검사: 코멘트(`//`)나 문자열 메시지가 아닌 호출형 사용을 reject.
-    const callLines = src
-      .split('\n')
-      .filter((line) => {
-        const trimmed = line.trim()
-        if (trimmed.startsWith('//') || trimmed.startsWith('*')) return false
-        return /matter\.stringify\s*\(/.test(line)
-      })
-    assert.equal(callLines.length, 0, `matter.stringify 호출 발견 — frontmatter 재직렬화 우려: ${callLines.join('\n')}`)
-    assert.match(src, /fmBlock = fmMatch\[1\]/, 'raw frontmatter 보존 로직 누락')
-  })
-
-  it('validate-frontmatter.ts에 stale axis-override 검사가 있어야 한다 (M4 codex-rescue P1 #3)', () => {
+  it('validate-frontmatter.ts에 본문 게이트 6종이 있다', () => {
     const src = fs.readFileSync(path.join(REPO_ROOT, 'scripts/validate-frontmatter.ts'), 'utf-8')
-    assert.match(src, /detectStaleAxisOverrides/, 'detectStaleAxisOverrides 함수 누락')
-    assert.match(src, /stale_axis_override/, 'stale_axis_override error code 누락')
+    for (const code of ['forbidden_html_tag', 'unbalanced_html_tag', 'broken_wikilink', 'duplicate_title', 'body_too_short', 'body_too_long', 'legacy_slug', 'stale_axis_override']) {
+      assert.match(src, new RegExp(code), `${code} 게이트 누락`)
+    }
   })
 
-  it('image-mappings report 산출물이 호출 시 갱신되어야 한다 (M4-C)', async () => {
-    // 무거운 통합 테스트 — 실제 스크립트는 다른 곳에서 실행되므로 산출물 존재만 확인.
-    const reportPath = path.join(REPO_ROOT, 'docs/image-mapping-status.md')
-    if (!fs.existsSync(reportPath)) return // report 미실행 상태도 허용
-    const md = fs.readFileSync(reportPath, 'utf-8')
-    assert.match(md, /# 본문 이미지 TODO 마커 매핑 현황/, '리포트 헤더 누락')
-    assert.match(md, /출처별 TODO 분포/, '출처 분포 섹션 누락')
+  it('kb-mdx가 위키링크를 링크로 바꾸고 허용 태그를 되살린다', async () => {
+    const { escapeKbContent } = await import('../src/lib/kb-mdx.ts')
+    const out = escapeKbContent('a [[x-1|표시]] b [[y-2]] <br> <mark>강조</mark> <u>x</u> {z}', {
+      resolveWikilink: (slug) => (slug === 'x-1' ? '/policies/x-1' : null),
+    })
+    assert.equal(out, 'a [표시](/policies/x-1) b y-2 <br /> <mark>강조</mark> &lt;u>x&lt;/u> &#123;z&#125;')
+  })
+
+  it('decompose-source.ts 안전 가드(prefix·path 유일성·override 충돌·stale)가 유지된다', () => {
+    const src = fs.readFileSync(DECOMPOSE_SCRIPT, 'utf-8')
+    assert.match(src, /SOURCE_FILE_MAP prefix 충돌/)
+    assert.match(src, /글로벌 path 충돌/)
+    assert.match(src, /axis override가 forcedAxis와 충돌/)
+    assert.match(src, /_axis-overrides\.json에 분해 결과와 매칭 안 되는 slug/)
+    assert.match(src, /INDENT_CODE_RE/)
   })
 })

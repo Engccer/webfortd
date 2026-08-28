@@ -1,0 +1,648 @@
+{
+  "_comment": "검수자가 작성한 1:1 이미지 매핑. M4-C codex-rescue P0 패치로 source 교차 검증됨.",
+  "_format": {
+    "manifest_path": "public/source-images/<source>/page-NNN-fig-MM.png (필수)",
+    "alt_override": "검수자가 alt 수정 필요 시 채움. null이면 _alt_original 사용.",
+    "notes": "메모 (옵션)"
+  },
+  "mappings": {
+    "2024-jbu-p-013#2024-jbu-work-support-guide#0": {
+      "_alt_original": "플로우차트의 신청서 작성 단계에 있는 아이콘으로, 장애인 근로인이 직접 서류를 작성하는 모습을 표현합니다. 이것은 서비스 신청의 첫 번째 단계를 상징합니다.",
+      "_file": "content/disability-types/2024-jbu-p-013.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2024-jbu-p-013#2024-jbu-work-support-guide#1": {
+      "_alt_original": "플로우차트의 접수 단계에 있는 아이콘으로, 한국장애인고용공단을 상징하는 건물 그림입니다. 근로지원인 서비스 신청이 접수되는 과정을 나타냅니다.",
+      "_file": "content/disability-types/2024-jbu-p-013.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2024-jbu-p-029#2024-jbu-work-support-guide#0": {
+      "_alt_original": "이 다이어그램은 교구 제작 지원 절차를 5단계로 나타냅니다. 지체·뇌병변 장애인 교원이 학교 및 교육청에 지원을 요청하면, 학교 및 교육청이 이를 검토한 후 교원에게 지원을 제공합니다. 이어서 학교 및 교육청은 정기적으로 모니터링을 실시하고 교원의 의견을 수렴하여 반영하는 과정으로 이루어져 있습니다.",
+      "_file": "content/disability-types/2024-jbu-p-029.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2024-staff-19#2024-support-staff-duty-guide#0": {
+      "_alt_original": "휠체어에 앉아 메가폰을 든 사람을 포함하여 세 명의 교직원 또는 지원 인력이 함께 소통하며 협력하는 일러스트. 한 명은 휠체어에 앉아 메가폰을 들고 있고, 다른 한 명은 돋보기를 들고 서 있으며, 또 다른 한 명은 앞을 가리키며 나아가고 있다. 함께 목표를 향해 나아가는 협력적인 모습을 보여준다.",
+      "_file": "content/disability-types/2024-staff-19.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2024-staff-3-6#2024-support-staff-duty-guide#0": {
+      "_alt_original": "페이지 중앙에 크게 표시된 로마 숫자 'V'입니다. 이는 문서의 다섯 번째 장을 나타내며, 하단에는 '청각장애인교원 지원 방안'이라는 장 제목이 있습니다.",
+      "_file": "content/disability-types/2024-staff-3-6.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2024-staff-3-8#2024-support-staff-duty-guide#0": {
+      "_alt_original": "지원 인력과 교사가 마주 앉아 대화하는 일러스트. 교사가 '감사합니다'라고 말하며 지원 인력의 도움에 대한 긍정적인 반응을 보이고 있다. 이는 장애인 교원에 대한 원격 지원이 성공적으로 이루어졌음을 시사한다.",
+      "_file": "content/disability-types/2024-staff-3-8.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2024-staff-p-023#2024-support-staff-duty-guide#0": {
+      "_alt_original": "학생 좌석 배치 지원 절차를 시각장애인교원과 지원인력 간의 상호작용으로 보여주는 순서도입니다. 시각장애인교원이 좌석 배치 및 모둠 구성 지원을 요청하면, 지원인력이 그 내용을 확인하고 요청에 따라 좌석 배치와 모둠 구성을 수행합니다. 이후 지원인력이 완성된 현황을 설명하고 시각장애인교원이 요청 내용과의 일치 여부를 확인하는 4단계 과정으로 구성됩니다.",
+      "_file": "content/disability-types/2024-staff-p-023.md",
+      "manifest_path": "public/source-images/2024-support-staff-duty-guide/page-025-render.png",
+      "alt_override": null,
+      "notes": "Phase 1.5b 자동 매핑 (method=known_answer, known_answer (PR A A8 검증))"
+    },
+    "2024-staff-p-095#2024-support-staff-duty-guide#0": {
+      "_alt_original": "이 흐름도는 지체·뇌병변장애인교원이 지원인력에게 시연 및 모델링 지원을 요청하는 것부터 수업에 활용되기까지의 5단계 절차를 보여줍니다. 지원인력은 교원에게 시연 및 모델링할 내용을 구체적으로 안내받아 연습하고, 교원에게 의도와 일치하는지 확인받은 후, 최종적으로 해당 시연 및 모델링이 교원의 수업에 활용됩니다.",
+      "_file": "content/disability-types/2024-staff-p-095.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2024-staff-p-127#2024-support-staff-duty-guide#0": {
+      "_alt_original": "휠체어에 앉은 여성이 한 손에 돋보기를 들고 다른 한 손을 높이 들어 올린 모습의 일러스트입니다. 이는 장애인교원의 교외 학급 활동을 위한 세심한 준비와 성공적인 실행을 상징합니다.",
+      "_file": "content/disability-types/2024-staff-p-127.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2024-staff-p-159#2024-support-staff-duty-guide#0": {
+      "_alt_original": "선생님으로 보이는 성인 여성과 학생으로 보이는 어린 여자아이가 나란히 서서 하트 포즈를 취하고 있는 일러스트입니다. 왼쪽의 여자아이는 머리 위로 두 팔로 큰 하트를 만들고 있고, 오른쪽의 여성은 가슴 앞에서 두 손으로 작은 하트를 만들고 있습니다. 서로 소통하고 긍정적으로 교류하는 모습을 표현합니다.",
+      "_file": "content/disability-types/2024-staff-p-159.md",
+      "manifest_path": "public/source-images/2024-support-staff-duty-guide/page-121-fig-01.png",
+      "alt_override": "선생님으로 보이는 성인 여성과 학생으로 보이는 어린 여자아이가 나란히 서서 하트 포즈를 취하고 있는 일러스트입니다. 왼쪽의 여성은 가슴 앞에서 두 손으로 작은 하트를 만들고 있고, 오른쪽의 여자아이는 머리 위로 두 팔로 큰 하트를 만들고 있습니다. 서로 소통하고 긍정적으로 교류하는 모습을 표현합니다.",
+      "notes": "M4 매핑 alt 좌우 반대 — 2026-05-17 PoC 4종 합의로 교정 (Gemini·Gemma·Codex 모두 NO)"
+    },
+    "2024-staff-p-165#2024-support-staff-duty-guide#0": {
+      "_alt_original": "청각장애인교원을 위한 전화 소통 지원 서비스인 '전화를 대신 받기'의 네 단계 과정을 보여주는 흐름도입니다. 청각장애인교원의 통화 요청과 내용 전달부터, 지원인력이 통화를 수행하고 그 내용을 청각장애인교원에게 전달하며, 마지막으로 청취 과정에 대한 피드백을 주고받는 순서로 진행됩니다.",
+      "_file": "content/disability-types/2024-staff-p-165.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2024-staff-p-169#2024-support-staff-duty-guide#0": {
+      "_alt_original": "두 여성이 소파에 앉아 서로 마주 보며 수어로 대화하는 일러스트. 이는 청각장애인과의 원활한 소통을 보여준다.",
+      "_file": "content/disability-types/2024-staff-p-169.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2024-staff-p-183#2024-support-staff-duty-guide#0": {
+      "_alt_original": "손과 팔의 움직임이 제한된 장애인 교원을 위한 보조기기인 트랙볼 마우스 사진입니다. 본체 왼쪽에 큰 노란색 트랙볼이 있고, 그 주변에 클릭을 위한 버튼들이 배열되어 있습니다.",
+      "_file": "content/disability-types/2024-staff-p-183.md",
+      "manifest_path": "public/source-images/2024-support-staff-duty-guide/page-150-fig-03.png",
+      "alt_override": "손과 팔의 움직임이 제한된 장애인 교원을 위한 보조기기인 트랙볼 마우스 사진입니다. 본체 중앙에 큰 노란색 트랙볼이 있고, 그 좌우에 클릭을 위한 파란색 버튼이 대칭으로 배치되어 있습니다.",
+      "notes": "M4 매핑 alt 트랙볼 위치 오기 — 2026-05-17 PoC 4종 합의로 교정 (Gemini·Codex가 NO, Gemma 묘사도 중앙 명시)"
+    },
+    "2024-staff-p-183#2024-support-staff-duty-guide#1": {
+      "_alt_original": "머리 움직임을 인식하여 컴퓨터 커서를 제어하는 헤드 마우스 장치 사진입니다. 검은색 렌즈가 달린 소형 카메라 형태로, 주로 모니터 상단에 부착하여 사용합니다.",
+      "_file": "content/disability-types/2024-staff-p-183.md",
+      "manifest_path": "public/source-images/2024-support-staff-duty-guide/page-150-fig-04.png",
+      "alt_override": null
+    },
+    "2023-hr-1-2#2023-hr-guide#0": {
+      "_alt_original": "법률 관련 내용을 시각적으로 나타내는, 저울 모양의 아이콘.",
+      "_file": "content/domains/2023-hr-1-2.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-1-2#2023-hr-guide#1": {
+      "_alt_original": "책 위에 저울이 놓인 아이콘으로, 장애인 공무원 인사관리의 법적 근거와 기본 방향을 상징합니다.",
+      "_file": "content/domains/2023-hr-1-2.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-1-2#2023-hr-guide#2": {
+      "_alt_original": "책 위에 저울이 놓인 아이콘으로, 시·도교육청이 지원 방안 수립 시 고려해야 할 법적 근거 및 사항들을 상징합니다.",
+      "_file": "content/domains/2023-hr-1-2.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-1-4#2023-hr-guide#0": {
+      "_alt_original": "파란색 배경에 저울이 얹힌 펼친 책 모양의 법령 아이콘으로, 문서 내에서 관련 법규 조항을 시각적으로 강조하고 다음 내용이 법적 근거임을 나타냅니다.",
+      "_file": "content/domains/2023-hr-1-4.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-1-4#2023-hr-guide#1": {
+      "_alt_original": "법률 문서 위에 저울이 놓인 모양의 아이콘으로, 관련 법령 및 지침을 상징합니다.",
+      "_file": "content/domains/2023-hr-1-4.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-1-4#2023-hr-guide#2": {
+      "_alt_original": "법률 문서 위에 저울이 놓인 모양의 아이콘으로, 관련 법령 및 지침을 상징합니다.",
+      "_file": "content/domains/2023-hr-1-4.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-1-4#2023-hr-guide#3": {
+      "_alt_original": "법률 문서 위에 저울이 놓인 모양의 아이콘으로, 관련 법령 및 지침을 상징합니다.",
+      "_file": "content/domains/2023-hr-1-4.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-1-4#2023-hr-guide#4": {
+      "_alt_original": "법률 및 규정 관련 내용을 나타내는 저울과 펼쳐진 책 모양의 아이콘.",
+      "_file": "content/domains/2023-hr-1-4.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-2-2#2023-hr-guide#0": {
+      "_alt_original": "법률을 상징하는 저울과 펼쳐진 책 모양의 아이콘입니다. 이 아이콘은 개인정보보호와 관련된 법률 조항을 안내하는 부분 앞에 배치되어 있습니다.",
+      "_file": "content/domains/2023-hr-2-2.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-2-2#2023-hr-guide#1": {
+      "_alt_original": "법률을 상징하는 저울 모양의 아이콘. 다음 내용은 개인정보 보호법 관련 법적 조항임을 나타냅니다.",
+      "_file": "content/domains/2023-hr-2-2.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-2-2#2023-hr-guide#2": {
+      "_alt_original": "밝은 표정으로 의족을 착용하고 한 손을 흔들고 있는 사람의 일러스트. 장애를 가진 사람의 활동성과 사회 참여를 상징합니다.",
+      "_file": "content/domains/2023-hr-2-2.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-2-2#2023-hr-guide#3": {
+      "_alt_original": "법률 아이콘. '개인정보 보호법' 제23조 '민감정보의 처리 제한'에 대한 법 조항이 이어진다.",
+      "_file": "content/domains/2023-hr-2-2.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-2-2#2023-hr-guide#4": {
+      "_alt_original": "법률 아이콘. '개인정보 보호법' 제16조 '개인정보의 수집 제한'에 대한 법 조항이 이어진다.",
+      "_file": "content/domains/2023-hr-2-2.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-3-5#2023-hr-guide#0": {
+      "_alt_original": "의족을 착용한 성인 남성과 젊은 사람이 밝은 표정으로 손을 흔들며 환하게 웃고 있는 일러스트입니다. 이는 장애인의 활발한 사회 활동과 긍정적인 관계를 상징합니다.",
+      "_file": "content/domains/2023-hr-3-5.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-3#2023-hr-guide#0": {
+      "_alt_original": "파란색 법전과 저울 그림이 있는 아이콘으로, 장애인 공무원 임용 절차 중 공정한 승진 심사를 다루는 부분임을 나타냅니다.",
+      "_file": "content/domains/2023-hr-3.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-3#2023-hr-guide#1": {
+      "_alt_original": "파란색 법전과 저울 그림이 있는 아이콘으로, 장애인 공무원 인사관리의 기본 방향 중 차별 금지 원칙을 강조합니다.",
+      "_file": "content/domains/2023-hr-3.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-3#2023-hr-guide#2": {
+      "_alt_original": "파란색 법전과 저울 그림이 있는 아이콘으로, 장애인의 권리에 관한 협약 제27조(근로 및 고용",
+      "_file": "content/domains/2023-hr-3.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-3#2023-hr-guide#3": {
+      "_alt_original": "파란색 법전과 저울 그림이 있는 아이콘으로, 장애인차별금지법 제10조(차별금지)의 구체적인 내용을 설명하는 섹션을 표시합니다.",
+      "_file": "content/domains/2023-hr-3.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-appendix-007#2023-hr-guide#0": {
+      "_alt_original": "청록색 배경에 굵고 커다란 흰색 숫자 '01'이 표시되어 있습니다. 숫자의 하단은 가로지르는 흰색 선에 의해 부분적으로 가려져 있습니다.",
+      "_file": "content/domains/2023-hr-appendix-007.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-appendix-007#2023-hr-guide#1": {
+      "_alt_original": "핑크색 상의를 입고 목발을 짚은 사람을 흰색 상의를 입은 다른 사람이 어깨를 부축하며 돕고 있는 일러스트. 두 사람 모두 미소를 짓고 있어 서로에게 우호적인 분위기를 나타내며, 도움과 지지를 상징한다.",
+      "_file": "content/domains/2023-hr-appendix-007.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-p-046#2023-hr-guide#0": {
+      "_alt_original": "보라색 배경 위에 흰색 숫자 '02'가 큰 글씨로 중앙에 배치되어 있으며, 페이지를 가로지르는 흰색 선에 걸쳐 있습니다. 선 아래에는 '장애인교원'과 '인사관리 안내서'라는 흰색 제목이 두 줄로 적혀 있어, 이 페이지가 문서의 두 번째 장을 알리는 인사관리 안내서임을 보여줍니다.",
+      "_file": "content/domains/2023-hr-p-046.md",
+      "manifest_path": "public/source-images/2023-hr-guide/page-024-render.png",
+      "alt_override": null,
+      "notes": "Phase 1.5b 자동 매핑 (method=known_answer, known_answer (PR A A8 검증))"
+    },
+    "2023-hr-p-057#2023-hr-guide#0": {
+      "_alt_original": "관련 법령으로 「사업주 및 장애인 등에 대한 융자·지원 규정」에 따른 근로지원인 유형 관련 내용을 설명하는 섹션 옆에 위치한 법령 아이콘입니다.",
+      "_file": "content/domains/2023-hr-p-057.md",
+      "manifest_path": "public/source-images/2023-hr-guide/page-060-render.png",
+      "alt_override": null,
+      "notes": "Phase 1.5b 자동 매핑 (method=known_answer, known_answer (PR A A8 검증))"
+    },
+    "2023-hr-p-057#2023-hr-guide#1": {
+      "_alt_original": "관련 법령으로 「장애인 고용촉진 및 직업재활법」 제21조의2에 따른 장애인 공무원 지원 내용을 설명하는 섹션 옆에 위치한 법령 아이콘입니다.",
+      "_file": "content/domains/2023-hr-p-057.md",
+      "manifest_path": "public/source-images/2023-hr-guide/page-060-render.png",
+      "alt_override": null,
+      "notes": "Phase 1.5b 자동 매핑 (method=known_answer, known_answer (PR A A8 검증))"
+    },
+    "2024-jbu-p-061#2024-jbu-work-support-guide#0": {
+      "_alt_original": "한 사람이 다른 사람의 복부를 발로 차 넘어뜨리는 신체적 학대 장면을 묘사한 일러스트.",
+      "_file": "content/domains/2024-jbu-p-061.md",
+      "manifest_path": null,
+      "alt_override": null,
+      "notes": "PR #4 stale 정리 (PR C). 본문 image를 TODO 마커로 복원하면서 entry도 null로."
+    },
+    "2024-jbu-p-061#2024-jbu-work-support-guide#1": {
+      "_alt_original": "신체적 학대 예시 일러스트와 학대 유형 목록을 연결하는 화살표 아이콘.",
+      "_file": "content/domains/2024-jbu-p-061.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2024-jbu-p-068#2024-jbu-work-support-guide#0": {
+      "_alt_original": "장애인학대 사례지원 절차를 보여주는 인포그래픽. 1644-8295로 신고 접수부터 조사/응급조치, 사례판정, 피해자 지원을 거쳐 사례 종결 및 재발 방지를 위한 사후 모니터링까지 총 7단계의 과정을 화살표로 연결하여 나타낸다.",
+      "_file": "content/domains/2024-jbu-p-068.md",
+      "manifest_path": "public/source-images/2024-jbu-work-support-guide/page-113-fig-01.png",
+      "alt_override": null
+    },
+    "2024-staff-p-184#2024-support-staff-duty-guide#0": {
+      "_alt_original": "검은색 프레임의 수동 휠체어 전신 사진입니다. 이 휠체어는 사용자가 손으로 직접 바퀴를 굴려 이동하는 방식으로, 큰 뒷바퀴와 작은 앞바퀴를 갖추고 있으며, 좌석과 등받이도 검은색입니다.",
+      "_file": "content/domains/2024-staff-p-184.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2024-staff-p-184#2024-support-staff-duty-guide#1": {
+      "_alt_original": "보행 보조기기인 워커의 모습입니다. 은색 금속 프레임으로 된 사각형 형태의 워커로, 몸의 균형을 잡기 어려운 지체 뇌병변장애인교원의 이동을 돕는 데 사용됩니다.",
+      "_file": "content/domains/2024-staff-p-184.md",
+      "manifest_path": "public/source-images/2024-support-staff-duty-guide/page-152-fig-01.png",
+      "alt_override": null
+    },
+    "2024-staff-p-184#2024-support-staff-duty-guide#2": {
+      "_alt_original": "차량 트렁크에서 지면으로 연결된 은색 휴대용 경사로 사진입니다. 휠체어를 사용하는 장애인 교원이 차량에 탑승하거나 경사가 있는 길을 오르내릴 때 사용할 수 있는 보조기기입니다.",
+      "_file": "content/domains/2024-staff-p-184.md",
+      "manifest_path": "public/source-images/2024-support-staff-duty-guide/page-153-fig-01.png",
+      "alt_override": null
+    },
+    "2024-staff-p-184#2024-support-staff-duty-guide#3": {
+      "_alt_original": "상판의 높이와 각도를 조절할 수 있는 목재 책상 사진입니다. 근육 강직 등으로 자세 유지가 어려운 장애인 교원이 편안하게 독서나 필기 활동을 할 수 있도록 돕는 보조기기입니다.",
+      "_file": "content/domains/2024-staff-p-184.md",
+      "manifest_path": "public/source-images/2024-support-staff-duty-guide/page-153-fig-02.png",
+      "alt_override": null
+    },
+    "2024-staff-p-184#2024-support-staff-duty-guide#4": {
+      "_alt_original": "여러 개의 독립된 공기 셀로 구성된 어두운 녹색의 욕창방지 방석 사진입니다. 이 방석은 장시간 휠체어나 의자에 앉아있는 지체·뇌병변장애인교원의 욕창 발생 위험을 줄이고 편안한 앉은 자세를 유지할 수 있도록 돕는 보조기기입니다.",
+      "_file": "content/domains/2024-staff-p-184.md",
+      "manifest_path": "public/source-images/2024-support-staff-duty-guide/page-154-fig-01.png",
+      "alt_override": null
+    },
+    "2024-staff-p-185#2024-support-staff-duty-guide#0": {
+      "_alt_original": "발행처 옆에 있는 교육부 로고. 파란색 원 안에 태극 문양이 형상화되어 있으며, 그 아래에 '교육부'와 'Ministry of Education'이라는 글자가 함께 표기되어 있습니다.",
+      "_file": "content/domains/2024-staff-p-185.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-1-3#2023-hr-guide#0": {
+      "_alt_original": "법령을 나타내는 아이콘",
+      "_file": "content/policies/2023-hr-1-3.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-2-3#2023-hr-guide#0": {
+      "_alt_original": "법률서적과 저울 모양의 아이콘. 아래에 이어지는 「국가공무원법」 제26조(임용의 원칙)의 관련 법령 내용을 나타냅니다.",
+      "_file": "content/policies/2023-hr-2-3.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-2-3#2023-hr-guide#1": {
+      "_alt_original": "법률서적과 저울 모양의 아이콘. 아래에 이어지는 「교육공무원 인사관리규정」 제18조(전보계획)의 관련 법령 내용을 나타냅니다.",
+      "_file": "content/policies/2023-hr-2-3.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-2-3#2023-hr-guide#2": {
+      "_alt_original": "법률과 공정성을 상징하는 아이콘으로, 관련 법령 내용에 대한 정보를 나타냄.",
+      "_file": "content/policies/2023-hr-2-3.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-2-3#2023-hr-guide#3": {
+      "_alt_original": "법률과 공정성을 상징하는 아이콘으로, 관련 법령 내용에 대한 정보를 나타냄.",
+      "_file": "content/policies/2023-hr-2-3.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-2-3#2023-hr-guide#4": {
+      "_alt_original": "법률서적과 망치가 그려진 아이콘으로, 장애인 차별금지 및 권리구제 등에 관한 법률의 핵심 내용을 시각적으로 나타냅니다.",
+      "_file": "content/policies/2023-hr-2-3.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-2-3#2023-hr-guide#5": {
+      "_alt_original": "법률서적과 망치가 그려진 아이콘으로, 장애인 공무원의 인사관리 및 근무환경에 대한 균형인사지침 내용을 시각적으로 나타냅니다.",
+      "_file": "content/policies/2023-hr-2-3.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-2-3#2023-hr-guide#6": {
+      "_alt_original": "법률서적과 망치가 그려진 아이콘으로, 장애 교원 및 장애 자녀 양육 교원의 전보 계획에 관한 교육공무원 인사관리규정 내용을 시각적으로 나타냅니다.",
+      "_file": "content/policies/2023-hr-2-3.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-2-4#2023-hr-guide#0": {
+      "_alt_original": "페이지 상단에 크게 흰색으로 표시된 숫자 '03'은 '장애인교원 인사관리 안내서' 문서의 세 번째 섹션을 나타냅니다.",
+      "_file": "content/policies/2023-hr-2-4.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-2-4#2023-hr-guide#1": {
+      "_alt_original": "책상에 앉아 노트북을 사용하는 휠체어를 탄 여성과 그 옆에 서 있는 남성의 일러스트입니다. 이는 장애인 교원과 비장애인 교원이 함께 업무를 보는 모습을 상징합니다.",
+      "_file": "content/policies/2023-hr-2-4.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-2-5#2023-hr-guide#0": {
+      "_alt_original": "법률 관련 내용을 나타내는 법전과 저울 모양 아이콘입니다.",
+      "_file": "content/policies/2023-hr-2-5.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-2-5#2023-hr-guide#1": {
+      "_alt_original": "법률 조항을 상징하는 아이콘으로, 펼쳐진 책 위에 정의의 저울이 놓여 있는 모습입니다.",
+      "_file": "content/policies/2023-hr-2-5.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-2-5#2023-hr-guide#2": {
+      "_alt_original": "법률 관련 내용을 나타내는 천칭과 법전 모양의 아이콘",
+      "_file": "content/policies/2023-hr-2-5.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-2-5#2023-hr-guide#3": {
+      "_alt_original": "법률 관련 내용을 나타내는 천칭과 법전 모양의 아이콘",
+      "_file": "content/policies/2023-hr-2-5.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-2-5#2023-hr-guide#4": {
+      "_alt_original": "관련 법령 정보를 나타내는 아이콘. 고대 문서나 법전을 상징하는 형태로, 법률 관련 내용을 시각적으로 강조합니다.",
+      "_file": "content/policies/2023-hr-2-5.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-2-5#2023-hr-guide#5": {
+      "_alt_original": "안내견 조끼를 입은 골든 리트리버 안내견이 옆에 앉아 있고, 그 옆에 한 여성이 서서 손을 흔들며 밝게 웃고 있는 일러스트입니다. 이 이미지는 장애인 교원을 위한 편의 지원을 상징합니다.",
+      "_file": "content/policies/2023-hr-2-5.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-2-6#2023-hr-guide#0": {
+      "_alt_original": "저울 모양이 새겨진 갈색 법전 아이콘입니다. 이 아이콘은 해당 섹션이 법적 조항과 관련된 내용임을 나타냅니다.",
+      "_file": "content/policies/2023-hr-2-6.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-2-6#2023-hr-guide#1": {
+      "_alt_original": "저울 모양이 새겨진 갈색 법전 아이콘입니다. 이 아이콘은 해당 섹션이 법적 조항과 관련된 내용임을 나타냅니다.",
+      "_file": "content/policies/2023-hr-2-6.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-2-6#2023-hr-guide#2": {
+      "_alt_original": "점자법 관련 법률 조항을 시각적으로 나타내는 열린 법전 아이콘입니다.",
+      "_file": "content/policies/2023-hr-2-6.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-2-6#2023-hr-guide#3": {
+      "_alt_original": "법전 아이콘. 이 아이콘은 옆에 있는 텍스트가 「지능정보화기본법」의 관련 조항임을 나타냅니다.",
+      "_file": "content/policies/2023-hr-2-6.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-2-6#2023-hr-guide#4": {
+      "_alt_original": "법률 또는 법규 관련 내용을 상징하는 아이콘입니다.",
+      "_file": "content/policies/2023-hr-2-6.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-5#2023-hr-guide#0": {
+      "_alt_original": "법률 관련 내용을 나타내는 갈색 책과 망치 모양의 아이콘으로, 「장애인 차별금지 및 권리구제 등에 관한 법률」 제11조에 따른 편의시설 지원 관련 내용을 설명한다.",
+      "_file": "content/policies/2023-hr-5.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-5#2023-hr-guide#1": {
+      "_alt_original": "법률 관련 내용을 나타내는 갈색 책과 망치 모양의 아이콘으로, 「장애인 차별금지 및 권리구제 등에 관한 법률 시행령」 제5조에 따른 편의시설 지원 관련 내용을 설명한다.",
+      "_file": "content/policies/2023-hr-5.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-5#2023-hr-guide#2": {
+      "_alt_original": "법률 관련 내용을 나타내는 갈색 책과 망치 모양의 아이콘으로, 「장애인·노인·임산부 등의 편의증진 보장에 관한 법률」 시행령에 따른 공공건물 및 공공이용시설에 대한 설명을 시작한다.",
+      "_file": "content/policies/2023-hr-5.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-5#2023-hr-guide#3": {
+      "_alt_original": "법률 서적과 저울이 그려진 아이콘으로, 법령 관련 정보를 나타냅니다.",
+      "_file": "content/policies/2023-hr-5.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-6#2023-hr-guide#0": {
+      "_alt_original": "연보라색 두 권의 책이 쌓여 있고 그 위에 저울 모양이 그려진 아이콘으로, 「장애인 차별금지 및 권리구제 등에 관한 법률」의 내용을 참조하고 있음을 나타냅니다.",
+      "_file": "content/policies/2023-hr-6.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-6#2023-hr-guide#1": {
+      "_alt_original": "첫 번째 아이콘과 동일하게 연보라색 두 권의 책이 쌓여 있고 그 위에 저울 모양이 그려진 아이콘으로, 「장애인 차별금지 및 권리구제 등에 관한 법률 시행령」의 내용을 참조하고 있음을 나타냅니다.",
+      "_file": "content/policies/2023-hr-6.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-6#2023-hr-guide#2": {
+      "_alt_original": "법률 또는 법규 관련 내용임을 나타내는 책과 저울 모양의 주황색 아이콘입니다.",
+      "_file": "content/policies/2023-hr-6.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-6#2023-hr-guide#3": {
+      "_alt_original": "법률 또는 법규 관련 내용임을 나타내는 책과 저울 모양의 주황색 아이콘입니다.",
+      "_file": "content/policies/2023-hr-6.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-6#2023-hr-guide#4": {
+      "_alt_original": "법률 또는 법규 관련 내용임을 나타내는 책과 저울 모양의 주황색 아이콘입니다.",
+      "_file": "content/policies/2023-hr-6.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-7#2023-hr-guide#0": {
+      "_alt_original": "법전과 저울이 그려진 법령 아이콘으로, 장애인 인식개선 교육 실시와 관련된 상세 법령 내용을 안내하고 있다.",
+      "_file": "content/policies/2023-hr-7.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-8#2023-hr-guide#0": {
+      "_alt_original": "책과 저울 모양의 법령 아이콘. 「장애인고용촉진 및 직업재활법 시행령」의 장애인지원관 담당 업무 관련 조항의 주요 내용을 나타냅니다.",
+      "_file": "content/policies/2023-hr-8.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-8#2023-hr-guide#1": {
+      "_alt_original": "책과 저울 모양의 법령 아이콘. 「장애인고용촉진 및 직업재활법」에 따른 장애인지원관 지정 관련 조항의 주요 내용을 나타냅니다.",
+      "_file": "content/policies/2023-hr-8.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-8#2023-hr-guide#2": {
+      "_alt_original": "분홍색 배경 위에 흰색으로 크게 쓰인 숫자 04가 보입니다.",
+      "_file": "content/policies/2023-hr-8.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2023-hr-p-052#2023-hr-guide#0": {
+      "_alt_original": "파란색 법률 아이콘으로, 저울과 책이 그려져 있으며 「교육공무원법」 제44조(휴직)에 대한 설명을 시각적으로 나타냅니다.",
+      "_file": "content/policies/2023-hr-p-052.md",
+      "manifest_path": "public/source-images/2023-hr-guide/page-046-render.png",
+      "alt_override": null,
+      "notes": "Phase 1.5b 자동 매핑 (method=known_answer, known_answer (PR A A8 검증))"
+    },
+    "2023-hr-p-052#2023-hr-guide#1": {
+      "_alt_original": "파란색 법률 아이콘으로, 저울과 책이 그려져 있으며 「국가공무원 복무·징계 관련 예규」에 대한 설명을 시각적으로 나타냅니다.",
+      "_file": "content/policies/2023-hr-p-052.md",
+      "manifest_path": "public/source-images/2023-hr-guide/page-046-render.png",
+      "alt_override": null,
+      "notes": "Phase 1.5b 자동 매핑 (method=known_answer, known_answer (PR A A8 검증))"
+    },
+    "2023-hr-p-052#2023-hr-guide#2": {
+      "_alt_original": "법률 조항임을 나타내는 책과 저울 모양의 아이콘입니다.",
+      "_file": "content/policies/2023-hr-p-052.md",
+      "manifest_path": "public/source-images/2023-hr-guide/page-046-render.png",
+      "alt_override": null,
+      "notes": "Phase 1.5b 자동 매핑 (method=known_answer, known_answer (PR A A8 검증))"
+    },
+    "2023-research-1-4#2023-disability-types-work-support-report#0": {
+      "_alt_original": "데이컴 기법을 활용한 직무 분석 분류표 예시 다이어그램입니다. 세로축은 '임무(Duties)', 가로축은 '작업(Tasks)'으로 표시되어 있으며, 임무별로 수행되는 작업들을 분류할 수 있도록 빈 칸들이 배열된 매트릭스 형태로 구성되어 있습니다.",
+      "_file": "content/policies/2023-research-1-4.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2024-jbu-2-10#2024-jbu-work-support-guide#0": {
+      "_alt_original": "보충 설명을 알리는 '참고' 아이콘.",
+      "_file": "content/policies/2024-jbu-2-10.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2024-jbu-p-016#2024-jbu-work-support-guide#0": {
+      "_alt_original": "한국장애인고용공단을 통한 보조공학기기 지원 절차를 설명하는 순서도입니다. 신청서 작성 및 제출, 접수, 신청서 및 접수 서류 검토, 지원 타당성 검토(현장 방문 등 포함), 지원 결정 및 통지 단계를 거쳐 보조공학기기가 지급됩니다. 고용유지조건 지원 기기 구매 시에는 이행보증 보험증권 제출 단계가 추가됩니다. 신청 시 제출 서류로는 보조공학기기 지원 신청서, 사업자등록증 사본, 장애인증명서 또는 장애인 복지카드 사본, 그리고 공무원증 사본이 필요합니다.",
+      "_file": "content/policies/2024-jbu-p-016.md",
+      "manifest_path": "public/source-images/2024-jbu-work-support-guide/page-027-fig-01.png",
+      "alt_override": null
+    },
+    "2024-jbu-p-062#2024-jbu-work-support-guide#0": {
+      "_alt_original": "두 사람이 등을 돌리고 손짓하며 한 사람을 따돌리는 모습. 이는 따돌림이나 사회적 고립과 같은 정서적 학대를 시각적으로 보여준다.",
+      "_file": "content/policies/2024-jbu-p-062.md",
+      "manifest_path": "public/source-images/2024-jbu-work-support-guide/page-101-fig-01.png",
+      "alt_override": "세 명의 남성이 정면을 향해 나란히 서 있는 일러스트. 가운데 인물은 눈물을 흘리며 양손을 옆으로 벌린 채 곤혹스러운 표정이고, 양옆의 두 인물은 가운데 인물을 향해 손가락질하며 비난하는 모습. 따돌림이나 정서적 학대를 시각적으로 보여준다.",
+      "notes": "M4 매핑 alt 동작 오기 — 2026-05-17 PoC 4종 합의로 교정 (Gemini·Codex·Gemma 모두 NO, '등을 돌리고' 묘사는 실제와 다름)"
+    },
+    "2024-jbu-p-063#2024-jbu-work-support-guide#0": {
+      "_alt_original": "휠체어에 앉아 불편해하는 여성의 팔을 억지로 잡아당기는 남성의 모습. 이는 신체적 괴롭힘이나 성적 학대를 묘사한다.",
+      "_file": "content/policies/2024-jbu-p-063.md",
+      "manifest_path": null,
+      "alt_override": null,
+      "notes": "PR #4 stale 정리 (PR C). 본문 image를 TODO 마커로 복원하면서 entry도 null로."
+    },
+    "2024-jbu-p-063#2024-jbu-work-support-guide#1": {
+      "_alt_original": "경제적 착취를 시각적으로 보여주는 삽화입니다. 한 사람이 다른 사람의 가방에서 돈을 몰래 빼내고 있습니다.",
+      "_file": "content/policies/2024-jbu-p-063.md",
+      "manifest_path": null,
+      "alt_override": null,
+      "notes": "PR #4 stale 정리 (PR C). 본문 image를 TODO 마커로 복원하면서 entry도 null로."
+    },
+    "2024-jbu-p-063#2024-jbu-work-support-guide#2": {
+      "_alt_original": "경제적 착취 삽화와 그 유형 목록을 연결하는 오른쪽 방향 화살표입니다.",
+      "_file": "content/policies/2024-jbu-p-063.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2024-jbu-p-063#2024-jbu-work-support-guide#3": {
+      "_alt_original": "유기 및 방임을 보여주는 삽화입니다. 많은 짐 상자들 옆에 한 사람이 홀로 앉아 있으며 쓸쓸해 보이는 모습입니다.",
+      "_file": "content/policies/2024-jbu-p-063.md",
+      "manifest_path": null,
+      "alt_override": null,
+      "notes": "PR #4 stale 추가 정리 (PR C). indexInFile drift로 alt 가드 차단됐던 항목. C1과 동일 패턴."
+    },
+    "2024-jbu-p-063#2024-jbu-work-support-guide#4": {
+      "_alt_original": "유기 및 방임 삽화와 그 유형 목록을 연결하는 오른쪽 방향 화살표입니다.",
+      "_file": "content/policies/2024-jbu-p-063.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2024-jbu-p-081#2024-jbu-work-support-guide#0": {
+      "_alt_original": "사업주가 한국장애인고용공단에 보조공학기기를 신청하고 지급받는 처리 절차를 나타낸 플로우차트입니다. 신청서 제출부터 서류 및 타당성 검토, 지원 결정 통지를 거쳐 기기가 지급되며, 고용유지조건 지원 기기의 경우 이행보증 보험증권 제출 단계가 포함됩니다.",
+      "_file": "content/policies/2024-jbu-p-081.md",
+      "manifest_path": "public/source-images/2024-jbu-work-support-guide/page-137-fig-01.png",
+      "alt_override": null
+    },
+    "2024-staff-2-4#2024-support-staff-duty-guide#0": {
+      "_alt_original": "안내견과 함께 흰 지팡이를 사용하여 걷고 있는 시각장애인 교원의 일러스트입니다. 안내견은 노란 조끼를 입고 교원과 나란히 발걸음을 맞추고 있으며, 교원은 안내견의 하네스를 잡고 있습니다. 이 그림은 시각장애인 교원의 독립적인 이동을 보여줍니다.",
+      "_file": "content/policies/2024-staff-2-4.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2024-staff-p-116#2024-support-staff-duty-guide#0": {
+      "_alt_original": "책상에 앉아 함께 업무를 보는 세 사람의 일러스트. 한 명은 노트북을 사용하고 있고, 두 명은 서류를 들고 있으며, 이 중 한 명은 의족을 착용하고 있습니다.",
+      "_file": "content/policies/2024-staff-p-116.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2024-staff-p-149#2024-support-staff-duty-guide#0": {
+      "_alt_original": "플로차트의 첫 번째 단계로, 청각장애인교원이 수업 중 학생 생활지도와 관련하여 지원인력에게 청각 정보 청취를 요청하는 과정을 보여줍니다.",
+      "_file": "content/policies/2024-staff-p-149.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2024-staff-p-149#2024-support-staff-duty-guide#1": {
+      "_alt_original": "플로차트의 두 번째 단계로, 지원인력이 청각장애인교원으로부터 요청받은 사항을 수행하는 과정입니다.",
+      "_file": "content/policies/2024-staff-p-149.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2024-staff-p-149#2024-support-staff-duty-guide#2": {
+      "_alt_original": "플로차트의 세 번째 단계로, 지원인력이 청취한 내용을 청각장애인교원에게 전달하는 과정을 나타냅니다.",
+      "_file": "content/policies/2024-staff-p-149.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2024-staff-p-149#2024-support-staff-duty-guide#3": {
+      "_alt_original": "플로차트의 네 번째 단계로, 청각장애인교원이 지원인력에게 피드백을 제공하고 다음 수업 청취를 요청하는 과정입니다.",
+      "_file": "content/policies/2024-staff-p-149.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2024-staff-p-177#2024-support-staff-duty-guide#0": {
+      "_alt_original": "문서의 '부록' 섹션 제목입니다. 부록에는 장애인 교원 지원인력 제공 관련 법적 근거와 보조기기의 종류별 사용 및 관리 방법에 대한 정보가 포함되어 있습니다.",
+      "_file": "content/policies/2024-staff-p-177.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2024-staff-p-182#2024-support-staff-duty-guide#0": {
+      "_alt_original": "책을 거치하는 스탠드 위에 펼쳐진 책이 놓여 있고, 기계 팔이 책 페이지를 넘길 준비를 하고 있는 자동 책장 넘기기 보조기기 사진입니다.",
+      "_file": "content/policies/2024-staff-p-182.md",
+      "manifest_path": null,
+      "alt_override": null
+    },
+    "2024-staff-p-182#2024-support-staff-duty-guide#1": {
+      "_alt_original": "파란색 필기 보조 도구를 끼운 펜을 한 손으로 잡고 공책에 글씨를 쓰는 모습입니다. 필기 보조 도구가 펜을 안정적으로 잡는 데 도움을 주어 편안하게 필기할 수 있도록 하는 것을 보여줍니다.",
+      "_file": "content/policies/2024-staff-p-182.md",
+      "manifest_path": "public/source-images/2024-support-staff-duty-guide/page-148-fig-02.png",
+      "alt_override": null
+    },
+    "2024-staff-p-182#2024-support-staff-duty-guide#2": {
+      "_alt_original": "펜을 잡기 어렵거나 손 떨림이 있는 사용자를 위해 설계된 여러 종류의 필기 보조 도구 제품들이 나란히 놓여 있습니다. 펜에 끼우거나 손에 고정하는 형태 등 다양한 디자인을 보여줍니다.",
+      "_file": "content/policies/2024-staff-p-182.md",
+      "manifest_path": "public/source-images/2024-support-staff-duty-guide/page-148-fig-03.png",
+      "alt_override": null
+    },
+    "2023-hr-p-061#2023-hr-guide#0": {
+      "_alt_original": "대전교육청 업무메신저 'Dje Talk'에서 사용되는 캐릭터 이모티콘의 화면 캡처 이미지입니다. 'Thank you', 'Please', '도와줄까?', '해피!' 등 다양한 표정과 메시지를 담은 밝고 컬러풀한 이모티콘들이 보이며, 유쾌한 직장 분위기 조성에 활용됩니다.",
+      "_file": "content/regions/2023-hr-p-061.md",
+      "manifest_path": "public/source-images/2023-hr-guide/page-084-fig-01.png",
+      "alt_override": null
+    }
+  }
+}

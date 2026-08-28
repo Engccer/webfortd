@@ -1,299 +1,233 @@
-# webfortd 출처 마크다운 분해 리포트 — M3
+# webfortd 출처 마크다운 분해 리포트
 
-자동 생성. `tsx scripts/decompose-source.ts` 실행 결과.
+자동 생성. `tsx scripts/decompose-source.ts` 실행 결과. 규칙 정본: `docs/DECOMPOSE_V2_DESIGN.md`.
 
 ## 2023-disability-types-work-support-report
 
-- 분해 페이지: 114개
-- 슬러그 충돌 해소: 69건
+- 분해 페이지: 92개
 - 이미지 미매칭: 1건
-- axis 분포: domains=62, disability-types=32, policies=18, regions=2
-- 신뢰도 분포: medium=80, high=33, low=1
+- axis 분포: domains=42, policies=23, regions=1, disability-types=25, uncategorized=1
+- 신뢰도 분포: medium=53, high=38, low=1
+- 평균 본문 길이: 8203자
+
+### 제목 범위 밖 번호(2층 승격 누락 의심) (2건)
+
+- `2023-research-4-3-1-1` — (2) 3차 전문가협의회 진행 절차
+- `2023-research-4-3-1-1` — (3) 1차 ~ 3차 전문가협의회 결과
+
+### 같은 경로에 같은 번호(-d 접미) (2건)
+
+- `2023-research-3-3-2-1-d2` — 「① 초등학교」 번호 중복 → 1-d2
+- `2023-research-3-3-d2` — 「3. 요약」 번호 중복 → 3-d2
+
+### 빈 조각 병합(100자 미만) (3건)
+
+- `2023-research-2-1-1` — 「1) 개요」(81자) → 2023-research-2-1-2
+- `2023-research-3-3-2-1` — 「(1) 델파이 1차 조사 결과」(0자) → 2023-research-3-3-2-1-d2
+- `2023-research-app-1-1` — 「[부록 1-1] 지체장애인 교원 대상 교사 직무분류표 수정(안) 작성표」(0자) → 2023-research-app-1-2
+
+### 5만 자 분할 (2건)
+
+- `2023-research-app-2` — 2개로 분할
+- `2023-research-app-3` — 4개로 분할
+
+### 개요 페이지(부모 서문 100자 이상) (4건)
+
+- `2023-research-1-2` — 2. 연구 내용 및 범위
+- `2023-research-4-1-3` — 3) 시사점
+- `2023-research-5-1` — 1. 결론
+- `2023-research-app-1` — ◇ 부록1. 장애인교원 근무지원 방안 개발 관련 자료
+
+### 제목 중복 해소(부모 접두) (37건)
+
+- `2023-research-2-2-1-1` — 「(1) 교수학습」 → 「정보접근 분야 (1) 교수학습」
+- `2023-research-2-2-2-1` — 「(1) 교수학습」 → 「의사소통 분야 (1) 교수학습」
+- `2023-research-2-2-3-1` — 「(1) 교수학습」 → 「이동 및 시설 접근 분야 (1) 교수학습」
+- `2023-research-2-2-4-1` — 「(1) 교수학습」 → 「신체활동 분야 (1) 교수학습」
+- `2023-research-2-2-5-1` — 「(1) 교수학습」 → 「기타 분야 (1) 교수학습」
+- `2023-research-2-2-6-1` — 「(1) 교수학습」 → 「공통 분야 (1) 교수학습」
+- `2023-research-2-2-1-2` — 「(2) 생활지도」 → 「정보접근 분야 (2) 생활지도」
+- `2023-research-2-2-2-2` — 「(2) 생활지도」 → 「의사소통 분야 (2) 생활지도」
+- `2023-research-2-2-3-2` — 「(2) 생활지도」 → 「이동 및 시설 접근 분야 (2) 생활지도」
+- `2023-research-2-2-6-2` — 「(2) 생활지도」 → 「공통 분야 (2) 생활지도」
+- `2023-research-2-2-1-3` — 「(3) 학교업무」 → 「정보접근 분야 (3) 학교업무」
+- `2023-research-2-2-3-3` — 「(3) 학교업무」 → 「이동 및 시설 접근 분야 (3) 학교업무」
+- `2023-research-2-2-1-4` — 「(4) 기타」 → 「정보접근 분야 (4) 기타」
+- `2023-research-2-2-3-4` — 「(4) 기타」 → 「이동 및 시설 접근 분야 (4) 기타」
+- `2023-research-2-2-2-3` — 「(3) 학급운영」 → 「의사소통 분야 (3) 학급운영」
+- `2023-research-2-2-6-3` — 「(3) 학급운영」 → 「공통 분야 (3) 학급운영」
+- `2023-research-2-2-2-4` — 「(4) 학교업무」 → 「의사소통 분야 (4) 학교업무」
+- `2023-research-2-2-6-4` — 「(4) 학교업무」 → 「공통 분야 (4) 학교업무」
+- `2023-research-2-2-2-5` — 「(5) 기타」 → 「의사소통 분야 (5) 기타」
+- `2023-research-2-2-6-5` — 「(5) 기타」 → 「공통 분야 (5) 기타」
+- `2023-research-2-2-4-2` — 「(2) 학교업무」 → 「신체활동 분야 (2) 학교업무」
+- `2023-research-2-2-5-2` — 「(2) 학교업무」 → 「기타 분야 (2) 학교업무」
+- `2023-research-3-3-2-2` — 「(2) 중학교」 → 「연구결과 (2) 중학교」
+- `2023-research-3-3-3-2` — 「(2) 중학교」 → 「델파이 2차 조사 결과 (2) 중학교」
+- `2023-research-5-1-1-2` — 「(2) 중학교」 → 「교원의 직무 유형 개발 결과 (2) 중학교」
+- `2023-research-3-3-2-3` — 「(3) 고등학교」 → 「연구결과 (3) 고등학교」
+- `2023-research-3-3-3-3` — 「(3) 고등학교」 → 「델파이 2차 조사 결과 (3) 고등학교」
+- `2023-research-5-1-1-3` — 「(3) 고등학교」 → 「교원의 직무 유형 개발 결과 (3) 고등학교」
+- `2023-research-3-3-2-4` — 「(4) 특수학교」 → 「연구결과 (4) 특수학교」
+- `2023-research-3-3-3-4` — 「(4) 특수학교」 → 「델파이 2차 조사 결과 (4) 특수학교」
+- `2023-research-5-1-1-4` — 「(4) 특수학교」 → 「교원의 직무 유형 개발 결과 (4) 특수학교」
+- `2023-research-3-3-3-1` — 「(1) 초등학교」 → 「델파이 2차 조사 결과 (1) 초등학교」
+- `2023-research-5-1-1-1` — 「(1) 초등학교」 → 「교원의 직무 유형 개발 결과 (1) 초등학교」
+- `2023-research-4-1-1-1` — 「(1) 1차 전문가협의회」 → 「전문가협의회 진행 결과 및 시사점 (1) 1차 전문가협의회」
+- `2023-research-4-2-1-1` — 「(1) 1차 전문가협의회」 → 「전문가협의회 진행 결과 (1) 1차 전문가협의회」
+- `2023-research-4-1-1-3` — 「(3) 3차 전문가협의회」 → 「전문가협의회 진행 결과 및 시사점 (3) 3차 전문가협의회」
+- `2023-research-4-2-1-3` — 「(3) 3차 전문가협의회」 → 「전문가협의회 진행 결과 (3) 3차 전문가협의회」
 
 ### 신뢰도 low 페이지 (검수 우선)
 
-- `content/disability-types/2023-research-p-072.md` — 낮은 필드: domains, regions
-
-### 신뢰도 medium 페이지 (80건)
-
-주요 점검 대상:
-- `content/domains/2023-research-1.md` — 낮은 필드: (axis 추론)
-- `content/domains/2023-research-1-2.md` — 낮은 필드: (axis 추론)
-- `content/domains/2023-research-49.md` — 낮은 필드: (axis 추론)
-- `content/domains/2023-research-appendix-006.md` — 낮은 필드: (axis 추론)
-- `content/domains/2023-research-1-3.md` — 낮은 필드: regions
-- `content/domains/2023-research-2.md` — 낮은 필드: (axis 추론)
-- `content/regions/2023-research-2-2.md` — 낮은 필드: (axis 추론)
-- `content/domains/2023-research-1-6.md` — 낮은 필드: (axis 추론)
-- `content/policies/2023-research-3.md` — 낮은 필드: regions
-- `content/domains/2023-research-p-020.md` — 낮은 필드: (axis 추론)
-- `content/disability-types/2023-research-p-021.md` — 낮은 필드: regions
-- `content/domains/2023-research-3-2.md` — 낮은 필드: (axis 추론)
-- `content/domains/2023-research-2-5.md` — 낮은 필드: regions
-- `content/domains/2023-research-3-3.md` — 낮은 필드: (axis 추론)
-- `content/domains/2023-research-4.md` — 낮은 필드: (axis 추론)
-- `content/domains/2023-research-5.md` — 낮은 필드: (axis 추론)
-- `content/domains/2023-research-7.md` — 낮은 필드: (axis 추론)
-- `content/domains/2023-research-6.md` — 낮은 필드: (axis 추론)
-- `content/regions/2023-research-2-6.md` — 낮은 필드: (axis 추론)
-- `content/policies/2023-research-2-7.md` — 낮은 필드: regions
-- ... 외 60건
-
-### 슬러그 충돌 해소
-
-- `2023-research-1` → `2023-research-1-2`
-- `2023-research-1` → `2023-research-1-3`
-- `2023-research-1` → `2023-research-1-4`
-- `2023-research-1` → `2023-research-1-5`
-- `2023-research-2` → `2023-research-2-2`
-- `2023-research-1` → `2023-research-1-6`
-- `2023-research-1` → `2023-research-1-7`
-- `2023-research-1` → `2023-research-1-8`
-- `2023-research-2` → `2023-research-2-3`
-- `2023-research-1` → `2023-research-1-9`
-- `2023-research-1` → `2023-research-1-10`
-- `2023-research-2` → `2023-research-2-4`
-- `2023-research-3` → `2023-research-3-2`
-- `2023-research-2` → `2023-research-2-5`
-- `2023-research-3` → `2023-research-3-3`
-- `2023-research-1` → `2023-research-1-11`
-- `2023-research-2` → `2023-research-2-6`
-- `2023-research-2` → `2023-research-2-7`
-- `2023-research-2` → `2023-research-2-8`
-- `2023-research-1` → `2023-research-1-12`
-- `2023-research-2` → `2023-research-2-9`
-- `2023-research-2` → `2023-research-2-10`
-- `2023-research-4` → `2023-research-4-2`
-- `2023-research-3-2` → `2023-research-3-2-2`
-- `2023-research-4` → `2023-research-4-3`
-- `2023-research-1` → `2023-research-1-13`
-- `2023-research-2` → `2023-research-2-11`
-- `2023-research-3-3` → `2023-research-3-3-2`
-- `2023-research-3` → `2023-research-3-4`
-- `2023-research-2` → `2023-research-2-12`
-- ... 외 39건
+- `content/uncategorized/2023-research-app-1.md` — 낮은 필드: domains, regions
 
 ## 2023-hr-guide
 
-- 분해 페이지: 94개
-- 슬러그 충돌 해소: 18건
-- 이미지 미매칭: 61건
-- axis 분포: policies=27, domains=29, disability-types=34, regions=4
-- 신뢰도 분포: high=42, medium=52
+- 분해 페이지: 71개
+- 이미지 미매칭: 2건
+- axis 분포: policies=31, disability-types=12, domains=24, regions=2, uncategorized=2
+- 신뢰도 분포: high=36, medium=33, low=2
+- 평균 본문 길이: 2915자
 
-### 신뢰도 medium 페이지 (52건)
+### 제목 범위 밖 번호(2층 승격 누락 의심) (2건)
 
-주요 점검 대상:
-- `content/domains/2023-hr-p-002.md` — 낮은 필드: (axis 추론)
-- `content/policies/2023-hr-p-003.md` — 낮은 필드: regions
-- `content/domains/2023-hr-p-005.md` — 낮은 필드: (axis 추론)
-- `content/domains/2023-hr-p-006.md` — 낮은 필드: (axis 추론)
-- `content/domains/2023-hr-appendix-007.md` — 낮은 필드: (axis 추론)
-- `content/policies/2023-hr-1.md` — 낮은 필드: regions
-- `content/disability-types/2023-hr-p-015.md` — 낮은 필드: domains
-- `content/disability-types/2023-hr-p-017.md` — 낮은 필드: domains
-- `content/disability-types/2023-hr-p-018.md` — 낮은 필드: domains
-- `content/disability-types/2023-hr-p-021.md` — 낮은 필드: domains
-- `content/domains/2023-hr-p-025.md` — 낮은 필드: (axis 추론)
-- `content/domains/2023-hr-p-026.md` — 낮은 필드: (axis 추론)
-- `content/domains/2023-hr-p-028.md` — 낮은 필드: (axis 추론)
-- `content/disability-types/2023-hr-p-029.md` — 낮은 필드: domains
-- `content/disability-types/2023-hr-p-030.md` — 낮은 필드: domains
-- `content/disability-types/2023-hr-p-033.md` — 낮은 필드: domains
-- `content/domains/2023-hr-p-035.md` — 낮은 필드: (axis 추론)
-- `content/domains/2023-hr-p-037.md` — 낮은 필드: (axis 추론)
-- `content/disability-types/2023-hr-p-039.md` — 낮은 필드: domains
-- `content/domains/2023-hr-p-043.md` — 낮은 필드: (axis 추론)
-- ... 외 32건
+- `2023-hr-3-1` — 1. 금지된 차별행위를 하지 않음에 있어서 과도한 부담이나 현저히 곤란한 사정 등이 있는 
+- `2023-hr-3-1` — 2. 금지된 차별행위가 특정 직무나 사업 수행의 성질상 불가피한 경우. 이 경우 특정 직무
 
-### 슬러그 충돌 해소
+### 빈 조각 병합(100자 미만) (3건)
 
-- `2023-hr-1` → `2023-hr-1-2`
-- `2023-hr-2` → `2023-hr-2-2`
-- `2023-hr-1` → `2023-hr-1-3`
-- `2023-hr-2` → `2023-hr-2-3`
-- `2023-hr-1` → `2023-hr-1-4`
-- `2023-hr-2` → `2023-hr-2-4`
-- `2023-hr-1` → `2023-hr-1-5`
-- `2023-hr-2` → `2023-hr-2-5`
-- `2023-hr-1` → `2023-hr-1-6`
-- `2023-hr-2` → `2023-hr-2-6`
-- `2023-hr-3` → `2023-hr-3-2`
-- `2023-hr-3` → `2023-hr-3-3`
-- `2023-hr-1` → `2023-hr-1-7`
-- `2023-hr-2` → `2023-hr-2-7`
-- `2023-hr-3` → `2023-hr-3-4`
-- `2023-hr-1` → `2023-hr-1-8`
-- `2023-hr-2` → `2023-hr-2-8`
-- `2023-hr-3` → `2023-hr-3-5`
+- `2023-hr-x1-x1` — 「□ 안내서 개발 목적」(83자) → 2023-hr-x1-x2
+- `2023-hr-2-3-2-2` — 「(2) 담임 또는 보직 배정」(97자) → 2023-hr-2-3-2-3
+- `2023-hr-3-2-3-1` — 「(1) 개념」(80자) → 2023-hr-3-2-3-2
+
+### 개요 페이지(부모 서문 100자 이상) (3건)
+
+- `2023-hr-1-2-2` — 2) 장애유형
+- `2023-hr-2-2` — 2. 장애인교원 인사관리 지원 내용
+- `2023-hr-app-3` — <부록3> 장애인교원 관련 유관기관 정보
+
+### 번호 없는 제목(x<n>) (19건)
+
+- `2023-hr-x1` — 일러두기
+- `2023-hr-x1-x1` — □ 안내서 개발 목적
+- `2023-hr-x1-x2` — □ 안내서 개발 근거 및 주요 내용
+- `2023-hr-x1-x3` — □ 안내서 활용 방법
+- `2023-hr-app-1-x1` — □ 장애인의 분류
+- `2023-hr-app-1-x2` — □ 「장애인복지법」에 따른 장애정도 판정 기준
+- `2023-hr-app-1-x3` — □ 「장애인복지법」에 따른 장애유형별 장애정도 판정 기준
+- `2023-hr-app-1-x4` — □ 「장애인고용촉진 및 직업재활법」에 따른 중증장애 기준
+- `2023-hr-app-1-x5` — □ 중증장애인 확인을 위한 구체적인 장애상태
+- `2023-hr-app-1-x6` — □ 장애인복지법에 따른 보행상 장애 관련 기준
+- `2023-hr-app-2-x1` — □ 근로지원인 신청 서식
+- `2023-hr-app-2-x1-x1` — 근로지원인 서비스 신청서
+- `2023-hr-app-2-x1-x2` — 개인정보 수집·이용 및 제공 사전 동의서(서비스 이용자용)
+- `2023-hr-app-2-x1-x3` — 행정정보 공동이용 신청(동의)서
+- `2023-hr-app-2-x2` — □ 보조공학기기 신청 서식
+- `2023-hr-app-2-x2-x1` — 보조공학기기 지원 신청서
+- `2023-hr-app-2-x2-x2` — 기기이용 장애인 및 신청기기 현황
+- `2023-hr-app-2-x2-x3` — 보조공학기기 이용 서약서
+- `2023-hr-app-2-x2-x4` — 개인정보 수집·이용 및 제공 사전 동의서
+
+### 신뢰도 low 페이지 (검수 우선)
+
+- `content/uncategorized/2023-hr-app-3-2.md` — 낮은 필드: domains
+- `content/uncategorized/2023-hr-app-3-4.md` — 낮은 필드: domains
 
 ## 2024-jbu-work-support-guide
 
-- 분해 페이지: 92개
-- 슬러그 충돌 해소: 30건
-- 이미지 미매칭: 15건
-- axis 분포: policies=35, domains=32, disability-types=21, regions=4
-- 신뢰도 분포: high=44, medium=48
+- 분해 페이지: 69개
+- 이미지 미매칭: 1건
+- axis 분포: policies=41, domains=24, disability-types=2, regions=2
+- 신뢰도 분포: high=34, medium=35
+- 평균 본문 길이: 2853자
 
-### 신뢰도 medium 페이지 (48건)
+### 개요 페이지(부모 서문 100자 이상) (2건)
 
-주요 점검 대상:
-- `content/domains/2024-jbu-2-98.md` — 낮은 필드: (axis 추론)
-- `content/domains/2024-jbu-3-112.md` — 낮은 필드: (axis 추론)
-- `content/disability-types/2024-jbu-1-2.md` — 낮은 필드: domains
-- `content/disability-types/2024-jbu-p-006.md` — 낮은 필드: domains
-- `content/domains/2024-jbu-p-007.md` — 낮은 필드: (axis 추론)
-- `content/domains/2024-jbu-p-009.md` — 낮은 필드: (axis 추론)
-- `content/domains/2024-jbu-2-2.md` — 낮은 필드: (axis 추론)
-- `content/disability-types/2024-jbu-p-012.md` — 낮은 필드: domains
-- `content/policies/2024-jbu-2-3.md` — 낮은 필드: regions
-- `content/domains/2024-jbu-p-017.md` — 낮은 필드: (axis 추론)
-- `content/policies/2024-jbu-p-020.md` — 낮은 필드: regions
-- `content/domains/2024-jbu-1-3.md` — 낮은 필드: (axis 추론)
-- `content/domains/2024-jbu-p-022.md` — 낮은 필드: (axis 추론)
-- `content/domains/2024-jbu-2-4.md` — 낮은 필드: (axis 추론)
-- `content/domains/2024-jbu-3.md` — 낮은 필드: (axis 추론)
-- `content/disability-types/2024-jbu-p-026.md` — 낮은 필드: domains
-- `content/disability-types/2024-jbu-p-027.md` — 낮은 필드: domains
-- `content/disability-types/2024-jbu-p-029.md` — 낮은 필드: domains
-- `content/domains/2024-jbu-p-030.md` — 낮은 필드: (axis 추론)
-- `content/domains/2024-jbu-p-031.md` — 낮은 필드: (axis 추론)
-- ... 외 28건
+- `2024-jbu-1-1-3` — 다. 장애인 교원의 장애유형별 특성 및 요구
+- `2024-jbu-4-app-2` — [부록 2] 지원 가능한 보조공학기기 유형 예
 
-### 슬러그 충돌 해소
+### 번호 없는 제목(x<n>) (9건)
 
-- `2024-jbu-1` → `2024-jbu-1-2`
-- `2024-jbu-2` → `2024-jbu-2-2`
-- `2024-jbu-2` → `2024-jbu-2-3`
-- `2024-jbu-1` → `2024-jbu-1-3`
-- `2024-jbu-2` → `2024-jbu-2-4`
-- `2024-jbu-2` → `2024-jbu-2-5`
-- `2024-jbu-1` → `2024-jbu-1-4`
-- `2024-jbu-2` → `2024-jbu-2-6`
-- `2024-jbu-2` → `2024-jbu-2-7`
-- `2024-jbu-1` → `2024-jbu-1-5`
-- `2024-jbu-2` → `2024-jbu-2-8`
-- `2024-jbu-1` → `2024-jbu-1-6`
-- `2024-jbu-1` → `2024-jbu-1-7`
-- `2024-jbu-2` → `2024-jbu-2-9`
-- `2024-jbu-2` → `2024-jbu-2-10`
-- `2024-jbu-2` → `2024-jbu-2-11`
-- `2024-jbu-1` → `2024-jbu-1-8`
-- `2024-jbu-2` → `2024-jbu-2-12`
-- `2024-jbu-1` → `2024-jbu-1-9`
-- `2024-jbu-2` → `2024-jbu-2-13`
-- `2024-jbu-1-2` → `2024-jbu-1-2-2`
-- `2024-jbu-3` → `2024-jbu-3-2`
-- `2024-jbu-1` → `2024-jbu-1-10`
-- `2024-jbu-2` → `2024-jbu-2-14`
-- `2024-jbu-1` → `2024-jbu-1-11`
-- `2024-jbu-2` → `2024-jbu-2-15`
-- `2024-jbu-3` → `2024-jbu-3-3`
-- `2024-jbu-1` → `2024-jbu-1-12`
-- `2024-jbu-2` → `2024-jbu-2-16`
-- `2024-jbu-3` → `2024-jbu-3-4`
+- `2024-jbu-4-app-2-x1` — □ 근로지원인 신청 서식
+- `2024-jbu-4-app-2-x1-x1` — 근로지원인 서비스 신청서
+- `2024-jbu-4-app-2-x1-x2` — 개인정보 수집·이용 및 제공 사전 동의서(서비스 이용자용)
+- `2024-jbu-4-app-2-x1-x3` — 행정정보 공동이용 신청(동의)서
+- `2024-jbu-4-app-2-x2` — □ 보조공학기기 신청 서식
+- `2024-jbu-4-app-2-x2-x1` — 보조공학기기 지원 신청서
+- `2024-jbu-4-app-2-x2-x2` — 기기이용 장애인 및 신청기기 현황
+- `2024-jbu-4-app-2-x2-x3` — 보조공학기기 이용 서약서
+- `2024-jbu-4-app-2-x2-x4` — 개인정보 수집·이용 및 제공 사전 동의서
 
-## 2020-collective-agreement
+### 제목 중복 해소(부모 접두) (2건)
 
-- 분해 페이지: 49개
-- 슬러그 충돌 해소: 3건
-- 이미지 미매칭: 0건
-- axis 분포: agreements=49
-- 신뢰도 분포: high=37, medium=11, low=1
-
-### 신뢰도 low 페이지 (검수 우선)
-
-- `content/agreements/2020-ca-15.md` — 낮은 필드: domains, regions
-
-### 신뢰도 medium 페이지 (11건)
-
-주요 점검 대상:
-- `content/agreements/2020-ca-9.md` — 낮은 필드: domains
-- `content/agreements/2020-ca-14.md` — 낮은 필드: regions
-- `content/agreements/2020-ca-21.md` — 낮은 필드: regions
-- `content/agreements/2020-ca-22.md` — 낮은 필드: regions
-- `content/agreements/2020-ca-24.md` — 낮은 필드: regions
-- `content/agreements/2020-ca-27.md` — 낮은 필드: regions
-- `content/agreements/2020-ca-35.md` — 낮은 필드: regions
-- `content/agreements/2020-ca-36.md` — 낮은 필드: regions
-- `content/agreements/2020-ca-43.md` — 낮은 필드: regions
-- `content/agreements/2020-ca-44.md` — 낮은 필드: regions
-- `content/agreements/2020-ca-46.md` — 낮은 필드: regions
-
-### 슬러그 충돌 해소
-
-- `2020-ca-1` → `2020-ca-1-2`
-- `2020-ca-2` → `2020-ca-2-2`
-- `2020-ca-3` → `2020-ca-3-2`
+- `2024-jbu-1-2-2-1` — 「1) 인적지원」 → 「정당한 편의제공 지원 절차 1) 인적지원」
+- `2024-jbu-4-app-2-x2-1` — 「1) 인적지원」 → 「보조공학기기 신청 서식 1) 인적지원」
 
 ## 2024-support-staff-duty-guide
 
-- 분해 페이지: 185개
-- 슬러그 충돌 해소: 45건
-- 이미지 미매칭: 27건
-- axis 분포: policies=50, domains=17, disability-types=118
-- 신뢰도 분포: high=156, medium=28, low=1
+- 분해 페이지: 131개
+- 이미지 미매칭: 0건
+- axis 분포: policies=35, domains=10, disability-types=86
+- 신뢰도 분포: medium=19, high=112
+- 평균 본문 길이: 1606자
 
-### 신뢰도 low 페이지 (검수 우선)
+### 빈 조각 병합(100자 미만) (3건)
 
-- `content/disability-types/2024-staff-p-113.md` — 낮은 필드: domains, regions
+- `2024-staff-3-7-8` — 「아. 물품 및 간식 등 구입」(75자) → 2024-staff-3-7-9
+- `2024-staff-4-5-4` — 「라. 조례 및 종례」(95자) → 2024-staff-4-5-5
+- `2024-staff-4-8-3` — 「다. 전화 기록 및 전달」(71자) → 2024-staff-4-8-4
 
-### 신뢰도 medium 페이지 (28건)
+### 개요 페이지(부모 서문 100자 이상) (2건)
 
-주요 점검 대상:
-- `content/domains/2024-staff-9.md` — 낮은 필드: (axis 추론)
-- `content/disability-types/2024-staff-19.md` — 낮은 필드: domains
-- `content/policies/2024-staff-p-004.md` — 낮은 필드: regions
-- `content/policies/2024-staff-p-006.md` — 낮은 필드: regions
-- `content/domains/2024-staff-p-007.md` — 낮은 필드: (axis 추론)
-- `content/domains/2024-staff-1.md` — 낮은 필드: regions
-- `content/domains/2024-staff-p-011.md` — 낮은 필드: (axis 추론)
-- `content/domains/2024-staff-p-012.md` — 낮은 필드: (axis 추론)
-- `content/domains/2024-staff-p-015.md` — 낮은 필드: (axis 추론)
-- `content/domains/2024-staff-p-017.md` — 낮은 필드: (axis 추론)
-- `content/disability-types/2024-staff-2-6.md` — 낮은 필드: regions
-- `content/disability-types/2024-staff-3-3.md` — 낮은 필드: regions
-- `content/domains/2024-staff-2-7.md` — 낮은 필드: (axis 추론)
-- `content/domains/2024-staff-3-4.md` — 낮은 필드: (axis 추론)
-- `content/domains/2024-staff-p-081.md` — 낮은 필드: (axis 추론)
-- `content/disability-types/2024-staff-p-089.md` — 낮은 필드: domains
-- `content/domains/2024-staff-q-a.md` — 낮은 필드: (axis 추론)
-- `content/disability-types/2024-staff-2-16.md` — 낮은 필드: regions
-- `content/disability-types/2024-staff-p-130.md` — 낮은 필드: domains
-- `content/domains/2024-staff-p-135.md` — 낮은 필드: (axis 추론)
-- ... 외 8건
+- `2024-staff-4-4` — 4. 비교과 활동
+- `2024-staff-4-5` — 5. 학급 경영
 
-### 슬러그 충돌 해소
+### 번호 없는 제목(x<n>) (7건)
 
-- `2024-staff-5` → `2024-staff-5-2`
-- `2024-staff-1` → `2024-staff-1-2`
-- `2024-staff-2` → `2024-staff-2-2`
-- `2024-staff-2` → `2024-staff-2-3`
-- `2024-staff-1` → `2024-staff-1-3`
-- `2024-staff-2` → `2024-staff-2-4`
-- `2024-staff-2` → `2024-staff-2-5`
-- `2024-staff-3` → `2024-staff-3-2`
-- `2024-staff-5` → `2024-staff-5-3`
-- `2024-staff-2` → `2024-staff-2-6`
-- `2024-staff-3` → `2024-staff-3-3`
-- `2024-staff-1` → `2024-staff-1-4`
-- `2024-staff-2` → `2024-staff-2-7`
-- `2024-staff-1` → `2024-staff-1-5`
-- `2024-staff-2` → `2024-staff-2-8`
-- `2024-staff-1` → `2024-staff-1-6`
-- `2024-staff-2` → `2024-staff-2-9`
-- `2024-staff-1` → `2024-staff-1-7`
-- `2024-staff-2` → `2024-staff-2-10`
-- `2024-staff-1` → `2024-staff-1-8`
-- `2024-staff-2` → `2024-staff-2-11`
-- `2024-staff-3` → `2024-staff-3-4`
-- `2024-staff-1` → `2024-staff-1-9`
-- `2024-staff-2` → `2024-staff-2-12`
-- `2024-staff-3` → `2024-staff-3-5`
-- `2024-staff-5` → `2024-staff-5-4`
-- `2024-staff-2` → `2024-staff-2-13`
-- `2024-staff-2` → `2024-staff-2-14`
-- `2024-staff-2` → `2024-staff-2-15`
-- `2024-staff-2` → `2024-staff-2-16`
-- ... 외 15건
+- `2024-staff-4-3-x1` — □ 수업 평가 시 지원인력의 주요 역할
+- `2024-staff-4-7-x1` — □ 지체·뇌병변장애인교원의 행정 업무 지원 시 기본 원칙
+- `2024-staff-app-1-x1` — □ 총론적 의무 관련 법적 근거
+- `2024-staff-app-1-x2` — □ 지원인력 및 보조공학기기 등 편의제공 관련 법적 근거
+- `2024-staff-app-1-x3` — □ 의사소통 지원 관련 법적 근거
+- `2024-staff-app-1-x4` — □ 정보 접근성 관련 법적 근거
+- `2024-staff-app-1-x5` — □ 시·도교육청별 장애인공무원 및 교원 편의지원 조례 현황(2024년 기준)
+
+### 제목 중복 해소(부모 접두) (35건)
+
+- `2024-staff-3-1-1` — 「가. 교수학습 활동 계획 수립 지원」 → 「시각장애인교원 지원 방안 가. 교수학습 활동 계획 수립 지원」
+- `2024-staff-4-1-1` — 「가. 교수학습 활동 계획 수립 지원」 → 「지체·뇌병변장애인교원 지원 방안 가. 교수학습 활동 계획 수립 지원」
+- `2024-staff-3-1-2` — 「나. 교수학습자료 개발 및 준비」 → 「시각장애인교원 지원 방안 나. 교수학습자료 개발 및 준비」
+- `2024-staff-4-1-2` — 「나. 교수학습자료 개발 및 준비」 → 「지체·뇌병변장애인교원 지원 방안 나. 교수학습자료 개발 및 준비」
+- `2024-staff-5-1-2` — 「나. 교수학습자료 개발 및 준비」 → 「청각장애인교원 지원 방안 나. 교수학습자료 개발 및 준비」
+- `2024-staff-3-3-1` — 「가. 평가 활동 계획」 → 「시각장애인교원 지원 방안 가. 평가 활동 계획」
+- `2024-staff-4-3-1` — 「가. 평가 활동 계획」 → 「지체·뇌병변장애인교원 지원 방안 가. 평가 활동 계획」
+- `2024-staff-3-3-2` — 「나. 평가 유형별 지원 내용」 → 「시각장애인교원 지원 방안 나. 평가 유형별 지원 내용」
+- `2024-staff-4-3-2` — 「나. 평가 유형별 지원 내용」 → 「지체·뇌병변장애인교원 지원 방안 나. 평가 유형별 지원 내용」
+- `2024-staff-3-3-3` — 「다. 평가 관리」 → 「시각장애인교원 지원 방안 다. 평가 관리」
+- `2024-staff-4-3-3` — 「다. 평가 관리」 → 「지체·뇌병변장애인교원 지원 방안 다. 평가 관리」
+- `2024-staff-3-3-4` — 「라. 평가 기록 입력 (학교생활기록부)」 → 「시각장애인교원 지원 방안 라. 평가 기록 입력 (학교생활기록부)」
+- `2024-staff-4-3-4` — 「라. 평가 기록 입력 (학교생활기록부)」 → 「지체·뇌병변장애인교원 지원 방안 라. 평가 기록 입력 (학교생활기록부)」
+- `2024-staff-3-4-1` — 「가. 자율 활동」 → 「시각장애인교원 지원 방안 가. 자율 활동」
+- `2024-staff-5-4-1` — 「가. 자율 활동」 → 「청각장애인교원 지원 방안 가. 자율 활동」
+- `2024-staff-3-4-2` — 「나. 봉사 활동」 → 「시각장애인교원 지원 방안 나. 봉사 활동」
+- `2024-staff-5-4-2` — 「나. 봉사 활동」 → 「청각장애인교원 지원 방안 나. 봉사 활동」
+- `2024-staff-3-4-3` — 「다. 동아리 활동」 → 「시각장애인교원 지원 방안 다. 동아리 활동」
+- `2024-staff-5-4-3` — 「다. 동아리 활동」 → 「청각장애인교원 지원 방안 다. 동아리 활동」
+- `2024-staff-3-4-4` — 「라. 진로 활동」 → 「시각장애인교원 지원 방안 라. 진로 활동」
+- `2024-staff-5-4-4` — 「라. 진로 활동」 → 「청각장애인교원 지원 방안 라. 진로 활동」
+- `2024-staff-3-4-5` — 「마. 비교과 활동 내용 입력 (학교생활기록부)」 → 「시각장애인교원 지원 방안 마. 비교과 활동 내용 입력 (학교생활기록부)」
+- `2024-staff-5-4-5` — 「마. 비교과 활동 내용 입력 (학교생활기록부)」 → 「청각장애인교원 지원 방안 마. 비교과 활동 내용 입력 (학교생활기록부)」
+- `2024-staff-3-5-1` — 「가. 학급 미화」 → 「시각장애인교원 지원 방안 가. 학급 미화」
+- `2024-staff-4-5-1` — 「가. 학급 미화」 → 「지체·뇌병변장애인교원 지원 방안 가. 학급 미화」
+- `2024-staff-3-5-3` — 「다. 좌석 배치」 → 「시각장애인교원 지원 방안 다. 좌석 배치」
+- `2024-staff-4-5-3` — 「다. 좌석 배치」 → 「지체·뇌병변장애인교원 지원 방안 다. 좌석 배치」
+- `2024-staff-3-6-1` — 「가. 학생 관찰 및 정보 전달」 → 「생활 지도 가. 학생 관찰 및 정보 전달」
+- `2024-staff-4-6-1` — 「가. 학생 관찰 및 정보 전달」 → 「생활지도 가. 학생 관찰 및 정보 전달」
+- `2024-staff-3-6-2` — 「나. 상담」 → 「생활 지도 나. 상담」
+- `2024-staff-4-6-2` — 「나. 상담」 → 「생활지도 나. 상담」
+- `2024-staff-3-9-1` — 「가. 집합연수」 → 「시각장애인교원 지원 방안 가. 집합연수」
+- `2024-staff-5-8-1` — 「가. 집합연수」 → 「청각장애인교원 지원 방안 가. 집합연수」
+- `2024-staff-4-2-3` — 「다. 학습 활동 지원」 → 「지체·뇌병변장애인교원 지원 방안 다. 학습 활동 지원」
+- `2024-staff-5-2-3` — 「다. 학습 활동 지원」 → 「청각장애인교원 지원 방안 다. 학습 활동 지원」
 
