@@ -4,11 +4,11 @@
 
 ## 2023-disability-types-work-support-report
 
-- 분해 페이지: 97개
+- 분해 페이지: 96개
 - 이미지 미매칭: 1건
-- axis 분포: domains=47, policies=22, regions=1, disability-types=26, uncategorized=1
-- 신뢰도 분포: medium=57, high=39, low=1
-- 평균 본문 길이: 7780자
+- axis 분포: domains=46, policies=22, regions=1, disability-types=26, uncategorized=1
+- 신뢰도 분포: medium=56, high=39, low=1
+- 평균 본문 길이: 7853자
 
 ### 같은 경로에 같은 번호(-d 접미) (2건)
 
@@ -20,10 +20,6 @@
 - `2023-research-2-1-1` — 「1) 개요」(81자) → 2023-research-2-1-2
 - `2023-research-3-3-2-1` — 「(1) 델파이 1차 조사 결과」(0자) → 2023-research-3-3-2-1-d2
 - `2023-research-app-1-1` — 「[부록 1-1] 지체장애인 교원 대상 교사 직무분류표 수정(안) 작성표」(0자) → 2023-research-app-1-2
-
-### 5만 자 분할 (1건)
-
-- `2023-research-app-3-x4` — 2개로 분할
 
 ### 개요 페이지(부모 서문 100자 이상) (4건)
 

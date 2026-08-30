@@ -18,7 +18,7 @@
  * 핵심 규칙:
  *  - 슬러그 체계 2종. `outline`(4종): 출처 접두 + 부에서 자기 수준까지 전 조상 번호
  *    (「Ⅱ부 > 2. > 1) > (1) 교수학습」 → `2023-research-2-2-1-1`). 번호 없는 제목은
- *    부모 경로 + `x<n>`, 같은 경로에 같은 번호가 두 번이면 `-d2` + 경고, 5만 자 분할은
+ *    부모 경로 + `x<n>`, 같은 경로에 같은 번호가 두 번이면 `-d2` + 경고, 5.5만 자 분할은
  *    `-pt<n>`, 부모 서문 개요 페이지는 부모 경로 그대로. 순번 fallback(`p-NNN`·
  *    `appendix-NNN`)은 없으며 만들 수 없으면 fatal. `article`(단체협약): 종전 제N조 방식
  *    그대로(주소 불변, frozen).
@@ -29,7 +29,7 @@
  *  - 같은 출처 안에서 title이 중복되면 부모 제목(번호 제거)을 접두로 붙인다.
  *  - 제목 끝 쪽수(`\s\d{1,3}$`)가 source_page와 같으면 제거.
  *  - 본문 100자 미만 조각은 다음 형제(없으면 이전 형제) 본문에 `## 원제목` 소절로 병합.
- *  - 5만 자 초과 본문은 표 블록 경계에서만 분할, 제목 `(1/N)`.
+ *  - 5.5만 자 초과 본문은 표 블록 경계에서만 분할, 제목 `(1/N)`.
  *  - 쪽 주석 `<!-- p.X (pdf N) -->`는 frontmatter source_page*로 옮기고 본문에서 제거.
  *  - 이미지 `(이미지: alt)`는 TODO 마커 다음 줄에 원문을 남긴다(alt가 화면에서 사라지지
  *    않게). image:apply가 마커와 alt 줄을 함께 치환한다.
@@ -77,7 +77,9 @@ export const FORBIDDEN_HTML_TAGS = ['page_header', 'page_number', 'page_footer',
 
 const OVERVIEW_MIN_CHARS = 100
 const MERGE_MAX_CHARS = 100
-const SPLIT_MAX_CHARS = 50_000
+// 2026-08-30 위원장 결정: 델파이 2차 특수학교용(4.9만 자)이 한 건으로 들어가도록 5만 → 5.5만(예산 5.25만).
+// validate-frontmatter.ts BODY_MAX_CHARS와 같은 값이어야 한다.
+const SPLIT_MAX_CHARS = 55_000
 /** 분할 판정 예산 — 분할 뒤에 붙는 관련 페이지 블록·이미지 alt 줄(최대 ~2,000자)을 미리 뺀다 */
 const SPLIT_BUDGET_CHARS = SPLIT_MAX_CHARS - 2_500
 const RELATED_MAX = 20
@@ -428,7 +430,7 @@ function normalizeBodyHeadings(body: string): string {
   return lines.join('\n')
 }
 
-/** 표 블록 경계에서만 자르는 5만 자 분할. 단일 표가 한도를 넘으면 그대로 두고 경고. */
+/** 표 블록 경계에서만 자르는 5.5만 자 분할. 단일 표가 한도를 넘으면 그대로 두고 경고. */
 function splitLargeBody(body: string): { parts: string[]; oversizedTable: boolean } {
   if (body.length <= SPLIT_BUDGET_CHARS) return { parts: [body], oversizedTable: false }
   const lines = body.split('\n')
@@ -832,12 +834,12 @@ export function decomposeFile(args: {
     plans = plans.filter((p) => !merged.has(p.slug))
   }
 
-  // 5만 자 분할(표 경계)
+  // 5.5만 자 분할(표 경계)
   const expanded: PagePlan[] = []
   for (const p of plans) {
     const { parts, oversizedTable } = splitLargeBody(p.body)
     if (parts.length === 1) { expanded.push(p); continue }
-    if (oversizedTable) warnings.push({ kind: 'split', slug: p.slug, detail: '단일 표가 5만 자를 넘어 그 블록은 자르지 못함' })
+    if (oversizedTable) warnings.push({ kind: 'split', slug: p.slug, detail: '단일 표가 5.5만 자를 넘어 그 블록은 자르지 못함' })
     parts.forEach((part, idx) => {
       const clone: PagePlan = { ...p, slug: `${p.slug}-pt${idx + 1}`, title: `${p.title} (${idx + 1}/${parts.length})`, body: part }
       expanded.push(clone)
@@ -1112,7 +1114,7 @@ const WARNING_LABEL: Record<DecomposeWarning['kind'], string> = {
   range: '제목 범위 밖 번호(2층 승격 누락 의심)',
   dup_number: '같은 경로에 같은 번호(-d 접미)',
   merged: '빈 조각 병합(100자 미만)',
-  split: '5만 자 분할',
+  split: '5.5만 자 분할',
   overview: '개요 페이지(부모 서문 100자 이상)',
   demoted_heading: '제목 후보 제외(굵게 강등)',
   unnumbered: '번호 없는 제목(x<n>)',

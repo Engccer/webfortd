@@ -141,7 +141,8 @@ describe('C. 주소 체계(outline)', () => {
   it('부록·분할·개요·번호 없음 주소 형태가 존재한다', () => {
     const slugs = new Set(pages.map((p) => p.slug))
     assert.ok(slugs.has('2023-research-app-1-2'), '[부록 1-2] → app-1-2')
-    assert.ok(slugs.has('2023-research-app-3-x4-pt1'), '5만 자 분할 -pt1')
+    assert.ok(slugs.has('2023-research-app-3-x4'), '특수학교용 2차(4.9만 자)는 5.5만 자 예산 안에서 한 건')
+    assert.ok(![...slugs].some((s) => /-pt\d+$/.test(s)), '현 4종에는 분할 페이지가 없어야 한다(있으면 한도 재검토)')
     assert.ok([...slugs].some((s) => /-x\d+$/.test(s)), '번호 없는 제목 x<n>')
     const overview = pages.find((p) => p.slug === '2023-hr-1-2-2')
     assert.ok(overview && overview.data.title === '2) 장애유형', '부모 서문 개요 페이지')

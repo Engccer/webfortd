@@ -15,7 +15,7 @@
  *   2. 슬러그(파일명 stem)가 kebab-case
  *   3. <axis>(부모 디렉터리)가 CONTENT_AXES 목록에 속함
  *   4. 본문 게이트(2026-08 3층 재생성, DECOMPOSE_V2_DESIGN §3.6): 파서 잔존 태그 / 허용 태그 불균형 /
- *      끊긴 위키링크 / 출처별 제목 중복 / 본문 100자 미만·5만 자 초과 / 4종 주소의 `-p-`·`appendix-` 재발
+ *      끊긴 위키링크 / 출처별 제목 중복 / 본문 100자 미만·5.5만 자 초과 / 4종 주소의 `-p-`·`appendix-` 재발
  */
 
 import fs from 'node:fs'
@@ -41,7 +41,7 @@ const FORBIDDEN_TAG_RE = /<\/?(page_header|page_number|page_footer|u|figure|span
 const BALANCED_TAGS = ['mark', 'sub', 'sup'] as const
 const WIKILINK_RE = /\[\[([^\]|#]+)(?:#[^\]|]+)?(?:\|[^\]]+)?\]\]/g
 const BODY_MIN_CHARS = 100
-const BODY_MAX_CHARS = 50_000
+const BODY_MAX_CHARS = 55_000 // decompose-source.ts SPLIT_MAX_CHARS와 동일(2026-08-30 상향)
 /** 순번 fallback 주소가 다시 생기면 안 되는 출처(4종) 접두 */
 const OUTLINE_PREFIX_RE = /^(2023-research|2023-hr|2024-jbu|2024-staff)-/
 const LEGACY_SLUG_RE = /-(p|appendix)-\d{3}(-|$)/

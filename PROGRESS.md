@@ -6,8 +6,8 @@
 
 - **웹**: Phase 1~4·A·B·7 완료. production https://webfortd.vercel.app (engccer Hobby 임시 운영, KHUDT Pro는 결제 락 — 복귀는 §미결 결정). Hobby 함수 12개 제한 아래 함수 9개로 배포 정상(2026-07-17 `[...kb]` catch-all 통합 이후).
 - **2층 마크다운 정본 v4 4종 완비(2026-08-28)**: `data/source-md/*_fused_v4_*.md`(v3는 `data/source-md/v3/` 보존).
-- **3층 재생성 완료(2026-08-29, BACKLOG C5 종결)**: 4종 파생 368건(research 97·hr 71·jbu 69·staff 131. 8/30 델파이 학교급·청각 (2)(3) 제목 승격으로 363 → 368), outline 주소 체계(`docs/DECOMPOSE_V2_DESIGN.md`), 대응표 `docs/slug-migration-2026-08.csv`, 회귀 표 `docs/regression-2026-08-review48.md`. **전부 draft** — 2차 검증(9/6 마감) 뒤 `npm run kb:bootstrap` 일괄 공개 → `content/.embed-paused` 삭제 → 야간 sync+embed 재개(임베딩 1회). 그때까지 production 4종 문서는 「검토 중」, 채팅 RAG는 DB의 v3 청크 유지.
-- **콘텐츠 baseline**: `content/` 427건 = published 50(단체협약 49 + resources 1) + draft 368(4종) + draft 9(FAQ). 축 7개. RAG 청크는 DB 기준 2775(v3, 재임베딩 전).
+- **3층 재생성 완료(2026-08-29, BACKLOG C5 종결)**: 4종 파생 367건(research 96·hr 71·jbu 69·staff 131. 8/30 델파이 학교급·청각 (2)(3) 제목 승격으로 363 → 367, 분할 한도 5.5만 자), outline 주소 체계(`docs/DECOMPOSE_V2_DESIGN.md`), 대응표 `docs/slug-migration-2026-08.csv`, 회귀 표 `docs/regression-2026-08-review48.md`. **전부 draft** — 2차 검증(9/6 마감) 뒤 `npm run kb:bootstrap` 일괄 공개 → `content/.embed-paused` 삭제 → 야간 sync+embed 재개(임베딩 1회). 그때까지 production 4종 문서는 「검토 중」, 채팅 RAG는 DB의 v3 청크 유지.
+- **콘텐츠 baseline**: `content/` 426건 = published 50(단체협약 49 + resources 1) + draft 367(4종) + draft 9(FAQ). 축 7개. RAG 청크는 DB 기준 2775(v3, 재임베딩 전).
 - **웹 콘텐츠 편집기 운영 중**(2026-08-04, PR #113): `(wiki)/editor`, GitHub PAT·Actions Secrets 등록 완료, 야간 sync+embed 워크플로(`nightly-embed.yml`, `LAST_EMBED_SHA` 게이트) 가동, production 실호출 통과. 잔여는 운영 잔무·VoiceOver 실측(BACKLOG §A8·§B).
 - **iOS 네이티브 v1**: 5탭(위키·채팅·자료실·미디어·설정) + 홀드 받아쓰기(채팅·위키 검색), 오프라인 위키 535건, OTP 인증·이력. Kit 테스트 49 green. iPhone 13 Pro 실기기 배포 상태(`ios/deploy-device.sh`), 서명 팀 72JQ7VD4V5(Apple Developer Program 유료, 2026-07-12 승인). TestFlight 미제출(준비물 BACKLOG §D). 정본 spec `docs/superpowers/specs/2026-07-10-ios-native-app-design.md`, 배포 절차 `docs/IOS_DISTRIBUTION.md`.
 - **테스트 baseline**(2026-08-04): unit 411 / component 190 / a11y 35 / integration RLS 5(실 DB; 기존 migrations 8건은 드리프트 실패 중 — BACKLOG E5).
