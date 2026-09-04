@@ -5,7 +5,7 @@
 ## 현재 상태 (2026-09-05)
 
 - **색상 대비 AA 충족(2026-09-05)**: 라이트 `--primary`·`--sidebar-primary`(#306cff → #215bf1)·`--muted-foreground`·`--destructive`, 다크 `--primary-foreground`(near-white → near-black) 조정으로 토큰·알파 조합 전 조합이 4.5:1 이상. 회귀는 `tests/lib/color-contrast.test.ts`가 계산으로 차단(브라우저 불필요).
-- **홈 검색 표면 단일화(2026-09-04)**: 홈은 히어로 **옴니박스** 단독(입력창 하나 + `[AI에게 질문]`, Cmd+Enter). 헤더 검색창은 홈에서만 숨고 그 밖 경로에서는 유지, 단축키 타깃 id는 `search-input` 하나로 통합. 질문은 `/chat?q=` → mount 시 1회 자동 전송 + 주소 정리. 실측 잔여는 BACKLOG A10.
+- **홈 검색 표면 단일화(2026-09-04)**: 홈은 히어로 **옴니박스** 단독(입력창 하나 + `[AI에게 질문]`, Cmd+Enter). 헤더 검색창은 홈에서만 숨고 그 밖 경로에서는 유지, 단축키 타깃 id는 `search-input` 하나로 통합. 질문은 `/chat?q=` → mount 시 1회 자동 전송 + 주소 정리. VoiceOver 실사용 합격(2026-09-05: 낭독 순서·Cmd+Enter·도착 커서·완료 커서 4항목).
 - **웹**: Phase 1~3·A·B·7 + 위키 리뉴얼(§Phase 진행 요약의 "Phase 4") 완료. 개정 Phase 4(소셜 피드)는 미착수. production https://webfortd.vercel.app (engccer Hobby 임시 운영, KHUDT Pro는 결제 락 — 복귀는 §미결 결정). Hobby 함수 12개 제한 아래 함수 9개로 배포 정상(2026-07-17 `[...kb]` catch-all 통합 이후).
 - **2층 마크다운 정본 v4 4종 완비(2026-08-28)**: `data/source-md/*_fused_v4_*.md`(v3는 `data/source-md/v3/` 보존).
 - **3층 재생성 완료(2026-08-29, BACKLOG C5 종결)**: 4종 파생 367건(research 96·hr 71·jbu 69·staff 131. 8/30 델파이 학교급·청각 (2)(3) 제목 승격으로 363 → 367, 분할 한도 5.5만 자), outline 주소 체계(`docs/DECOMPOSE_V2_DESIGN.md`), 대응표 `docs/slug-migration-2026-08.csv`, 회귀 표 `docs/regression-2026-08-review48.md`. **전부 draft** — 2차 검증(9/6 마감) 결과에 따라 공개 여부를 위원장이 판정(§미결 결정). 공개로 판정되면 `npm run kb:bootstrap` → `content/.embed-paused` 삭제 → 야간 sync+embed 재개(임베딩 1회). 그때까지 production 4종 문서는 「검토 중」, 채팅 RAG는 DB의 v3 청크 유지. 재개 선행 조건 3건(chunker·구 v3 고아 행 정리·FAQ 공개 판정)은 BACKLOG C9.
