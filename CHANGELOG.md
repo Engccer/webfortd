@@ -2,6 +2,16 @@
 
 > 날짜별 변경 이력(마일스톤 경계 갱신). 2026-07-10 이전 이력은 git log와 CLAUDE.md §Phase 진행 요약이 정본(지연 생성 원칙에 따라 이 파일은 iOS 트랙 진입 시점부터 시작).
 
+## 2026-09-05 — 색상 대비 WCAG AA 충족 + 전수 대비 게이트 신설
+
+- **배경**: 옴니박스 작업 중 a11y 실패로 드러난 색상 대비 미달(BACKLOG E9)을 위원장 판정(9/5 「4.5:1로 수정」)에 따라 해소. 미달은 **눈으로 보이지 않는 결함**이라 값 조정은 전부 계산으로 정했다(`oklch` → sRGB 변환 후 WCAG 대비). 검산: 종전 `oklch(0.585 0.233 264)`가 `#306cff`로 나와 axe 측정값과 일치.
+- **토큰 조정**(라이트 `:root`): `--primary`·`--sidebar-primary` L 0.585 → 0.535(`#306cff` → `#215bf1`), `--muted-foreground` 0.556 → 0.535, `--destructive` 0.577 → 0.540. 다크 `.dark`: `--primary-foreground` near-white(0.985) → near-black(0.145). 다크 primary는 배경 위 글자로도 쓰여(6.18:1) primary 자체를 어둡게 하지 않고 글자 쪽을 뒤집었다.
+- **한 번에 안 끝난 이유(기록)**: primary만 4.5로 올렸을 때 axe가 여전히 실패했다. 남은 것은 ① 배지 `bg-primary/10 text-primary`(**알파 합성** 배경이라 토큰 쌍 검사를 통과, 4.30:1) ② `--muted-foreground`가 흰 배경에서는 4.73인데 회색 배경(`bg-muted`/`secondary`/`accent`, 모두 `#f5f5f5`)에서 4.34 ③ 같은 자리의 `--destructive` 4.37. **쌍을 손으로 나열하는 방식 자체가 원인**이라 게이트를 전수 대조로 바꿨다.
+- **게이트 신설** `tests/lib/color-contrast.test.ts`: `globals.css`의 `:root`·`.dark` 블록에서 oklch 토큰을 파싱해 **글자 9종 × 배경 8종 전수 조합** + 실사용 알파 조합(`primary/10`·`primary/5`·`destructive/5`)의 대비를 계산하고 4.5:1 미달을 전부 실패로 낸다. 브라우저·서버가 필요 없어 매 커밋 돌고, 아직 화면에 쓰이지 않은 조합까지 미리 막는다. 계산 검산 테스트(흰·검 21:1, 종전 primary `#306cff`/4.47:1 재현)를 함께 둬 변환 구현이 틀리면 게이트가 먼저 깨지게 했다.
+  - ⚠ 이 테스트를 쓰면서 잡은 자기 결함: `.dark` 블록을 `indexOf`로 찾으면 파일 앞쪽 `@custom-variant dark (&:is(.dark *))`에 먼저 걸려 `:root`를 읽는다 — 다크 테스트가 라이트 토큰을 검사하는 **거짓 통과**였다(빨간불 확인 과정에서 발견, 줄머리 정규식으로 교정).
+- **axe 기준선 조임**: `tests/a11y/axe-serious-baseline.json`에서 12개 라우트의 `color-contrast: 1`을 제거. 종전 기준선은 규칙 단위로 1건을 허용했고(노드 수와 무관) 그 때문에 배지 미달이 로고 미달에 가려져 있었다. 이제 1건이라도 생기면 실패한다.
+- **검증**: unit 414 pass + 1 skip / component 211 / lint 0 error / build 성공 / **a11y 40 전부 pass**(색상 대비 위반 0건 — 8/29 주소 재편 이후 처음). 라이트·다크 화면 육안 확인(브랜드 파랑은 같은 계열의 조금 더 깊은 톤, 다크 파란 버튼은 어두운 글자).
+
 ## 2026-09-04 — 홈 검색 표면 단일화: 옴니박스 (검색창 2개 → 1개)
 
 - **배경**: 홈 화면에 검색창이 둘 노출됐다(헤더 소형 `SiteSearch` + 히어로 대형 `SiteSearch variant="hero"`). 위원장 지시로 하나만 남기고, 남는 하나를 gildongmu 웹 옴니박스 계약(입력창 하나 + 듀얼 액션, `docs/superpowers/specs/2026-07-30-omnibox-web-ia-redesign-design.md` §1)대로 재구성.

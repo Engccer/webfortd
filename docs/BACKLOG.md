@@ -59,7 +59,6 @@
 - E5 `tests/migrations` 8건이 운영 DB 베이스라인 드리프트(published 535 vs 초기 가정 0 등)로 실패 중 — 베이스라인 갱신 또는 fixture 격리(CHANGELOG 2026-08-04 부수 발견)
 - E6 웹 감사 보류분(PR #78): ChatUI `aria-relevant`(위원장 실 VoiceOver 판정) / KB fixed overlay 탭 잔존(구조 대수술) / retrieval 직렬 3왕복(RPC 마이그레이션) / 분산 rate limit·첨부 magic bytes 검사
 - E7 RAG 청크 `char_start`/`char_end` DEFERRED(Phase 3 M1)
-- E9 색상 대비 AA 미달(2026-09-04 실측): `--primary` `#306cff`가 흰 배경 위 본문 크기에서 **4.45:1**(AA 4.5 필요, 헤더 로고 "장애인교원" 등 전 페이지 공통)이고 `bg-primary` 버튼의 `#fafafa` 글자는 **4.26:1**. 전 라우트 baseline에 `color-contrast: 1`로 등록돼 묵인돼 왔다. 별건으로 `tests/a11y/axe-serious-baseline.json`의 키가 8/29 주소 재편 전 구 주소(`2023-hr-p-004`·`2023-hr-1-3`)라 `atomic-samples.spec.ts`의 새 표본 2건이 "신규 rule 회귀"로 실패 중(draft라 「검토 중」 배너 `bg-primary` 버튼이 1건 추가되어 2건). **baseline 키만 갱신하면 실제 미달을 정상으로 세탁**하므로, 토큰 조정 판정(PROGRESS §미결 결정) 후 함께 정리한다.
 - E8 decompose 리뷰 잔여(2026-08-29): 범위 경고가 자기+부모 kind만 봄(조상 전체로 넓히면 2층 승격 누락 신호 증가) / 분해 규칙(split·merge·range·demote·-d2) 단위 테스트 부재(함수 미export, 현재는 실 content e2e만)
 
 ## F. 사업·운영 결정 대기 (판정은 PROGRESS §미결 결정)
@@ -87,3 +86,4 @@
 | gildongmu SpeechService 레이스 가드 백포트 | gildongmu `e1f5d2f`, CHANGELOG 2026-07-20 |
 | C5 3층 위키 문서 재생성 | 2026-08-29 완료(363건 draft), CHANGELOG 2026-08-29. 공개·임베딩 재개는 C9 |
 | C8 청각 (2)(3) 제목 승격 + 델파이 학교급 승격 | 2026-08-30 완료(363 → 367건, 분할 한도 5.5만 자 상향 포함), CHANGELOG 2026-08-30 |
+| E9 색상 대비 AA 미달 | 2026-09-05 완료(라이트 3종·다크 1종 토큰 조정 + 전수 매트릭스 게이트 신설, axe 기준선에서 color-contrast 제거로 0건 고정), CHANGELOG 2026-09-05 |
