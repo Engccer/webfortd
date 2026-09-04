@@ -3,17 +3,17 @@
   "_fix_trigger": "Phase 5 진입 전 + 에스앤씨랩 평가 전 baseline 9건 모두 0건. 별도 디자인 시스템 fix PR로 처리. (link-name 1건은 PR #55에서 해결됨.)",
   "_update_script": "자동 갱신 스크립트 없음 — 개선 로그를 보고 이 파일을 직접 수정한다.",
   "routes": {
-    "/": { "color-contrast": 1 },
-    "/chat": { "color-contrast": 1 },
-    "/library": { "color-contrast": 1 },
-    "/media": { "color-contrast": 1 },
-    "/library/2023-hr-guide": { "color-contrast": 1 },
-    "/editor": { "color-contrast": 1 },
-    "/legacy": { "color-contrast": 1 },
-    "/legacy/about": { "color-contrast": 1 },
-    "/legacy/support": { "color-contrast": 1 },
-    "/disability-types/2023-hr-p-004": { "color-contrast": 1 },
-    "/policies/2023-hr-1-3": { "color-contrast": 1 },
-    "/agreements/2020-ca-1-2": { "color-contrast": 1 }
+    "/": {},
+    "/chat": {},
+    "/library": {},
+    "/media": {},
+    "/library/2023-hr-guide": {},
+    "/editor": {},
+    "/legacy": {},
+    "/legacy/about": {},
+    "/legacy/support": {},
+    "/disability-types/2023-hr-p-004": {},
+    "/policies/2023-hr-1-3": {},
+    "/agreements/2020-ca-1-2": {}
   }
 }
