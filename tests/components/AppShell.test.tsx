@@ -5,8 +5,11 @@ import { AppShell } from "@/components/layout/AppShell"
 import { ThemeProvider } from "next-themes"
 import { AuthProvider } from "@/contexts/AuthContext"
 
+// 홈은 헤더 검색창을 숨기므로(히어로 옴니박스 단독), 단축키 테스트만 홈 밖 경로로 바꾼다.
+let mockPathname = "/"
+
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/",
+  usePathname: () => mockPathname,
   useRouter: () => ({ push: vi.fn(), prefetch: vi.fn(), replace: vi.fn() }),
 }))
 
@@ -64,6 +67,8 @@ beforeEach(() => {
   // restoreAllMocks 후 다시 적용 (cleanup은 afterEach setup.ts에서 수행)
   mockDesktopMediaQuery()
   stubLocalStorage()
+  // 경로 mock 초기화 — 테스트 본문에서 복구하면 assertion 실패 시 다음 테스트로 샌다.
+  mockPathname = "/"
 })
 
 function wrap(node: React.ReactNode) {
@@ -118,6 +123,11 @@ describe("AppShell", () => {
   })
 
   it("Cmd+K focuses #search-input", async () => {
+    // AppShell의 children은 여기서 텍스트뿐이라 홈 히어로 옴니박스가 없다. 단축키
+    // 자체를 검증하려면 검색창이 존재하는 경로여야 하므로 홈 밖으로 둔다.
+    // 홈에서 같은 단축키가 히어로 옴니박스로 가는지는 tests/a11y/sidebar.spec.ts가
+    // 실 브라우저에서 검증한다(Alt+3).
+    mockPathname = "/policies/edu-support"
     const user = userEvent.setup()
     render(wrap(<AppShell initialExpanded={true}>x</AppShell>))
     const input = document.getElementById("search-input")

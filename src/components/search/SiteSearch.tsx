@@ -11,14 +11,26 @@
  *   첫 포커스/입력 시점에 dynamic import — 초기 클라이언트 번들에서 분리.
  * - 결과 건수는 상시 mount된 sr-only role="status" 영역으로 알림 (WCAG 4.1.3).
  *
+ * 두 변형은 더 이상 같은 화면에 공존하지 않는다(홈은 hero 단독, 그 밖은 header 단독 —
+ * Header가 홈에서 검색창을 숨긴다). 그래서 id·listbox id를 갈라 둘 이유가 없어져
+ * 하나로 합쳤다: Alt+3·Cmd+K 타깃 id="search-input"이 어느 화면에서든 그 화면의
+ * 검색창을 정확히 가리킨다. ⚠ 두 변형을 한 화면에 다시 세우면 id가 중복되므로,
+ * 그때는 id 분리와 단축키 타깃 결정을 함께 되살려야 한다.
+ *
  * variant:
- * - "header"(기본): 헤더 우측 소형 검색창. id="search-input"(Alt+3 타깃) + aria-label.
- * - "hero": 위키 홈 상단 대형 검색창. 헤더와 동시에 존재하므로 id/listbox를 분리하고
- *   접근명은 aria-label 대신 연결된 <label>로 준다(시맨틱 우선 — 위원장 지시).
+ * - "header"(기본): 헤더 우측 소형 검색창. aria-label로 접근명을 준다.
+ * - "hero": 위키 홈 상단 대형 검색창(옴니박스). 접근명은 aria-label 대신 연결된
+ *   <label>로 준다(시맨틱 우선 — 위원장 지시).
  *   hero에만 음성 받아쓰기 버튼(iOS 위키 탭 검색과 동일 계약, 2026-07-18) — 전사
  *   완료가 곧 쿼리 대체 + 라이브 검색 실행이라 별도 제출 동작이 없고, 결과 건수는
  *   기존 role="status" 영역이 발화한다. 헤더 소형 검색창(h-9)은 44px 터치 타깃이
  *   부적합해 제외.
+ *
+ * onAsk (옴니박스 듀얼 액션, 2026-09-04 — gildongmu SearchBar 계약 이식):
+ *   주면 [AI에게 질문] 버튼과 Cmd/Ctrl+Enter가 활성된다. gildongmu와 달리 [검색]
+ *   제출 버튼은 두지 않는다 — 이 검색은 타이핑 즉시 결과가 펼쳐지는 라이브 검색이라
+ *   제출할 대상이 없다(검색 결과 페이지 부재). 이동·전송은 호출부 책임이고 여기서는
+ *   현재 입력값만 넘긴다. 입력이 비어도 호출한다(빈 채팅 열기).
  */
 
 import * as React from "react"
@@ -82,11 +94,14 @@ function runQuery(idx: DocumentIndex, q: string): ResultHit[] {
 
 export function SiteSearch({
   variant = "header",
+  onAsk,
 }: {
   variant?: "header" | "hero"
+  /** 옴니박스 듀얼 액션 — 현재 입력값을 받아 AI 채팅으로 넘긴다(호출부가 이동 담당). */
+  onAsk?: (query: string) => void
 } = {}) {
   const isHero = variant === "hero"
-  const inputId = isHero ? "hero-search-input" : "search-input"
+  const inputId = "search-input"
   const router = useRouter()
   const inputRef = React.useRef<HTMLInputElement>(null)
   const containerRef = React.useRef<HTMLDivElement>(null)
@@ -181,6 +196,14 @@ export function SiteSearch({
   )
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // 듀얼 액션 키보드 계약(gildongmu와 동일): Cmd+Enter(윈도우 Ctrl+Enter)=AI 질문.
+    // 맨 Enter는 아래에서 검색 결과 이동을 유지한다 — 질문이 검색으로 새지 않게
+    // 여기서 먼저 가로채고 return 한다. onAsk 없으면(헤더 검색창) 수식키도 무동작.
+    if (onAsk && e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault()
+      onAsk(query)
+      return
+    }
     if (e.key === "ArrowDown") {
       e.preventDefault()
       if (results.length === 0) return
@@ -208,7 +231,7 @@ export function SiteSearch({
     }
   }
 
-  const listboxId = isHero ? "hero-search-listbox" : "site-search-listbox"
+  const listboxId = "site-search-listbox"
 
   return (
     <div ref={containerRef} className={cn("relative", isHero && "w-full")}>
@@ -219,11 +242,13 @@ export function SiteSearch({
           장애인교원 위키 검색
         </label>
       )}
-      <div className="flex items-center gap-2">
+      {/* flex-wrap + 입력창 최소폭: 좁은 화면에서는 [AI에게 질문]이 다음 줄로 내려가
+          세 컨트롤이 한 줄에 끼여 44px 터치 타깃을 잃는 일이 없다. 데스크탑은 한 줄. */}
+      <div className="flex flex-wrap items-center gap-2">
         {/* hero: 아이콘·입력창·지우기를 별도 relative 묶음으로 감싸 우측에 음성 버튼
             자리를 만든다. header: display:contents로 기존 DOM 기여를 그대로 유지
             (absolute 아이콘·지우기는 종전처럼 바깥 relative 컨테이너에 앵커). */}
-        <div className={isHero ? "relative flex-1" : "contents"}>
+        <div className={isHero ? "relative min-w-48 flex-1" : "contents"}>
           <Search
           className={cn(
             "pointer-events-none absolute top-1/2 -translate-y-1/2 text-muted-foreground",
@@ -288,6 +313,20 @@ export function SiteSearch({
             onTranscribed={handleVoiceTranscribed}
             onError={(message) => setVoiceError(message)}
           />
+        )}
+        {/* 탭 순서 [검색어][지우기][음성][AI에게 질문] — 입력 직후에 두 액션이 이어져
+            스크린리더로 훑을 때 "검색은 결과가 바로, 질문은 이 버튼" 구조가 드러난다. */}
+        {onAsk && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onAsk(query)}
+            // basis-full: 줄바꿈되는 좁은 화면에서 폭을 채워 터치 타깃을 넓힌다.
+            // sm 이상은 basis-auto로 돌아가 입력창·음성과 한 줄에 선다.
+            className="min-h-11 basis-full px-4 text-base sm:basis-auto"
+          >
+            AI에게 질문
+          </Button>
         )}
       </div>
 

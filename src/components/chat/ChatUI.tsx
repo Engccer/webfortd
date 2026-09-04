@@ -48,6 +48,7 @@ import { SourceCard } from '@/components/chat/SourceCard'
 import { ThreadDrawer } from '@/components/chat/ThreadDrawer'
 import { VoiceRecordButton } from '@/components/chat/VoiceRecordButton'
 import { useAuth } from '@/contexts/AuthContext'
+import { useAutoSendInitialQuestion } from '@/hooks/useAutoSendInitialQuestion'
 import { useChatCompletionFocus } from '@/hooks/useChatCompletionFocus'
 import { isStaleThread } from '@/lib/chat/session-timeout'
 import { motionScrollBehavior } from '@/lib/motion'
@@ -72,9 +73,11 @@ interface AssistantMetadata {
 interface ChatUIProps {
   /** drawer 선택 시 page.tsx searchParams.thread → 새 thread로 mount */
   initialThreadId?: string
+  /** 홈 옴니박스 [AI에게 질문]이 넘긴 첫 질문(`?q=`) — mount 시 1회 자동 전송 */
+  initialQuestion?: string
 }
 
-export function ChatUI({ initialThreadId }: ChatUIProps = {}) {
+export function ChatUI({ initialThreadId, initialQuestion }: ChatUIProps = {}) {
   const { user } = useAuth()
   const [input, setInput] = useState('')
   const [threadId, setThreadId] = useState<string | undefined>(initialThreadId)
@@ -189,6 +192,16 @@ export function ChatUI({ initialThreadId }: ChatUIProps = {}) {
 
   const isLoading = status === 'submitted' || status === 'streaming'
 
+  // 홈 옴니박스에서 넘어온 첫 질문 자동 전송(1회) — 이후 흐름은 손으로 보낸 질문과
+  // 완전히 같다. 전송 효과음은 내지 않는다(누른 곳이 이 화면이 아니라 홈이었다).
+  useAutoSendInitialQuestion({
+    question: initialQuestion,
+    send: (text) => {
+      armFailureSurface(text)
+      sendMessage({ text })
+    },
+  })
+
   // 마지막 사용자 질문 id — 이 메시지의 헤딩에만 focus ref를 부착한다.
   const lastUserMessageId = useMemo(() => {
     for (let i = messages.length - 1; i >= 0; i--) {
@@ -227,6 +240,18 @@ export function ChatUI({ initialThreadId }: ChatUIProps = {}) {
     [user, threadId, lastAssistantAxis],
   )
 
+  /**
+   * 전송 실패 표면 준비 — 오류 배너(`chatError && lastFailedMessage`)와 재시도가
+   * 성립하려면 전송 시점에 이 두 상태가 잡혀 있어야 한다. **모든 전송 경로가 이
+   * 함수를 지나야 한다**: 손 전송(send)과 홈 옴니박스 자동 전송이 갈라져 있었을 때
+   * 자동 전송 실패가 무음이 됐다(완료 신호만 나고 배너·재시도 없음 = 3-state 붕괴).
+   */
+  function armFailureSurface(text: string) {
+    // M6.2 — 전송 시점에 저장. onError 발화 시 retry 가능 (텍스트만)
+    setLastFailedMessage(text)
+    setChatError(null)
+  }
+
   async function send(text: string) {
     // 스트리밍 중 재전송 가드 — textarea를 disabled로 막는 대신 여기서 차단 (포커스 유지, WCAG 2.4.3)
     if (isLoading) return
@@ -234,9 +259,7 @@ export function ChatUI({ initialThreadId }: ChatUIProps = {}) {
     if (!trimmed && !attachment) return
     // 전송 효과음 (accessibility.soundEnabled 게이트)
     playChatSendSound()
-    // M6.2 — 전송 시점에 저장. onError 발화 시 retry 가능 (텍스트만)
-    setLastFailedMessage(trimmed)
-    setChatError(null)
+    armFailureSurface(trimmed)
 
     // M7.2 — 첨부 있으면 file part로 변환해 함께 전송
     if (attachment) {
@@ -294,6 +317,12 @@ export function ChatUI({ initialThreadId }: ChatUIProps = {}) {
 
   return (
     <div className="mx-auto flex h-[calc(100vh-8rem)] max-w-3xl flex-col px-4 sm:px-6">
+      {/* 화면 제목은 시각적으로 불필요하지만(대화 UI 자체가 곧 제목) 구조상 필요하다:
+          FocusManager가 라우트 이동 시 첫 h1으로 포커스를 옮기는 전역 계약이라
+          h1이 없으면 이 화면만 포커스가 body로 떨어진다(홈 옴니박스 질문의 착지점).
+          아래 헤딩들(사용자 질문 h2)의 계층 기준점이기도 하다. */}
+      <h1 className="sr-only">채팅</h1>
+
       {/* 로그인 사용자만 ThreadDrawer 렌더 (비로그인은 drawer 자체 없음) */}
       {user && (
         <div className="mb-2 flex items-center justify-between">

@@ -1,12 +1,15 @@
-import { describe, it, expect, vi } from "vitest"
+import { describe, it, expect, vi, beforeEach } from "vitest"
 import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { Header } from "@/components/layout/Header"
 import { SidebarProvider } from "@/contexts/SidebarContext"
 import { ThemeProvider } from "next-themes"
 
+// 경로는 테스트마다 바뀐다 — 헤더 검색창이 홈에서만 숨는 계약을 양쪽에서 검증한다.
+let mockPathname = "/"
+
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/",
+  usePathname: () => mockPathname,
   useRouter: () => ({ push: vi.fn(), prefetch: vi.fn(), replace: vi.fn() }),
 }))
 
@@ -29,6 +32,10 @@ function wrap(node: React.ReactNode, opts?: { isMobile?: boolean; isExpanded?: b
 }
 
 describe("Header", () => {
+  beforeEach(() => {
+    mockPathname = "/"
+  })
+
   it("renders hamburger toggle with aria-controls and aria-expanded", () => {
     render(wrap(<Header />))
     const btn = screen.getByRole("button", { name: /메뉴 접기|메뉴 펼치기/ })
@@ -77,9 +84,15 @@ describe("Header", () => {
     expect(screen.getByRole("button", { name: "메뉴 접기" })).toHaveAttribute("aria-expanded", "true")
   })
 
-  it("renders SiteSearch (search input present)", () => {
+  it("홈에서는 검색창을 렌더하지 않는다 (히어로 옴니박스가 단독 검색 표면)", () => {
+    mockPathname = "/"
     render(wrap(<Header />))
-    const search = document.getElementById("search-input")
-    expect(search).toBeTruthy()
+    expect(document.getElementById("search-input")).toBeNull()
+  })
+
+  it("홈 밖에서는 검색창을 렌더한다 (그 화면의 유일한 검색 표면)", () => {
+    mockPathname = "/policies/edu-support"
+    render(wrap(<Header />))
+    expect(document.getElementById("search-input")).toBeTruthy()
   })
 })

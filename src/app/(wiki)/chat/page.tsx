@@ -10,9 +10,10 @@ export const metadata: Metadata = {
 export default async function ChatPage({
   searchParams,
 }: {
-  // Next.js 16 — searchParams는 async
-  searchParams: Promise<{ thread?: string }>
+  // Next.js 16 — searchParams는 async.
+  // q: 홈 옴니박스 [AI에게 질문]이 넘긴 첫 질문. ChatUI가 1회 전송 후 주소에서 지운다.
+  searchParams: Promise<{ thread?: string; q?: string }>
 }) {
   const params = await searchParams
-  return <ChatUI initialThreadId={params.thread} />
+  return <ChatUI initialThreadId={params.thread} initialQuestion={params.q} />
 }

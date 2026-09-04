@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { Menu } from "lucide-react"
 import { useSidebar } from "@/contexts/SidebarContext"
 import { SiteSearch } from "@/components/search/SiteSearch"
@@ -9,6 +10,11 @@ import { Button } from "@/components/ui/Button"
 export function Header() {
   const { isExpanded, isMobile, isMobileOpen, toggle } = useSidebar()
   const open = isMobile ? isMobileOpen : isExpanded
+  // 홈은 히어로 옴니박스가 단독 검색 표면이다. 여기서 헤더 검색창까지 렌더하면
+  // 한 화면에 검색창이 둘이 되고 id="search-input"(Alt+3·Cmd+K 타깃)도 중복된다.
+  // 사이드바가 경로로 모드를 가르는 방식과 같은 패턴 — 상태를 새로 두지 않는다.
+  const pathname = usePathname()
+  const showSearch = pathname !== "/"
 
   return (
     <header className="sticky top-0 z-30 w-full border-b border-border bg-background/95 backdrop-blur">
@@ -36,7 +42,7 @@ export function Header() {
 
         <div className="flex-1" />
 
-        <SiteSearch />
+        {showSearch && <SiteSearch />}
       </div>
     </header>
   )

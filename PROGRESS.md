@@ -2,15 +2,16 @@
 
 > 현재 상태·다음 단계·미결 결정만 담는다(자율성 헌장 §문서화 규율). 항구 원칙은 CLAUDE.md, 날짜별 이력은 CHANGELOG.md, 열린 항목·판정 대기·이월은 docs/BACKLOG.md, PR 단위 상세는 git log.
 
-## 현재 상태 (2026-08-30)
+## 현재 상태 (2026-09-04)
 
+- **홈 검색 표면 단일화(2026-09-04)**: 홈은 히어로 **옴니박스** 단독(입력창 하나 + `[AI에게 질문]`, Cmd+Enter). 헤더 검색창은 홈에서만 숨고 그 밖 경로에서는 유지, 단축키 타깃 id는 `search-input` 하나로 통합. 질문은 `/chat?q=` → mount 시 1회 자동 전송 + 주소 정리. 실측 잔여는 BACKLOG A10.
 - **웹**: Phase 1~3·A·B·7 + 위키 리뉴얼(§Phase 진행 요약의 "Phase 4") 완료. 개정 Phase 4(소셜 피드)는 미착수. production https://webfortd.vercel.app (engccer Hobby 임시 운영, KHUDT Pro는 결제 락 — 복귀는 §미결 결정). Hobby 함수 12개 제한 아래 함수 9개로 배포 정상(2026-07-17 `[...kb]` catch-all 통합 이후).
 - **2층 마크다운 정본 v4 4종 완비(2026-08-28)**: `data/source-md/*_fused_v4_*.md`(v3는 `data/source-md/v3/` 보존).
 - **3층 재생성 완료(2026-08-29, BACKLOG C5 종결)**: 4종 파생 367건(research 96·hr 71·jbu 69·staff 131. 8/30 델파이 학교급·청각 (2)(3) 제목 승격으로 363 → 367, 분할 한도 5.5만 자), outline 주소 체계(`docs/DECOMPOSE_V2_DESIGN.md`), 대응표 `docs/slug-migration-2026-08.csv`, 회귀 표 `docs/regression-2026-08-review48.md`. **전부 draft** — 2차 검증(9/6 마감) 결과에 따라 공개 여부를 위원장이 판정(§미결 결정). 공개로 판정되면 `npm run kb:bootstrap` → `content/.embed-paused` 삭제 → 야간 sync+embed 재개(임베딩 1회). 그때까지 production 4종 문서는 「검토 중」, 채팅 RAG는 DB의 v3 청크 유지. 재개 선행 조건 3건(chunker·구 v3 고아 행 정리·FAQ 공개 판정)은 BACKLOG C9.
 - **콘텐츠 baseline**: `content/` 426건 = published 50(단체협약 49 + resources 1) + draft 367(4종) + draft 9(FAQ). 콘텐츠 보유 축 8개(`CONTENT_AXES` 9개 중 stories 0건, uncategorized 3건). RAG 청크는 DB 기준 2775(v3, 재임베딩 전).
 - **웹 콘텐츠 편집기 운영 중**(2026-08-04, PR #113): `(wiki)/editor`, GitHub PAT·Actions Secrets 등록 완료, 야간 sync+embed 워크플로(`nightly-embed.yml`, `LAST_EMBED_SHA` 게이트) 가동, production 실호출 통과. 잔여는 운영 잔무·VoiceOver 실측(BACKLOG §A8·§B).
 - **iOS 네이티브 v1**: 5탭(위키·채팅·자료실·미디어·설정) + 홀드 받아쓰기(채팅·위키 검색), 오프라인 위키 535건(v3 시점 번들. `bundle-content.mjs`가 published만 담는데 현재 published는 50건이라 C9 일괄 공개 전 재번들 금지), OTP 인증·이력. Kit 테스트 49 green. iPhone 13 Pro 실기기 배포 상태(`ios/deploy-device.sh`), 서명 팀 72JQ7VD4V5(Apple Developer Program 유료, 2026-07-12 승인). TestFlight 미제출(준비물 BACKLOG §D). 정본 spec `docs/superpowers/specs/2026-07-10-ios-native-app-design.md`, 배포 절차 `docs/IOS_DISTRIBUTION.md`.
-- **테스트 baseline**(2026-08-30): unit 409 pass + 1 skip(`npm test` 기준 tests 410) / component 190 / a11y 35 / integration RLS 5(실 DB; 기존 migrations 8건은 드리프트 실패 중 — BACKLOG E5).
+- **테스트 baseline**(2026-09-04): unit 409 pass + 1 skip(`npm test` 기준 tests 410) / component 211 / a11y 40 중 38 pass(색상 대비 2건 실패는 8/29 주소 재편 때 baseline 키가 안 따라온 것 + 실제 AA 미달 — BACKLOG E9) / integration RLS 5(실 DB; 기존 migrations 8건은 드리프트 실패 중 — BACKLOG E5).
 - **공식 사업 트랙**(2026-07-14): 과업요청서 최종본 중부대 전달 완료, 수행사 선정·계약은 중부대 주관. webfortd는 독립 레퍼런스 트랙(`docs/DIRECTION_2026.md` §11).
 - **서버 공용 자산**: Bearer 이중 인증(`src/lib/supabase/request-auth.ts`) + `GET /api/chat/threads/[id]`(iOS·웹 이력 복원 공용).
 
@@ -30,4 +31,5 @@
 | 앱 아이콘 디자인 방향 | 1024×1024 미제작. "장애인교원 위키" 정체성을 담은 신규 제작 필요 | `docs/IOS_DISTRIBUTION.md` §2 |
 | M5 라이브 음성 재개 시점 | dodo-planet Live 오류 수정·검증 후 이식(2026-07-10 지시) | iOS spec §4.4 |
 | 4종 367건 공개 여부·시점 | 2차 검수 마감 9/6. 공개는 자동이 아니라 **검토 결과에 달린 판정** — 품질이 미흡하면 재작업 후로 미룬다. 공개로 판정되면 절차·선행 조건 3건은 BACKLOG C9 | `docs/BACKLOG.md` C9 |
+| primary 색 대비 조정 | `#306cff`가 흰 배경 위 4.45:1로 WCAG AA(4.5:1)에 0.05 미달 — 헤더 로고를 포함해 전 페이지에 걸린다. 브랜드 색을 조금 어둡게 할지, 로고 문자를 굵게/크게 해 대비 기준을 완화 적용할지 판정 필요 | BACKLOG E9 |
 | LICENSE·저작권 표기 | 공개 저장소이자 사업 자산이라 저작권 주체·라이선스는 위원장 결정 | BACKLOG F1 |
