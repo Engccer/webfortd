@@ -32,12 +32,11 @@
 - C3 ~~이미지 매핑 검수 큐 79건~~ → 폐기(2026-08-29): v3 LLM alt 기반 매핑은 2층 v4가 그림을 전사·대체텍스트로 흡수해 실체가 사라짐. 자산은 `content/_archive-v3/`에 보존, 새 매핑은 alt 해시 키로 `image:template`부터 시작(현재 마커 4건)
 - C4 `reviewed_by: ["1차 검토(김헌용)"]` placeholder를 정밀 검수 시 실제 reviewer로 교체(점진)
 - C6 지원인력 안내자료 부록2 기기 사진 12장 대체텍스트: v4는 `(사진: 기기명)` 자리표시(표 안 이미지라 HWPX 추출 불가). v3 LLM alt 11건 이식 또는 `generate_alt_text.py` 생성 — 3층 단계에서 처리
-- C8 ~~2층 제목 승격 누락(청각 (2)(3))~~ → 종결(2026-08-30): `hwpx_enrich.py` 규칙 대신 `정본 수정 목록.csv` 「제목 승격」 행(위원장 결정 델파이 표지 8건과 동일 경로)으로 2층에 적용, `decompose --reset`으로 `4-3-1-1`/`-2`/`-3` 형제 분리. CHANGELOG 2026-08-30
 - C11 `apply_corrections.py` 쪽 범위 한정(docparse 스킬 개정) 뒤 2023 최종보고서 재빌드가 깨짐: 부록 구간(p.403~)에 쪽 주석이 없어 「원본 쪽」이 419·436 등인 기존 4행(스레기통·찾아다니녀야·기자제·연구원 연락처)이 「지정 쪽에 원문 없음」으로 종료된다(2026-08-30 실측, 「제목 승격」 10행은 직접 치환으로 적용). `build-2023-report.sh` 재실행 전에 부록 쪽 주석 보강(C12) 또는 스크립트의 범위 밖 fallback 중 하나가 필요
 - C12 부록2·3(델파이 조사지) 구간에 쪽 주석이 p.403·p.467 하나씩뿐이라 학교급 8건 모두 `source_page`가 403/467로 고정된다. 실제 표지 쪽(pdf_pages.json 대조): 1차 초등 403·중 419·고 436·특수 452 / 2차 초등 467·중 482·고 498·특수 513. C10과 함께 처리
-- C9 **4종 일괄 공개·임베딩 재개**(2차 검증 완료 후, 9/7 이후): `npm run kb:bootstrap`(reviewed_by는 2차 검증 결과로) → `content/.embed-paused` 삭제·커밋 → 야간 워크플로(또는 workflow_dispatch)가 kb:sync+kb:embed 1회 실행(구 v3 행 정리는 sync가 source별 delete-then-insert로 처리) → `tests/lib/sitemap.test.ts` 임계값 복원. **재개 전 필수**: `scripts/lib/chunker.ts`가 `## 관련 페이지` 블록을 빼고 `[[slug|제목]]`을 표시명으로 치환하도록(현재는 링크 구문이 그대로 임베딩됨, 리뷰 지적 2026-08-29)
+- C9 **일괄 공개·임베딩 재개**(2차 검증 마감 9/6 후): `npm run kb:bootstrap` → `content/.embed-paused` 삭제·커밋 → 야간 워크플로(또는 workflow_dispatch)가 kb:sync+kb:embed 1회 실행 → `tests/lib/sitemap.test.ts` 임계값 복원. **재개 전 필수 3건**: ① `scripts/lib/chunker.ts`가 `## 관련 페이지` 블록을 빼고 `[[slug|제목]]`을 표시명으로 치환(현재는 링크 구문이 그대로 임베딩됨, 리뷰 지적 2026-08-29) ② **구 v3 `documents` 행은 sync가 지우지 않는다** — `upsertDocuments`가 `onConflict: 'slug'` upsert라 주소가 바뀐 구 행이 published 상태로 남는다(delete-then-insert는 `wiki_backlinks` 전용, `sync-content-to-db.ts:178`·`:264`). 고아 행 정리 단계를 따로 넣을 것 ③ `kb:bootstrap`은 `content/**/*.md` **전체**(현재 draft 376건)를 승격하므로 FAQ 9건(C1)·uncategorized 3건의 공개 여부를 먼저 판정할 것. reviewed_by는 스크립트 상수 `'1차 검토(김헌용)'` 고정이라 2차 검증 결과 반영은 별건(C4 + reviewer 인자 신설 선행).
 - C7 2층 v4 2차 검증 대상(콘텐츠팀): 신청 서식 전사 블록(OCR 유래), 인사관리 도표 2종 대체텍스트, `정본 수정 목록.csv` 「확인 필요」 행
-- C10 `source_page` 값 형식 정리(C9 전): 2층 쪽 주석이 섞여 `pdf373`(부록 표지, `source_page_end: 355`와 역전)·`pdf2`·`Ⅰ-8`~`Ⅰ-11` 같은 값이 13건. 드라이브 `문서 목록.csv` 「원본 쪽」과 「관련 페이지」 `(원본 N쪽)`에 그대로 노출된다. `decompose-source.ts` 쪽 주석 파서에서 `pdf` 접두는 `source_page_pdf`로만 보내고 인쇄 쪽이 없으면 비우는 쪽이 맞아 보임
+- C10 `source_page` 값 형식 정리(C9 전): 2층 쪽 주석이 섞여 `pdf373`(부록 표지, `source_page_end: 355`와 역전)·`pdf2`·`Ⅰ-3`~`Ⅰ-11` 같은 값이 12건(`source_page_end`까지 합치면 15개 파일). 드라이브 `문서 목록.csv` 「원본 쪽」과 「관련 페이지」 `(원본 N쪽)`에 그대로 노출된다. `decompose-source.ts` 쪽 주석 파서에서 `pdf` 접두는 `source_page_pdf`로만 보내고 인쇄 쪽이 없으면 비우는 쪽이 맞아 보임
 
 ## D. iOS TestFlight 준비물 (`docs/IOS_DISTRIBUTION.md` §2)
 

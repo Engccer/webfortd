@@ -9,7 +9,7 @@
 //      - 동일 → pass
 //
 // Baseline: tests/a11y/axe-serious-baseline.json
-// 갱신: npm run test:a11y:update-baseline (baseline 감소 시점 자동 반영)
+// 갱신: `tests/a11y/axe-serious-baseline.json`을 아래 개선 로그에 맞춰 직접 수정(자동 갱신 스크립트 없음)
 // Fix trigger: Phase 5 진입 전 + 에스앤씨랩 평가 전 모든 baseline 0건
 
 import AxeBuilder from '@axe-core/playwright'
@@ -92,7 +92,7 @@ export async function expectNoAxeViolations(page: Page, info: TestInfo, route: s
   }
   if (improvements.length > 0) {
     console.log(
-      `[a11y improvement] ${route} — baseline 갱신 권고: ${improvements.join(', ')} (npm run test:a11y:update-baseline)`,
+      `[a11y improvement] ${route} — baseline 갱신 권고: ${improvements.join(', ')} (axe-serious-baseline.json 직접 수정)`,
     )
   }
 }

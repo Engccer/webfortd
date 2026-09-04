@@ -1,7 +1,7 @@
 {
   "_comment": "Phase 4 M3 PR D — route별 serious 위반 baseline. axe-helper.ts가 신규 회귀 차단에 사용. 신규 추가 serious 위반은 fail. baseline 감소는 권고(개선). 모든 항목 0건이 fix trigger 종료 조건. 기본 키는 라우트, 값은 {ruleId: count}.",
   "_fix_trigger": "Phase 5 진입 전 + 에스앤씨랩 평가 전 baseline 9건 모두 0건. 별도 디자인 시스템 fix PR로 처리. (link-name 1건은 PR #55에서 해결됨.)",
-  "_update_script": "npm run test:a11y:update-baseline 으로 자동 갱신 (개선 시점).",
+  "_update_script": "자동 갱신 스크립트 없음 — 개선 로그를 보고 이 파일을 직접 수정한다.",
   "routes": {
     "/": { "color-contrast": 1 },
     "/chat": { "color-contrast": 1 },

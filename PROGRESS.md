@@ -2,15 +2,15 @@
 
 > 현재 상태·다음 단계·미결 결정만 담는다(자율성 헌장 §문서화 규율). 항구 원칙은 CLAUDE.md, 날짜별 이력은 CHANGELOG.md, 열린 항목·판정 대기·이월은 docs/BACKLOG.md, PR 단위 상세는 git log.
 
-## 현재 상태 (2026-08-29)
+## 현재 상태 (2026-08-30)
 
-- **웹**: Phase 1~4·A·B·7 완료. production https://webfortd.vercel.app (engccer Hobby 임시 운영, KHUDT Pro는 결제 락 — 복귀는 §미결 결정). Hobby 함수 12개 제한 아래 함수 9개로 배포 정상(2026-07-17 `[...kb]` catch-all 통합 이후).
+- **웹**: Phase 1~3·A·B·7 + 위키 리뉴얼(§Phase 진행 요약의 "Phase 4") 완료. 개정 Phase 4(소셜 피드)는 미착수. production https://webfortd.vercel.app (engccer Hobby 임시 운영, KHUDT Pro는 결제 락 — 복귀는 §미결 결정). Hobby 함수 12개 제한 아래 함수 9개로 배포 정상(2026-07-17 `[...kb]` catch-all 통합 이후).
 - **2층 마크다운 정본 v4 4종 완비(2026-08-28)**: `data/source-md/*_fused_v4_*.md`(v3는 `data/source-md/v3/` 보존).
-- **3층 재생성 완료(2026-08-29, BACKLOG C5 종결)**: 4종 파생 367건(research 96·hr 71·jbu 69·staff 131. 8/30 델파이 학교급·청각 (2)(3) 제목 승격으로 363 → 367, 분할 한도 5.5만 자), outline 주소 체계(`docs/DECOMPOSE_V2_DESIGN.md`), 대응표 `docs/slug-migration-2026-08.csv`, 회귀 표 `docs/regression-2026-08-review48.md`. **전부 draft** — 2차 검증(9/6 마감) 뒤 `npm run kb:bootstrap` 일괄 공개 → `content/.embed-paused` 삭제 → 야간 sync+embed 재개(임베딩 1회). 그때까지 production 4종 문서는 「검토 중」, 채팅 RAG는 DB의 v3 청크 유지.
-- **콘텐츠 baseline**: `content/` 426건 = published 50(단체협약 49 + resources 1) + draft 367(4종) + draft 9(FAQ). 축 7개. RAG 청크는 DB 기준 2775(v3, 재임베딩 전).
+- **3층 재생성 완료(2026-08-29, BACKLOG C5 종결)**: 4종 파생 367건(research 96·hr 71·jbu 69·staff 131. 8/30 델파이 학교급·청각 (2)(3) 제목 승격으로 363 → 367, 분할 한도 5.5만 자), outline 주소 체계(`docs/DECOMPOSE_V2_DESIGN.md`), 대응표 `docs/slug-migration-2026-08.csv`, 회귀 표 `docs/regression-2026-08-review48.md`. **전부 draft** — 2차 검증(9/6 마감) 뒤 `npm run kb:bootstrap` 일괄 공개 → `content/.embed-paused` 삭제 → 야간 sync+embed 재개(임베딩 1회). 그때까지 production 4종 문서는 「검토 중」, 채팅 RAG는 DB의 v3 청크 유지. 재개 선행 조건 3건(chunker·구 v3 고아 행 정리·FAQ 공개 판정)은 BACKLOG C9.
+- **콘텐츠 baseline**: `content/` 426건 = published 50(단체협약 49 + resources 1) + draft 367(4종) + draft 9(FAQ). 콘텐츠 보유 축 8개(`CONTENT_AXES` 9개 중 stories 0건, uncategorized 3건). RAG 청크는 DB 기준 2775(v3, 재임베딩 전).
 - **웹 콘텐츠 편집기 운영 중**(2026-08-04, PR #113): `(wiki)/editor`, GitHub PAT·Actions Secrets 등록 완료, 야간 sync+embed 워크플로(`nightly-embed.yml`, `LAST_EMBED_SHA` 게이트) 가동, production 실호출 통과. 잔여는 운영 잔무·VoiceOver 실측(BACKLOG §A8·§B).
-- **iOS 네이티브 v1**: 5탭(위키·채팅·자료실·미디어·설정) + 홀드 받아쓰기(채팅·위키 검색), 오프라인 위키 535건, OTP 인증·이력. Kit 테스트 49 green. iPhone 13 Pro 실기기 배포 상태(`ios/deploy-device.sh`), 서명 팀 72JQ7VD4V5(Apple Developer Program 유료, 2026-07-12 승인). TestFlight 미제출(준비물 BACKLOG §D). 정본 spec `docs/superpowers/specs/2026-07-10-ios-native-app-design.md`, 배포 절차 `docs/IOS_DISTRIBUTION.md`.
-- **테스트 baseline**(2026-08-04): unit 411 / component 190 / a11y 35 / integration RLS 5(실 DB; 기존 migrations 8건은 드리프트 실패 중 — BACKLOG E5).
+- **iOS 네이티브 v1**: 5탭(위키·채팅·자료실·미디어·설정) + 홀드 받아쓰기(채팅·위키 검색), 오프라인 위키 535건(v3 시점 번들. `bundle-content.mjs`가 published만 담는데 현재 published는 50건이라 C9 일괄 공개 전 재번들 금지), OTP 인증·이력. Kit 테스트 49 green. iPhone 13 Pro 실기기 배포 상태(`ios/deploy-device.sh`), 서명 팀 72JQ7VD4V5(Apple Developer Program 유료, 2026-07-12 승인). TestFlight 미제출(준비물 BACKLOG §D). 정본 spec `docs/superpowers/specs/2026-07-10-ios-native-app-design.md`, 배포 절차 `docs/IOS_DISTRIBUTION.md`.
+- **테스트 baseline**(2026-08-30): unit 409 pass + 1 skip(`npm test` 기준 tests 410) / component 190 / a11y 35 / integration RLS 5(실 DB; 기존 migrations 8건은 드리프트 실패 중 — BACKLOG E5).
 - **공식 사업 트랙**(2026-07-14): 과업요청서 최종본 중부대 전달 완료, 수행사 선정·계약은 중부대 주관. webfortd는 독립 레퍼런스 트랙(`docs/DIRECTION_2026.md` §11).
 - **서버 공용 자산**: Bearer 이중 인증(`src/lib/supabase/request-auth.ts`) + `GET /api/chat/threads/[id]`(iOS·웹 이력 복원 공용).
 
@@ -19,7 +19,7 @@
 1. **위원장 실측 게이트 일괄**(BACKLOG §A): iOS 실기기(비행기 모드·VoiceOver 로터/표·OTP 플로), 편집기 VoiceOver 편집 흐름, 웹 hero 검색·라이브 음성 실 마이크, 애니메이션 feel check.
 2. 게이트 통과 후 iOS TestFlight: 판매자명 결정(§미결 결정) → App Store Connect 앱 레코드 → Archive → 내부 테스터(`docs/IOS_DISTRIBUTION.md` §3). 준비물은 BACKLOG §D.
 3. 편집기 운영 잔무(BACKLOG §B): 연구보조원 `editor_roles` seed(이메일 수령 시), 안내 전달, PAT 만료 캘린더, 런북.
-4. **3층 후속(8/27 메모 §6 7~11단계)**: 6단계 완료(8/29: 드라이브 `3. 위키 문서/` 412건 스냅샷·`문서 목록.csv`·검수 시트 v2·2차 표본 50건 읽기 자료·안내문 초안, 스크립트 `scripts/drive/export-wiki-snapshot.py`). 안내문 게시(8/30, 위원장) → 2차 검수팀 회의 → 2차 검수 마감(9/6) → `kb:bootstrap` 일괄 공개 + `.embed-paused` 삭제 → 수행사 전달(9/7 회의 이후). 2층 제목 승격 누락 2건(BACKLOG C8)·`source_page` 형식 혼재(C10)는 공개 전 반영.
+4. **3층 후속(8/27 메모 §6 7~11단계)**: 6단계 완료(8/29: 드라이브 `3. 위키 문서/` 412건 스냅샷·`문서 목록.csv`·검수 시트 v2·2차 표본 50건 읽기 자료·안내문 초안, 스크립트 `scripts/drive/export-wiki-snapshot.py`). 안내문 게시(8/30, 위원장) → 2차 검수팀 회의 → 2차 검수 마감(9/6) → `kb:bootstrap` 일괄 공개 + `.embed-paused` 삭제 → 수행사 전달(9/7 회의 이후). `source_page` 형식 혼재(C10)·부록 쪽 주석 고정(C12)·2023 보고서 2층 재빌드 회귀(C11)는 공개 전 반영.
 
 ## 미결 결정 (위원장)
 
