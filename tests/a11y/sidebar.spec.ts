@@ -167,6 +167,23 @@ test("Alt+2 moves focus to #app-sidebar", async ({ page }) => {
   expect(focusedId).toBe("app-sidebar")
 })
 
+// Alt+3 검색: 홈은 히어로 옴니박스가 단독 검색 표면이라(헤더 검색창 숨김) 단축키가
+// 그 입력창에 안착해야 한다. 검색창이 둘이던 시절의 id 분리를 되살리면 여기서 깨진다.
+test("홈 검색창은 하나이고 Alt+3이 그 옴니박스로 이동한다", async ({ page }) => {
+  await page.goto("/")
+
+  await expect(page.getByRole("combobox")).toHaveCount(1)
+
+  await page.keyboard.press("Alt+3")
+  await page.waitForTimeout(50)
+
+  const focused = await page.evaluate(() => {
+    const el = document.activeElement as HTMLElement | null
+    return { id: el?.id ?? "", tag: el?.tagName ?? "" }
+  })
+  expect(focused).toEqual({ id: "search-input", tag: "INPUT" })
+})
+
 // ─── 위키/레거시 모드 분기 + 신규 페이지 (T10) ───────────────────────────────────
 
 test.describe("위키/레거시 모드 분기 + 신규 페이지", () => {

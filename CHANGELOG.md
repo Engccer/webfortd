@@ -2,6 +2,19 @@
 
 > 날짜별 변경 이력(마일스톤 경계 갱신). 2026-07-10 이전 이력은 git log와 CLAUDE.md §Phase 진행 요약이 정본(지연 생성 원칙에 따라 이 파일은 iOS 트랙 진입 시점부터 시작).
 
+## 2026-09-04 — 홈 검색 표면 단일화: 옴니박스 (검색창 2개 → 1개)
+
+- **배경**: 홈 화면에 검색창이 둘 노출됐다(헤더 소형 `SiteSearch` + 히어로 대형 `SiteSearch variant="hero"`). 위원장 지시로 하나만 남기고, 남는 하나를 gildongmu 웹 옴니박스 계약(입력창 하나 + 듀얼 액션, `docs/superpowers/specs/2026-07-30-omnibox-web-ia-redesign-design.md` §1)대로 재구성.
+- **홈 = 히어로 옴니박스 단독**: `Header`가 `usePathname()`으로 홈에서만 검색창을 렌더하지 않는다(사이드바 모드 분기와 같은 패턴, 새 상태 없음). 공존이 끝나 `SiteSearch`의 id 두 갈래(`hero-search-input`/`search-input`, `hero-search-listbox`/`site-search-listbox`)를 하나로 합쳤다 — Alt+3·Cmd+K 타깃 `search-input`이 어느 화면에서든 그 화면의 검색창을 가리킨다.
+- **듀얼 액션**: `SiteSearch`에 `onAsk` 추가 → `[AI에게 질문]` 버튼 + Cmd/Ctrl+Enter. gildongmu와 달리 `[검색]` 제출 버튼은 두지 않는다(webfortd 검색은 타이핑 즉시 결과가 펼쳐지는 라이브 검색이라 제출 대상이 없다). Enter는 종전 검색 결과 이동 유지. 좁은 화면에서는 `flex-wrap` + 입력창 최소폭으로 질문 버튼이 다음 줄로 내려가 44px 타깃을 지킨다.
+- **자동 전송**(위원장 판정 9/4): 질문은 `/chat?q=`로 넘기고 `useAutoSendInitialQuestion`(신설)이 mount 시 1회 전송한 뒤 주소에서 `q`만 제거한다 — 재전송 경로는 리렌더·Strict Mode(ref 가드)와 새로고침(주소 정리) 둘뿐이다. 주소 정리는 `router.replace`가 아니라 `history.replaceState`로 한다(서버 컴포넌트 재렌더가 스트리밍 중 상태를 흔들지 않게). 포커스는 건드리지 않는다 — 완료 시 마지막 질문 헤딩 이동 계약(`useChatCompletionFocus`)이 그대로 성립한다.
+- **제거**: 히어로 소제목("정책·법령·사례부터 보조공학까지, 검색하거나 채팅으로 물어보세요")과 별도 "채팅으로 질문" 링크. 전자는 바로 아래 컨트롤이 두 액션을 이미 보여주는 중복 안내였고(미니멀 + SR 낭독 노이즈), 후자는 옴니박스 질문 버튼에 흡수됐다(입력 텍스트를 함께 넘기므로 기능은 늘었다).
+- **테스트**: 신규 `tests/components/search/site-search-ask.test.tsx`(4) · `tests/components/WikiHero.test.tsx`(4) · `tests/components/useAutoSendInitialQuestion.test.tsx`(6) · `tests/a11y/omnibox.spec.ts`(3, 실 브라우저 E2E: 질문이 사용자 턴 헤딩으로 서고 `q`가 사라지는 것까지) · `tests/a11y/sidebar.spec.ts`에 "홈 검색창 1개 + Alt+3 안착". `Header.test.tsx`·`AppShell.test.tsx`는 경로 mock을 가변으로 바꿔 홈/홈밖 양쪽을 검증.
+- **리뷰가 잡은 결함(별도 컨텍스트, 실측 기반)**: ① **P1 자동 전송 실패가 무음**이었다 — 자동 전송이 `send()`를 우회해 `sendMessage`를 직접 불러 `lastFailedMessage`가 비었고, 오류 배너(`chatError && lastFailedMessage`)와 재시도가 영영 렌더되지 않았다. 완료 신호(효과음·질문 헤딩 포커스)만 나고 답도 오류도 재시도도 없는 3-state 붕괴라, 화면을 볼 수 없는 사용자는 실패를 알 방법이 없다. 실패 표면 준비를 `armFailureSurface()` 한 곳으로 모아 모든 전송 경로가 지나게 하고 회귀 테스트 5건을 고정(수정을 되돌리면 2건이 실패하는 것까지 확인). ② **P2 `/chat`에 `h1`이 없어** 라우트 이동 시 `FocusManager`(첫 `h1`으로 포커스)의 착지점이 없었다 — sr-only `h1` "채팅" 추가(사용자 질문 `h2`의 계층 기준점이기도 하다). 실기기 확인은 BACKLOG A10.
+- **리뷰 반영(P3)**: `AppShell` 테스트의 경로 mock 복구를 `beforeEach`로 옮김(assertion 실패 시 상태 누수) / E2E "Enter는 검색 유지"가 결과 0건 쿼리라 공회전하던 것을 결과가 나오는 쿼리로 바꿔 Enter·Cmd+Enter를 각각 검증 / 질문 길이 상한 500자 / 훅 주석의 `router.replace` 근거를 실측대로 정정(RSC 왕복은 실재하나 클라이언트 state는 보존됨) / StrictMode 이중 실행 케이스 테스트 고정.
+- **리뷰가 확인한 것**: `sentRef` 가드가 StrictMode에서도 1회 보장 / `history.replaceState`가 App Router에서 캐노니컬 URL만 갱신하고 RSC 재요청·리마운트를 하지 않음(Next 16.2.6 소스 실독) / `variant="hero"` 공존 경로 부재·잔존 참조 0건 / 낭독 순서 `combobox → 지우기 → 음성 → AI에게 질문`, 터치 타깃 108×44·44×44, 320px에서 줄바꿈 288×44.
+- **검증**: unit 409 pass + 1 skip / component 211 / lint 0 error / build 성공(487 정적 페이지) / a11y 38 pass. 잔여 a11y 실패 2건은 이 변경과 무관한 기존 상태(`git stash` 대조로 확인, 원인·판정은 BACKLOG E9).
+
 ## 2026-08-30 — 델파이 조사지 학교급 제목 승격 + 청각 전문가협의회 (2)(3) 승격 (3층 363 → 367건)
 
 - **배경**: 2차 검수 표본 3·26번이 `2023-research-app-3-pt1`·`pt2`였는데, 부록3(델파이 2차 조사지)이 학교급(초·중·고·특수) 경계가 아니라 5만 자 기준으로 잘려 있었다. 원인은 「「장애인교원 교육 전념 여건 지원사업」을 위한 전문가 패널 의견 조사_(초등학교용, 2차)」 표지가 제목이 아니라 표 셀 안에 있어 분해기가 경계로 보지 못한 것. 위원장 결정(8/30, 자문 세션)으로 표지를 제목으로 승격. BACKLOG C8(청각 (2)(3) 본문 서식 → 「① 진행 절차」 중복)도 같은 경로로 종결.

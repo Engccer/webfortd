@@ -15,6 +15,7 @@
 | A7 | 애니메이션 feel check(reduced-motion 토글·채팅 자동 스크롤·모바일 드로어) | PR #97·#98 |
 | A8 | 웹 콘텐츠 편집기 VoiceOver 실기기 실측(편집 흐름 전체) | PR #113 |
 | A9 | 라이브 음성 채팅 실 마이크 smoke(`docs/PHASE7_ENV_SETUP.md` §3) | PR #74 |
+| A10 | 웹 홈 옴니박스 VoiceOver 실사용: 입력창→음성→[AI에게 질문] 낭독 순서, Cmd+Enter 질문 경로, 자동 전송된 질문이 완료 시 질문 헤딩으로 안착하는지, `/chat` 도착 시 포커스 착지점(sr-only h1 「채팅」)이 실제로 낭독되는지 | 2026-09-04 |
 
 채팅 VoiceOver(전송 포커스 유지→완료 시 질문 헤딩·홀드 받아쓰기 전 항목)는 2026-07-20 실기기 합격으로 종결(CHANGELOG 2026-07-20).
 
@@ -57,6 +58,7 @@
 - E5 `tests/migrations` 8건이 운영 DB 베이스라인 드리프트(published 535 vs 초기 가정 0 등)로 실패 중 — 베이스라인 갱신 또는 fixture 격리(CHANGELOG 2026-08-04 부수 발견)
 - E6 웹 감사 보류분(PR #78): ChatUI `aria-relevant`(위원장 실 VoiceOver 판정) / KB fixed overlay 탭 잔존(구조 대수술) / retrieval 직렬 3왕복(RPC 마이그레이션) / 분산 rate limit·첨부 magic bytes 검사
 - E7 RAG 청크 `char_start`/`char_end` DEFERRED(Phase 3 M1)
+- E9 색상 대비 AA 미달(2026-09-04 실측): `--primary` `#306cff`가 흰 배경 위 본문 크기에서 **4.45:1**(AA 4.5 필요, 헤더 로고 "장애인교원" 등 전 페이지 공통)이고 `bg-primary` 버튼의 `#fafafa` 글자는 **4.26:1**. 전 라우트 baseline에 `color-contrast: 1`로 등록돼 묵인돼 왔다. 별건으로 `tests/a11y/axe-serious-baseline.json`의 키가 8/29 주소 재편 전 구 주소(`2023-hr-p-004`·`2023-hr-1-3`)라 `atomic-samples.spec.ts`의 새 표본 2건이 "신규 rule 회귀"로 실패 중(draft라 「검토 중」 배너 `bg-primary` 버튼이 1건 추가되어 2건). **baseline 키만 갱신하면 실제 미달을 정상으로 세탁**하므로, 토큰 조정 판정(PROGRESS §미결 결정) 후 함께 정리한다.
 - E8 decompose 리뷰 잔여(2026-08-29): 범위 경고가 자기+부모 kind만 봄(조상 전체로 넓히면 2층 승격 누락 신호 증가) / 분해 규칙(split·merge·range·demote·-d2) 단위 테스트 부재(함수 미export, 현재는 실 content e2e만)
 
 ## F. 사업·운영 결정 대기 (판정은 PROGRESS §미결 결정)
